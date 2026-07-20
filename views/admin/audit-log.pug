@@ -1,0 +1,75 @@
+extends ../layouts/base
+
+block content
+  .flex.items-center.justify-between.mb-8
+    div
+      h1.text-3xl.font-extrabold.tracking-tight Nhật ký Hệ thống
+      p.text-muted-foreground Theo dõi các sự kiện hệ thống và hành động của người dùng một cách an toàn.
+    
+    form.flex.items-center.gap-3(method='GET', action='/admin/audit')
+      select.form-select.h-10.rounded-lg(name='action', onchange='this.form.submit()')
+        option(value='') Tất cả hành động
+        option(value='USER_LOGIN', selected=actionFilter==='USER_LOGIN') Người dùng Đăng nhập
+        option(value='USER_REGISTER', selected=actionFilter==='USER_REGISTER') Người dùng Đăng ký
+        option(value='COURSE_CREATE', selected=actionFilter==='COURSE_CREATE') Khóa học được tạo
+        option(value='EXAM_SUBMIT', selected=actionFilter==='EXAM_SUBMIT') Bài thi đã nộp
+        option(value='SETTINGS_UPDATE', selected=actionFilter==='SETTINGS_UPDATE') Cài đặt đã cập nhật
+      if actionFilter
+        a.btn-outline.h-10.px-4(href='/admin/audit') Xóa bộ lọc
+
+  .glass-panel.rounded-2xl.border.border-border.overflow-hidden
+    if logs.length > 0
+      .table-wrap
+        table.w-full.text-left.border-collapse
+          thead
+            tr
+              th Thời gian
+              th Người dùng
+              th Hành động
+              th Địa chỉ IP
+              th Chi tiết
+          tbody.divide-y.divide-border
+            each log in logs
+              tr(class='hover_bg-muted/30 transition-colors')
+                td.py-3.px-4.whitespace-nowrap
+                  p.text-sm.font-medium= new Date(log.createdAt).toLocaleString()
+                td.py-3.px-4
+                  if log.user
+                    .flex.items-center.gap-2
+                      if log.user.avatarUrl
+                        img.w-6.h-6.rounded-full.object-cover(src=log.user.avatarUrl, alt=log.user.name)
+                      else
+                        .w-6.h-6.rounded-full.text-primary.flex.items-center.justify-center.font-bold.text-2xs(class='bg-primary/10')
+                          = log.user.name.charAt(0)
+                      div
+                        p.text-sm.font-bold= log.user.name
+                        p.text-xs.text-muted-foreground= log.user.email
+                  else
+                    span.text-sm.text-muted-foreground Hệ thống / Người dùng đã xóa
+                td.py-3.px-4
+                  span.inline-flex.items-center.px-2.py-1.rounded-md.text-xs.font-bold.bg-muted.text-foreground
+                    = log.action
+                td.py-3.px-4
+                  p.text-sm.font-mono.text-muted-foreground= log.ipAddress || '—'
+                td.py-3.px-4
+                  if log.details && Object.keys(log.details).length > 0
+                    script(type='application/json', data-audit-json= log._id)= JSON.stringify(log.details)
+                    button.text-xs.font-bold.text-primary(class='hover_underline', type='button', data-modal-open= '[data-audit-json="' + log._id + '"]', data-modal-title= 'Chi tiết sự kiện — ' + log.action) Xem chi tiết
+                  else
+                    span.text-xs.text-muted-foreground —
+
+      //- Pagination
+      if totalPages > 1
+        .p-4.border-t.border-border.flex.items-center.justify-between(class='bg-muted/10')
+          p.text-sm.text-muted-foreground Đang hiển thị trang #{currentPage} trong số #{totalPages}
+          .flex.items-center.gap-2
+            if currentPage > 1
+              a.btn-outline.h-8.px-3.text-xs(href=`/admin/audit?page=${currentPage - 1}${actionFilter ? '&action=' + actionFilter : ''}`) Trước
+            if currentPage < totalPages
+              a.btn-outline.h-8.px-3.text-xs(href=`/admin/audit?page=${currentPage + 1}${actionFilter ? '&action=' + actionFilter : ''}`) Tiếp
+    else
+      .py-12.text-center
+        .w-12.h-12.rounded-full.bg-muted.flex.items-center.justify-center.mx-auto.mb-4.text-muted-foreground
+          i.ph-bold.ph-file-search.text-2xl
+        h2.text-lg.font-bold Không tìm thấy nhật ký nào
+        p.text-muted-foreground.mt-1 Hãy thử điều chỉnh bộ lọc của bạn.

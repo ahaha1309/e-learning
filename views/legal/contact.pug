@@ -1,0 +1,23 @@
+extends ../layouts/base
+
+block content
+  .page-narrow.max-w-4xl.mx-auto.pt-16.pb-32
+    .animate-in.slide-in-up
+      p.eyebrow Hỗ trợ
+      h1.text-4xl.font-extrabold.tracking-tighter.mb-4 Liên hệ với chúng tôi
+      p.text-muted-foreground.mb-12 Chúng tôi ở đây để giúp đỡ với bất kỳ câu hỏi hoặc vấn đề nào.
+
+    .grid.grid-cols-1.md_grid-cols-2.gap-8.animate-in.slide-in-up(style='animation-delay: 100ms;')
+      .glass-panel.p-8(class='rounded-[2rem]')
+        .w-12.h-12.rounded-xl.bg-primary.text-primary-foreground.flex.items-center.justify-center.mb-6
+          i.ph-bold.ph-envelope-simple.text-2xl
+        h3.text-lg.font-bold.mb-2 Gửi email cho chúng tôi
+        p.text-sm.text-muted-foreground.mb-4 Nhóm của chúng tôi thường trả lời trong vòng 24 giờ.
+        a.text-sm.font-bold.text-primary(href='mailto:support@eduspace.io') support@eduspace.io
+
+      .glass-panel.p-8(class='rounded-[2rem]')
+        .w-12.h-12.rounded-xl.bg-primary.text-primary-foreground.flex.items-center.justify-center.mb-6
+          i.ph-bold.ph-chat-circle.text-2xl
+        h3.text-lg.font-bold.mb-2 Trò chuyện trực tiếp
+        p.text-sm.text-muted-foreground.mb-4 Trò chuyện với nhóm của chúng tôi trong giờ làm việc.
+        a.text-sm.font-bold.text-primary(href='#') Bắt đầu cuộc trò chuyện

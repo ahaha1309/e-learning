@@ -1,0 +1,140 @@
+//- ── Command Palette JS (§13 Search) ─────────────────────────────────
+if currentUser
+  script.
+    (function() {
+      var backdrop = document.getElementById('cmd-palette-backdrop');
+      var input = document.getElementById('cmd-input');
+      var results = document.getElementById('cmd-results');
+      if (!backdrop || !input || !results) return;
+
+      // Role-specific links
+      var role = '!{currentUser ? currentUser.role : ""}';
+      var links = {
+        student: [
+          { label: 'Tổng quan', href: '/student', icon: 'ph-squares-four' },
+          { label: 'Lớp học của tôi', href: '/student/classrooms', icon: 'ph-chalkboard' },
+          { label: 'Tham gia lớp học', href: '/student/classrooms/join', icon: 'ph-plus-circle' },
+          { label: 'Phân tích', href: '/student/analytics', icon: 'ph-chart-line' },
+          { label: 'Chứng chỉ', href: '/student/certificates', icon: 'ph-certificate' },
+          { label: 'Khám phá khóa học', href: '/catalog', icon: 'ph-compass' },
+          { label: 'Thông báo', href: '/notifications', icon: 'ph-bell' },
+          { label: 'Hồ sơ', href: '/profile', icon: 'ph-user-circle' },
+        ],
+        teacher: [
+          { label: 'Bảng điều khiển', href: '/teacher', icon: 'ph-squares-four' },
+          { label: 'Lớp học của tôi', href: '/teacher/classrooms', icon: 'ph-chalkboard' },
+          { label: 'Tạo lớp học', href: '/teacher/classrooms/new', icon: 'ph-plus' },
+          { label: 'Ngân hàng câu hỏi', href: '/teacher/question-banks', icon: 'ph-bank' },
+          { label: 'Phân tích', href: '/teacher/analytics', icon: 'ph-chart-bar' },
+          { label: 'Thông báo', href: '/notifications', icon: 'ph-bell' },
+          { label: 'Hồ sơ', href: '/profile', icon: 'ph-user-circle' },
+        ],
+        admin: [
+          { label: 'Bảng điều khiển quản trị', href: '/admin', icon: 'ph-squares-four' },
+          { label: 'Người dùng', href: '/admin/users', icon: 'ph-users' },
+          { label: 'Thêm người dùng', href: '/admin/users/new', icon: 'ph-user-plus' },
+          { label: 'Giáo viên', href: '/admin/teachers', icon: 'ph-chalkboard-teacher' },
+          { label: 'Chờ phê duyệt', href: '/admin/teachers/pending', icon: 'ph-clock' },
+          { label: 'Học sinh', href: '/admin/students', icon: 'ph-student' },
+          { label: 'Lớp học', href: '/admin/classrooms', icon: 'ph-chalkboard' },
+          { label: 'Bài thi', href: '/admin/exams', icon: 'ph-exam' },
+          { label: 'Bài tập', href: '/admin/assignments', icon: 'ph-file-code' },
+          { label: 'Cài đặt', href: '/admin/settings', icon: 'ph-gear-six' },
+        ]
+      };
+      var items = links[role] || [];
+
+      function renderItems(filtered) {
+        results.innerHTML = '';
+        if (!filtered.length) {
+          results.innerHTML = '<div class="cmd-palette-section">Không tìm thấy kết quả nào</div>';
+          return;
+        }
+        filtered.forEach(function(item, i) {
+          var div = document.createElement('a');
+          div.href = item.href;
+          div.className = 'cmd-palette-item';
+          div.setAttribute('role', 'option');
+          div.setAttribute('data-index', i);
+          div.innerHTML = '<i class="ph-bold ' + item.icon + ' text-muted-foreground"></i><span>' + item.label + '</span>';
+          results.appendChild(div);
+        });
+      }
+
+      var lastTrigger = null;
+      var FOCUSABLE_SEL = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+      function setTriggerExpanded(state) {
+        document.querySelectorAll('[data-cmd-palette]').forEach(function(b) {
+          b.setAttribute('aria-expanded', state ? 'true' : 'false');
+        });
+      }
+
+      function open() {
+        lastTrigger = document.activeElement;
+        setTriggerExpanded(true);
+        backdrop.classList.add('open');
+        input.value = '';
+        renderItems(items);
+        setTimeout(function() { input.focus(); }, 50);
+        document.body.style.overflow = 'hidden';
+      }
+      function close() {
+        backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+        setTriggerExpanded(false);
+        if (lastTrigger && typeof lastTrigger.focus === 'function') {
+          try { lastTrigger.focus(); } catch (e) {}
+          lastTrigger = null;
+        }
+      }
+
+      // Focus trap inside the palette
+      document.addEventListener('keydown', function(e) {
+        if (!backdrop.classList.contains('open') || e.key !== 'Tab') return;
+        var nodes = backdrop.querySelectorAll(FOCUSABLE_SEL);
+        var vis = Array.prototype.filter.call(nodes, function(n) {
+          return n.offsetParent !== null || n === document.activeElement;
+        });
+        if (!vis.length) { e.preventDefault(); setTimeout(function(){ input.focus(); }, 0); return; }
+        var first = vis[0], last = vis[vis.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+
+      // Keyboard shortcut: Cmd+K / Ctrl+K
+      document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          backdrop.classList.contains('open') ? close() : open();
+        }
+        if (e.key === 'Escape' && backdrop.classList.contains('open')) close();
+      });
+
+      // Close on backdrop click
+      backdrop.addEventListener('click', function(e) {
+        if (e.target === backdrop) close();
+      });
+
+      // Filter on input
+      input.addEventListener('input', function() {
+        var q = input.value.toLowerCase();
+        var filtered = q ? items.filter(function(i) { return i.label.toLowerCase().includes(q); }) : items;
+        renderItems(filtered);
+      });
+
+      // Keyboard navigation in results
+      input.addEventListener('keydown', function(e) {
+        var btns = results.querySelectorAll('.cmd-palette-item');
+        var active = results.querySelector('.cmd-palette-item:focus');
+        var idx = active ? parseInt(active.getAttribute('data-index'), 10) : -1;
+        if (e.key === 'ArrowDown') { e.preventDefault(); var next = btns[idx + 1] || btns[0]; if (next) next.focus(); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); var prev = btns[idx - 1] || btns[btns.length - 1]; if (prev) prev.focus(); }
+        if (e.key === 'Enter' && active) { active.click(); }
+      });
+
+      // Wire trigger buttons (topbar search button)
+      document.querySelectorAll('[data-cmd-palette]').forEach(function(btn) {
+        btn.addEventListener('click', open);
+      });
+    })();

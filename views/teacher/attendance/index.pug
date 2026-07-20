@@ -1,0 +1,38 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Giảng viên
+    h1.text-3xl.font-bold.tracking-tight Buổi Điểm danh
+    p.text-muted-foreground.mt-2 Lớp học: #{classroom.name}
+
+    if feedback
+      .alert-success= feedback
+
+    .flex.flex-wrap.gap-3
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại Lớp học
+      form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance', class='inline-block')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        button.btn-primary(type='submit') Bắt đầu Buổi mới
+
+    if sessions.length
+      .space-y-3.mt-4
+        each session in sessions
+          article.card.p-5.flex.justify-between.items-center
+            div
+              p.font-medium= session.date.toLocaleDateString('en-GB')
+              p.text-sm.text-muted-foreground.mt-1 Trạng thái:
+                if session.status === 'open'
+                  span.text-success.font-bold  Mở
+                else
+                  span.text-destructive  Đóng
+            .flex.gap-2
+              if session.status === 'open'
+                a.pill(href='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/live') Tiếp tục Trực tiếp
+              a.pill(href='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/records') Xem Bản ghi
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-clipboard-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Chưa có buổi điểm danh nào
+        p.text-sm.text-muted-foreground.mt-2 Nhấp vào "Bắt đầu Buổi mới" để bắt đầu.

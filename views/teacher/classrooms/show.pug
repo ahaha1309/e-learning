@@ -1,0 +1,94 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    //- Cinematic Header
+    .grid.grid-cols-1.gap-8.items-start.animate-in.slide-in-up(class='lg_grid-cols-[1fr_360px]')
+      div
+        nav.breadcrumb.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold= classroom.name
+
+        p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-3 Trung tâm Giảng dạy
+        h1.text-4xl.md_text-6xl.font-extrabold.tracking-tighter.text-foreground= classroom.name
+        p.text-xl.text-muted-foreground.max-w-prose.mt-5.leading-relaxed= classroom.description || 'Chưa có mô tả.'
+      
+      aside.glass-panel.p-8.border.shadow-sm.text-center(class='rounded-[2rem] border-border/60')
+        p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.mb-4 Mã tham gia
+        div.inline-flex.items-center.justify-center.w-full.bg-muted.rounded-xl.p-4.mb-4(class='border border-border/50')
+          strong.text-5xl.tracking-widest.font-mono.text-foreground= classroom.code
+        p.text-sm.text-muted-foreground Chia sẻ mã này với học sinh của bạn để cấp cho họ quyền truy cập.
+
+    if feedback
+      .alert-primary.animate-in.fade-in.rounded-2xl= feedback
+
+    //- Cinematic Navigation Tabs
+    .border-b.animate-in.slide-in-up(class='border-border/60', style='animation-delay: 200ms;')
+      nav.flex.gap-8.overflow-x-auto
+        a.pb-5.text-sm.font-bold.border-b-2.border-primary.text-foreground(href='/teacher/classrooms/' + classroom.id) Tổng quan
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/lectures') Bài giảng
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/assignments') Bài tập
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/exams') Bài thi
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/gradebook') Sổ điểm
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/attendance') Điểm danh
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/discussions') Thảo luận
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/analytics') Phân tích
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/edit') Cài đặt
+
+    section.animate-in.slide-in-up(style='animation-delay: 300ms;')
+      .flex.items-center.justify-between.mb-8
+        h2.text-3xl.font-extrabold.tracking-tight Danh sách Học sinh
+        a.btn-outline.h-12.px-6.rounded-full.text-sm.font-bold(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id) Quản lý Danh sách
+
+      if members.length
+        .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+          .table-wrap
+            table.w-full.text-left.border-collapse
+              thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
+                tr
+                  th.px-8.py-5.font-bold Tên học sinh
+                  th.px-8.py-5.font-bold Email
+                  th.px-8.py-5.font-bold Trạng thái
+                  th.px-8.py-5.font-bold.text-center Hành động
+              tbody(class='divide-y divide-border/60')
+                each member in members
+                  tr.transition-colors(class='hover_bg-muted/10')
+                    td.px-8.py-6
+                      .flex.items-center.gap-4
+                        div.w-12.h-12.rounded-full.flex.items-center.justify-center.font-bold.text-lg.border(class='bg-primary/10 text-primary border-primary/20')
+                          = member.student.name.charAt(0).toUpperCase()
+                        span.font-bold.text-base.text-foreground= member.student.name
+                    td.px-8.py-6.font-mono.text-sm.text-muted-foreground= member.student.email
+                    td.px-8.py-6
+                      if member.status === 'pending'
+                        span.badge-warning.shadow-sm.px-3.py-1 Chờ xử lý
+                      else if member.status === 'active'
+                        span.badge-success.shadow-sm.px-3.py-1 Hoạt động
+                      else
+                        span.badge-muted.shadow-sm.px-3.py-1= member.status
+                    td.px-8.py-6
+                      if member.status === 'pending'
+                        .flex.items-center.justify-end.gap-3
+                          form(method='POST', action='/teacher/classrooms/' + classroom.id + '/members/' + member.id + '/approve')
+                            input(type='hidden', name='_csrf', value=csrfToken)
+                            button.btn-primary.h-10.px-5.rounded-xl.text-sm.font-bold.shadow-diffused(type='submit') Phê duyệt
+                          form(method='POST', action='/teacher/classrooms/' + classroom.id + '/members/' + member.id + '/reject')
+                            input(type='hidden', name='_csrf', value=csrfToken)
+                            button.btn-outline.h-10.px-5.rounded-xl.text-sm.font-bold.text-destructive(class='border-destructive/30 hover_bg-destructive/10', type='submit') Từ chối
+                      else
+                        .flex.items-center.justify-end.gap-2
+                          a.w-10.h-10.rounded-full.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_text-info hover_bg-info/10', href='/teacher/classrooms/' + classroom.id + '/analytics', title='Xem Tiến độ')
+                            i.ph-bold.ph-chart-bar.text-sm
+                          form(method='POST', action='/teacher/classrooms/' + classroom.id + '/members/' + member.id + '/remove', onsubmit="return confirm('Xóa học sinh này khỏi lớp học?');")
+                            input(type='hidden', name='_csrf', value=csrfToken)
+                            button.w-10.h-10.rounded-full.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_text-destructive hover_bg-destructive/10', type='submit', title='Xóa Học sinh')
+                              i.ph-bold.ph-user-minus.text-sm
+      else
+        .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2.5rem] border-border/60', style='animation-delay: 400ms;')
+          .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
+            i.ph-fill.ph-users.text-5xl(class='text-muted-foreground/30')
+          h2.text-3xl.font-extrabold.text-foreground Chưa có học sinh nào
+          p.text-lg.text-muted-foreground.mt-3 Chia sẻ mã tham gia để bắt đầu.

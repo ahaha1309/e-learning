@@ -1,0 +1,107 @@
+extends ../layouts/base
+
+block content
+  //- §2.1 Guest Journey: auth pages minimal — no distractions, clear CTA
+  //- §6 Responsive: single column on mobile, split-screen on lg+
+  .min-h-screen.flex
+
+    //- ── LEFT BRAND PANEL (desktop only) ─────────────────────────────────
+    .hidden.lg_flex.flex-col.justify-between.p-12.relative.overflow-hidden.flex-shrink-0(class='w-[480px] bg-primary/5 border-r border-border/60')
+      //- Ambient glow
+      .absolute.inset-0.pointer-events-none(aria-hidden='true')
+        div.absolute.top-0.left-0.w-80.h-80.rounded-full.bg-primary.opacity-10(style='filter:blur(100px);')
+        div.absolute.bottom-0.right-0.w-64.h-64.rounded-full.bg-info.opacity-10(style='filter:blur(80px);')
+
+      //- Brand logo
+      a.inline-flex.items-center.gap-3.relative.z-10(href='/', aria-label='EduSpace home')
+        .w-10.h-10.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.shadow-sm
+          i.ph-bold.ph-graduation-cap.text-xl(aria-hidden='true')
+        span.font-bold.text-lg.tracking-tight= siteName || 'EduSpace'
+
+      //- Center feature callouts
+      .space-y-8.relative.z-10
+        div
+          h2.text-3xl.font-extrabold.tracking-tighter.mb-3 Chào mừng trở lại.
+          p.text-muted-foreground.leading-relaxed Lớp học, bài thi và bài tập của bạn — tất cả trong một.
+
+        .space-y-4
+          -
+            var helpItems = [
+              {icon:'ph-chalkboard', text:'Truy cập lớp học của bạn ngay lập tức'},
+              {icon:'ph-exam', text:'Làm bài thi trong chế độ tập trung không xao nhãng'},
+              {icon:'ph-chart-line', text:'Theo dõi tiến độ và điểm số của bạn qua thời gian'}
+            ];
+          each item in helpItems
+            .flex.items-center.gap-4
+              .w-9.h-9.rounded-xl.flex.items-center.justify-center.flex-shrink-0(class='bg-primary/10 text-primary')
+                i.ph-bold(class=item.icon + ' text-base', aria-hidden='true')
+              p.text-sm.font-medium.text-foreground= item.text
+
+      //- Footer
+      .relative.z-10
+        p.text-xs.text-muted-foreground &copy; #{new Date().getFullYear()} #{siteName || 'EduSpace'}. Được thiết kế cho lớp học thực tế.
+
+    //- ── RIGHT FORM PANEL ─────────────────────────────────────────────────
+    .flex-1.flex.items-center.justify-center.p-6.sm_p-10.relative.overflow-hidden.bg-background
+      //- Subtle ambient on form side
+      .absolute.inset-0.pointer-events-none(aria-hidden='true')
+        div.absolute.top-1.of-4.right-0.w-96.h-96.rounded-full.bg-primary.opacity-5(style='filter:blur(100px);')
+
+      .relative.z-10.w-full.max-w-md
+
+        //- Header — visible on mobile where brand panel is hidden
+        .flex.items-center.gap-3.mb-8.lg_hidden
+          a.inline-flex.items-center.gap-2(href='/', aria-label='EduSpace home')
+            .w-8.h-8.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground
+              i.ph-bold.ph-graduation-cap.text-sm(aria-hidden='true')
+            span.font-bold.text-base.tracking-tight= siteName || 'EduSpace'
+
+        h1.text-3xl.font-extrabold.tracking-tighter.mb-2 Đăng nhập vào tài khoản
+        p.text-muted-foreground.text-sm.mb-8 Nhập thông tin đăng nhập của bạn dưới đây để tiếp tục.
+
+        form.space-y-5(method='POST', action='/auth/login', novalidate)
+          input(type='hidden', name='_csrf', value=csrfToken)
+
+          //- Error alert (§12 Error States: specific, actionable)
+          if errorMessage
+            div.flex.items-start.gap-3.p-4.rounded-xl.border.animate-in.slide-in-down(role='alert', class='bg-destructive/5 border-destructive/20 text-destructive')
+              i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+              p.text-sm.font-medium.leading-snug= errorMessage
+
+          //- Email
+          .field
+            label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='email') Địa chỉ Email
+            .input-icon
+              .icon: i.ph-bold.ph-envelope-simple.text-lg.text-muted-foreground(aria-hidden='true')
+              input#email(
+                type='email', name='email', value=formData.email || '',
+                required, autocomplete='email', placeholder='name@example.com',
+                class='h-12 rounded-xl'
+              )
+
+          //- Password
+          .field
+            .flex.items-center.justify-between(style='margin-bottom:0.375rem;')
+              label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='password') Mật khẩu
+              a.text-xs.font-bold.text-primary.transition-colors(class='hover_text-primary/80', href='/auth/forgot-password') Quên mật khẩu?
+            .input-icon
+              .icon: i.ph-bold.ph-lock.text-lg.text-muted-foreground(aria-hidden='true')
+              input#password(
+                type='password', name='password',
+                required, autocomplete='current-password', placeholder='••••••••',
+                class='h-12 rounded-xl pr-12'
+              )
+              button.absolute.inset-y-0.right-0.flex.items-center.pr-4.text-muted-foreground.hover_text-foreground.transition-colors(
+                type='button', data-toggle-password='password', aria-label='Hiển thị mật khẩu'
+              )
+                i.ph-bold.ph-eye.text-lg(data-toggle-password-icon='password', aria-hidden='true')
+
+          //- Submit
+          button.btn-primary.w-full.h-12.text-base.rounded-xl.shadow-sm.active_scale-95.transition-transform.mt-2(type='submit')
+            | Đăng nhập
+            i.ph-bold.ph-arrow-right(aria-hidden='true')
+
+        .mt-8.pt-6.border-t.text-center(class='border-border/60')
+          p.text-sm.text-muted-foreground
+            | Chưa có tài khoản?&nbsp;
+            a.font-bold.text-primary.hover_underline(href='/auth/register') Tạo tài khoản miễn phí

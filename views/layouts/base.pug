@@ -1,0 +1,256 @@
+doctype html
+html(lang='en', class='light')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='color-scheme', content='light dark')
+    meta(name='description', content=metaDescription || 'Enterprise learning management platform — manage classrooms, exams, assignments, and student progress.')
+    title= title ? title + ' | ' + (siteName || 'EduSpace') : (siteName || 'EduSpace')
+
+    //- Open Graph / Social sharing meta tags
+    meta(property='og:type', content='website')
+    meta(property='og:title', content=title ? title + ' | ' + (siteName || 'EduSpace') : (siteName || 'EduSpace'))
+    meta(property='og:description', content=metaDescription || 'Enterprise learning management platform — manage classrooms, exams, assignments, and student progress.')
+    meta(property='og:site_name', content=siteName || 'EduSpace')
+    meta(property='og:locale', content='en_US')
+    if metaImage
+      meta(property='og:image', content=metaImage)
+      meta(property='og:image:width', content='1200')
+      meta(property='og:image:height', content='630')
+
+    //- Twitter Card meta tags
+    meta(name='twitter:card', content='summary_large_image')
+    meta(name='twitter:title', content=title ? title + ' | ' + (siteName || 'EduSpace') : (siteName || 'EduSpace'))
+    meta(name='twitter:description', content=metaDescription || 'Enterprise learning management platform — manage classrooms, exams, assignments, and student progress.')
+    if metaImage
+      meta(name='twitter:image', content=metaImage)
+
+    //- Security / robots
+    meta(name='robots', content='noindex, nofollow')
+    meta(name='referrer', content='strict-origin-when-cross-origin')
+    meta(http-equiv='X-Content-Type-Options', content='nosniff')
+
+    link(rel='icon', type='image/svg+xml', href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3Cpath d='M16 8L6 13.5v1L16 20l10-5.5v-1L16 8z' fill='white'/%3E%3Cpath d='M22 16.8v4.7c0 1-2.7 2.5-6 2.5s-6-1.5-6-2.5v-4.7l6 3.3 6-3.3z' fill='white' opacity='0.85'/%3E%3C/svg%3E")
+
+    //- Fonts: Geist
+    link(rel='preconnect', href='https://fonts.googleapis.com')
+    link(rel='preconnect', href='https://fonts.gstatic.com', crossorigin)
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap')
+
+    link(rel='stylesheet', href='/css/style.css')
+
+    //- Bootstrap Icons (fallback if Phosphor CDN fails)
+    link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
+
+    //- Phosphor Icons
+    script(src='https://unpkg.com/@phosphor-icons/web@2.1.1/src/index.js', defer)
+
+    //- Anti-FOUC Theme Script
+    script.
+      (function() {
+        try {
+          var savedTheme = window.localStorage.getItem('elearning-theme');
+          if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+
+    block head
+
+  body.bg-background.text-foreground.font-sans.antialiased
+
+    //- Skip link for accessibility
+    a.skip-link(href='#main-content') Chuyển đến nội dung chính
+
+
+    //- Toast Container
+    #toast-container.fixed.top-20.right-4.z-toast.flex.flex-col.gap-3.pointer-events-none(style='max-width: 420px;')
+
+    //- Shared modal (driven by /js/modal.js). Hidden until .open.
+    include ./partials/_modal
+    if flash && flash.message
+      script.
+        (function() {
+          var msg = !{JSON.stringify(flash.message)};
+          var type = !{JSON.stringify(flash.type || 'info')};
+          setTimeout(function() { showToast(msg, type); }, 100);
+        })();
+
+    include ./partials/cmd-palette
+
+
+    //- AUTHENTICATED SHELL
+    if currentUser && isAuthenticated
+
+      include ./partials/topbar
+
+      .shell
+        aside.shell-sidebar#sidebar(aria-label='Navigation')
+          if currentUser.role === 'admin'
+            include ./partials/sidebar-admin
+          else if currentUser.role === 'teacher'
+            include ./partials/sidebar-teacher
+          else
+            include ./partials/sidebar-student
+
+        main.shell-main(id='main-content', tabindex='-1')
+          block content
+
+    //- PUBLIC / AUTH SHELL
+    else
+      header.fixed.top-0.left-0.right-0.z-sticky.border-b.border-border.transition-colors.duration-300(class='bg-background/80 backdrop-blur-md', role='banner')
+        .max-w-7xl.mx-auto.px-6.h-16.flex.items-center.justify-between
+          .flex.items-center(class='gap-2.5')
+            a.flex.items-center(href='/', class='gap-2.5 group', aria-label='#{siteName} home')
+              .w-8.h-8.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.flex-shrink-0.transition-transform.duration-300(class='group-hover_scale-105 group-hover_shadow-[0_0_20px_hsl(var(--primary)/0.4)]')
+                i.ph-bold.ph-graduation-cap
+              span.font-bold.text-base.tracking-tight= siteName || 'EduSpace'
+
+          nav.flex.items-center(class='gap-4', aria-label='Main')
+            a.text-sm.font-medium.text-muted-foreground.transition-colors.hidden(class='md_block hover_text-foreground', href='/catalog') Danh mục khóa học
+            .w-px.h-4.bg-border.hidden(class='md_block')
+            a.text-sm.font-medium.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/auth/login') Đăng nhập
+            a.btn.btn-primary.btn-sm.rounded-full.shadow-sm(href='/auth/register') Bắt đầu
+
+      main.flex-1.flex.flex-col.min-h-screen(id='main-content', class='pt-16', tabindex='-1')
+        block content
+
+      footer.border-t.border-border.mt-auto(class='bg-background')
+        .max-w-7xl.mx-auto.px-6.py-12
+          .grid.grid-cols-1.gap-8(class='md_grid-cols-4')
+            .col-span-1(class='md_col-span-2')
+              .flex.items-center(class='gap-2.5 mb-4')
+                .w-8.h-8.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.flex-shrink-0
+                  i.ph-bold.ph-graduation-cap
+                span.font-bold.text-lg.tracking-tight= siteName || 'EduSpace'
+              p.text-sm.text-muted-foreground.max-w-xs.leading-relaxed
+                | Nền tảng quản lý học tập hiện đại dành cho lớp học, đánh giá và theo dõi tiến độ của học sinh.
+
+            div
+              h3.text-sm.font-bold.mb-4.tracking-tight Nền tảng
+              ul.space-y-3.text-sm.text-muted-foreground
+                li: a.transition-colors(href='/catalog', class='hover_text-foreground') Danh mục khóa học
+                li: a.transition-colors(href='/auth/login', class='hover_text-foreground') Đăng nhập
+                li: a.transition-colors(href='/auth/register', class='hover_text-foreground') Bắt đầu
+
+            div
+              h3.text-sm.font-bold.mb-4.tracking-tight Pháp lý
+              ul.space-y-3.text-sm.text-muted-foreground
+                li: a.transition-colors(href='/legal/privacy', class='hover_text-foreground') Chính sách bảo mật
+                li: a.transition-colors(href='/legal/terms', class='hover_text-foreground') Điều khoản dịch vụ
+                li: a.transition-colors(href='/legal/contact', class='hover_text-foreground') Liên hệ
+
+          .mt-12.pt-8.border-t.border-border.flex.flex-col.md_flex-row.items-center.justify-between.gap-4
+            p.text-xs.text-muted-foreground
+              | &copy; #{new Date().getFullYear()} #{siteName || 'EduSpace'} Inc. Mọi quyền được bảo lưu.
+            .flex.items-center.gap-4.text-muted-foreground
+              a.transition-colors(href='https://twitter.com', target='_blank', rel='noopener noreferrer', class='hover_text-foreground', aria-label='Twitter')
+                i.ph-bold.ph-twitter-logo.text-lg
+              a.transition-colors(href='https://github.com', target='_blank', rel='noopener noreferrer', class='hover_text-foreground', aria-label='GitHub')
+                i.ph-bold.ph-github-logo.text-lg
+
+    //- ── SCRIPTS ─────────────────────────────────────────────────────────
+    script(src='/js/theme.js')
+    script(src='/js/modal.js')
+
+    if currentUser
+      script.
+        (function () {
+          var sidebar = document.getElementById('sidebar');
+          var toggle = document.getElementById('sidebar-toggle');
+          var overlay = document.getElementById('sidebar-overlay');
+
+          function openSidebar() {
+            if (!sidebar) return;
+            sidebar.classList.add('open');
+            if (overlay) overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+          }
+          function closeSidebar() {
+            if (!sidebar) return;
+            sidebar.classList.remove('open');
+            if (overlay) overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+          }
+
+          if (toggle) toggle.addEventListener('click', openSidebar);
+          if (overlay) overlay.addEventListener('click', closeSidebar);
+
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeSidebar();
+          });
+        })();
+
+    //- Global toast utility
+    script.
+      function showToast(message, type) {
+        type = type || 'info';
+        var container = document.getElementById('toast-container');
+        if (!container) return;
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + type + ' pointer-events-auto';
+        toast.setAttribute('role', 'alert');
+        var icons = { success: 'ph-check-circle', error: 'ph-x-circle', warning: 'ph-warning-circle', info: 'ph-info' };
+        toast.innerHTML = '<i class="ph-bold ' + (icons[type] || icons.info) + ' text-lg flex-shrink-0"></i><div class="flex-1"><p class="text-sm font-medium">' + message + '</p></div><button class="flex-shrink-0 text-muted-foreground hover_text-foreground" onclick="this.parentElement.remove()" aria-label="Bỏ qua">&times;</button>';
+        container.appendChild(toast);
+        setTimeout(function () { if (toast.parentElement) toast.remove(); }, 5000);
+      }
+
+    //- Show/hide password toggle
+    script.
+      document.addEventListener('click', function(e) {
+        var btn = e.target.closest('[data-toggle-password]');
+        if (!btn) return;
+        var inputId = btn.getAttribute('data-toggle-password');
+        var input = document.getElementById(inputId);
+        var icon = document.querySelector('[data-toggle-password-icon="' + inputId + '"]');
+        if (!input) return;
+        var isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.setAttribute('aria-label', isPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu');
+        if (icon) icon.className = 'ph-bold text-lg ' + (isPassword ? 'ph-eye-slash' : 'ph-eye');
+      });
+
+    block scripts
+
+    include ./partials/cmd-palette-script
+
+      //- ── Aria-expanded toggle for user dropdown (§8 Accessibility) ──────
+      script.
+        (function() {
+          var dropdownBtn = document.querySelector('[aria-haspopup="true"]');
+          if (!dropdownBtn) return;
+          var group = dropdownBtn.closest('.group');
+          dropdownBtn.addEventListener('click', function() {
+            var expanded = dropdownBtn.getAttribute('aria-expanded') === 'true';
+            dropdownBtn.setAttribute('aria-expanded', (!expanded).toString());
+          });
+          document.addEventListener('click', function(e) {
+            if (group && !group.contains(e.target)) {
+              dropdownBtn.setAttribute('aria-expanded', 'false');
+            }
+          });
+        })();
+
+      //- ── Language Switcher Script ─────────────────────────────────────────
+      div#google_translate_element(style="display:none;")
+      script(type="text/javascript").
+        function googleTranslateElementInit() {
+          new google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+        }
+        function toggleLanguage() {
+          var match = document.cookie.match(new RegExp('(^| )googtrans=([^;]+)'));
+          var currentLang = match ? match[2].split('/')[2] : 'en';
+          var newLang = currentLang === 'vi' ? 'en' : 'vi';
+          document.cookie = 'googtrans=/en/' + newLang + '; path=/';
+          if (newLang === 'en') {
+            document.cookie = 'googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          }
+          window.location.reload();
+        }
+      script(type="text/javascript", src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit")

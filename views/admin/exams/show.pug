@@ -1,0 +1,88 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-8.animate-in.fade-in
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Chi tiết Bài thi
+        h1.text-3xl.font-extrabold.tracking-tight= exam.title
+        p.text-muted-foreground.mt-2= exam.description || 'Không có mô tả'
+      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/exams')
+        i.ph-bold.ph-arrow-left
+        | Quay lại
+
+    .grid.grid-cols-1.lg_grid-cols-3.gap-6
+      .lg_col-span-2.space-y-6
+        .bento-card.p-6
+          h2.text-lg.font-bold.mb-4 Câu hỏi (#{questions.length})
+          if questions.length
+            .space-y-4
+              each q, idx in questions
+                .border.rounded-xl.p-4(class='border-border/60')
+                  .flex.items-start.justify-between.gap-4
+                    div.flex-1
+                      .flex.items-center.gap-2.mb-2
+                        span.text-xs.font-bold.text-muted-foreground Q#{idx + 1}
+                        span.badge-muted.badge-sm= q.type === 'multiple_choice' ? 'Trắc nghiệm một lựa chọn' : q.type === 'multiple_answer' ? 'Trắc nghiệm nhiều lựa chọn' : 'Tự luận'
+                        span.text-xs.text-muted-foreground #{q.points} điểm
+                      p.font-medium= q.content
+                      if q.options && q.options.length
+                        .mt-2.space-y-1
+                          each opt in q.options
+                            .flex.items-center.gap-2.text-sm(class=opt.isCorrect ? 'text-success font-bold' : 'text-muted-foreground')
+                              if opt.isCorrect
+                                i.ph-bold.ph-check-circle.text-xs
+                              else
+                                i.ph-bold.ph-circle.text-xs
+                              span= opt.text
+          else
+            .empty-state.py-8.border-0.bg-transparent
+              p.text-sm.text-muted-foreground Chưa có câu hỏi nào được thêm.
+
+        .bento-card.p-6
+          h2.text-lg.font-bold.mb-4 Bài nộp (#{submissions.length})
+          if submissions.length
+            .overflow-x-auto
+              table.w-full.text-left.text-sm
+                thead
+                  tr.border-b.border-border
+                    th.px-4.py-2.font-semibold Học sinh
+                    th.px-4.py-2.font-semibold Điểm
+                    th.px-4.py-2.font-semibold Trạng thái
+                    th.px-4.py-2.font-semibold Đã nộp
+                tbody
+                  each sub in submissions
+                    tr.border-b.border-border
+                      td.px-4.py-2= sub.student ? sub.student.name : 'Không rõ'
+                      td.px-4.py-2.font-mono= sub.score != null ? sub.score + '/' + exam.totalPoints : '—'
+                      td.px-4.py-2
+                        span.badge-muted.badge-sm= sub.gradingStatus || sub.status
+                      td.px-4.py-2.text-muted-foreground= sub.submittedAt ? new Date(sub.submittedAt).toLocaleDateString('en-GB') : '—'
+          else
+            .empty-state.py-8.border-0.bg-transparent
+              p.text-sm.text-muted-foreground Chưa có bài nộp nào.
+
+      .space-y-6
+        .bento-card.p-6.space-y-4
+          h2.text-lg.font-bold Thông tin Bài thi
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Lớp học
+            span.text-sm.font-medium= exam.classroom ? exam.classroom.name : 'N/A'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Giảng viên
+            span.text-sm.font-medium= exam.teacher ? exam.teacher.name : 'N/A'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Thời lượng
+            span.text-sm.font-mono.font-bold= exam.duration ? exam.duration + ' phút' : 'Không giới hạn'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Tổng điểm
+            span.text-sm.font-mono.font-bold= exam.totalPoints || 0
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Câu hỏi
+            span.text-sm.font-mono.font-bold= exam.questionCount || 0
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Đã xuất bản
+            if exam.isPublished
+              span.badge-success.badge-sm Có
+            else
+              span.badge-muted.badge-sm Không

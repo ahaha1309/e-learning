@@ -1,0 +1,21 @@
+//- Command Palette (§13 Search) — role-aware
+if currentUser
+  #cmd-palette-backdrop.cmd-palette-backdrop(aria-modal='true', role='dialog', aria-label='Command palette')
+    .cmd-palette
+      .cmd-palette-input
+        i.ph-bold.ph-magnifying-glass.text-muted-foreground.flex-shrink-0
+        input#cmd-input(type='text', placeholder='Tìm kiếm hoặc đi đến...', autocomplete='off', spellcheck='false', aria-label='Tìm kiếm')
+        kbd.cmd-palette-hint
+          span esc
+      #cmd-results.cmd-palette-results(role='listbox', aria-label='Kết quả tìm kiếm')
+        //- Results rendered by JS
+      .cmd-palette-footer
+        .cmd-palette-hint
+          kbd ↑↓
+          | &nbsp;điều hướng
+        .cmd-palette-hint
+          kbd ↵
+          | &nbsp;mở
+        .cmd-palette-hint
+          kbd esc
+          | &nbsp;đóng

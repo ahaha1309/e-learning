@@ -1,0 +1,57 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    header
+      p.eyebrow Danh mục Giảng viên
+      h1.text-3xl.font-extrabold.tracking-tight Phê duyệt Giảng viên
+      p.text-muted-foreground.mt-2.text-sm Xem xét đăng ký giảng viên trước khi họ có thể truy cập các công cụ quản lý lớp học và bài giảng.
+
+    if feedback
+      .alert-success.rounded-xl= feedback
+
+    if teachers && teachers.length > 0
+      .grid.grid-cols-1.lg_grid-cols-2.gap-6
+        each teacher in teachers
+          article.bento-card.p-6.flex.flex-col.gap-6
+            .flex.items-start.justify-between.gap-4
+              .flex.items-center.gap-4
+                div.w-12.h-12.rounded-full.text-warning.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-warning/10')
+                  if teacher.avatarUrl
+                    img.w-full.h-full.rounded-full.object-cover(src=teacher.avatarUrl, alt=teacher.name)
+                  else
+                    = teacher.name ? teacher.name.charAt(0).toUpperCase() : '?'
+                div
+                  h3.text-lg.font-bold.text-foreground= teacher.name
+                  p.text-sm.text-muted-foreground= teacher.email
+              span.badge-warning.badge-sm.shadow-sm Đang chờ xét duyệt
+            
+            div.rounded-xl.p-4.space-y-3.border.border-border(class='bg-muted/30')
+              .flex.items-center.justify-between.text-sm
+                span.text-muted-foreground Điện thoại
+                span.font-medium.text-foreground= teacher.phone || 'Không cung cấp'
+              .flex.items-center.justify-between.text-sm
+                span.text-muted-foreground Đã nộp đơn
+                span.font-medium.text-foreground= teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+
+            .flex.items-center.gap-3.mt-auto
+              form.flex-1(method='POST', action='/admin/teachers/' + teacher.id + '/approve')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                button.btn-primary.w-full.h-10.rounded-lg(type='submit')
+                  i.ph-bold.ph-check
+                  | Phê duyệt
+              form.flex-1(method='POST', action='/admin/teachers/' + teacher.id + '/reject')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                button.btn-outline.w-full.h-10.rounded-lg(type='submit')
+                  | Từ chối
+    else
+      .empty-state.py-20.bento-card
+        .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-fill.ph-check-circle.text-3xl(class='text-success/80')
+        h2.text-lg.font-bold.text-foreground Đã xử lý xong
+        p.text-sm.text-muted-foreground.mt-1 Không có giảng viên nào đang chờ phê duyệt vào lúc này.
+
+    .pt-4
+      a.btn-outline.h-10.px-4.rounded-lg(href='/admin')
+        i.ph-bold.ph-arrow-left
+        | Quay lại bảng điều khiển

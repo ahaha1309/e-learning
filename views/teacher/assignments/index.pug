@@ -1,0 +1,57 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/teacher/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Bài tập
+
+    +pgHeader({ eyebrow: 'Giảng viên', icon: 'ph-bold ph-chalkboard-teacher', h1: 'Bài tập ' + classroom.name, subtitle: 'Xuất bản bài tập cho lớp học của bạn và hiển thị hạn chót tại một nơi.' })
+      aside.glass-panel.rounded-2xl.p-5.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
+          i.ph-bold.ph-stack.text-lg
+        div
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Bài tập
+          p.font-mono.text-3xl.font-bold.tracking-tighter= assignments.length
+
+    .flex.gap-2.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/new')
+        i.ph-bold.ph-plus
+        | Tạo bài tập
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại lớp học
+      a.pill(href='/teacher/classrooms') Tất cả lớp học
+
+    //- Toolbar with Search
+    .bg-card.rounded-2xl.border.border-border.p-4.flex.flex-col.sm_flex-row.items-center.justify-between.gap-4
+      form.flex-1.flex.flex-col.sm_flex-row.gap-3.w-full(method='GET', action='/teacher/classrooms/' + classroom.id + '/assignments')
+        .relative.flex-1.max-w-md
+          i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground(class='top-1/2 -translate-y-1/2')
+          input.w-full.pl-10.h-10.rounded-lg.border.border-input.bg-background.text-sm.focus-visible_ring-1.focus-visible_ring-primary(type='search', name='q', value=query || '', placeholder='Tìm kiếm bài tập...')
+        button.btn-primary.h-10.px-4.rounded-lg(type='submit') Tìm kiếm
+
+    if feedback
+      .alert-success.animate-in.fade-in= feedback
+
+    if assignments.length
+      .space-y-3.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each assignment in assignments
+          article.card.p-5.card-hover
+            .flex.justify-between.gap-4.flex-wrap
+              div
+                h2.text-lg.font-bold.mb-1= assignment.title
+                p.text-sm.text-muted-foreground= assignment.description || 'Chưa có mô tả.'
+              span.badge-muted.badge-sm= assignment.totalPoints + ' điểm'
+            .flex.flex-wrap.gap-4.text-sm.text-muted-foreground.mt-3
+              span Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
+              span Đã xuất bản #{assignment.isPublished ? 'Có' : 'Không'}
+            .mt-3
+              a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id)
+                i.ph-bold.ph-arrow-right
+                | Mở bài tập
+    else
+      +emptyState({ icon: 'ph-fill ph-file-code', title: 'Chưa có bài tập nào', desc: 'Tạo bài tập đầu tiên để chia sẻ với học sinh của bạn.' })

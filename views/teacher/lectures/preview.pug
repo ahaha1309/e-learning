@@ -1,0 +1,43 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight Xem trước bài giảng
+        p.text-muted-foreground.max-w-prose.mt-2= lecture.title
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Định dạng
+        strong.text-2xl.font-mono.uppercase= preview.resourceType
+        p.text-sm.text-muted-foreground.mt-3= lecture.chapterTitle
+
+    if preview.mode === 'video'
+      .card.p-6
+        video.w-full.rounded-xl.bg-black(controls, preload='metadata')
+          source(src=preview.resourceUrl)
+          | Trình duyệt của bạn không hỗ trợ thẻ video.
+    else if preview.mode === 'pdf'
+      .card.p-4
+        object.w-full.rounded-xl(class='min-h-[78dvh]', data=preview.resourceUrl, type='application/pdf')
+          p.text-muted
+            | Trình duyệt của bạn không thể hiển thị trực tiếp tệp PDF này.
+            a.text-primary(href=preview.resourceUrl, target='_blank', rel='noreferrer') Mở trong thẻ mới
+    else if preview.mode === 'office'
+      .card.p-4
+        iframe.w-full.border-0.rounded-xl(class='min-h-[78dvh]', src=preview.officeUrl, allowfullscreen='true')
+    else if preview.mode === 'text'
+      .card.p-6
+        p.text-lg.font-bold.mb-2 Nội dung bài giảng
+        p.text-muted.whitespace-pre-wrap= lecture.content || 'Chưa có nội dung chi tiết.'
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-eye-slash.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Không có bản xem trước
+        p.text-sm.text-muted-foreground.mt-2 Bài giảng này chưa có tài nguyên nào có thể xem trước được đính kèm.
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/lectures/' + lecture.id) Quay lại bài giảng
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/lectures') Quay lại các bài giảng
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại lớp học

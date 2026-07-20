@@ -1,0 +1,62 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    //- Cinematic Header
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='border-primary/20', class='py-1.5 bg-primary/5') Mạng lưới của tôi
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Lớp học
+        p.text-lg.text-muted-foreground.mt-3 Tham gia lớp học bằng mã từ giảng viên và theo dõi các lớp học đang hoạt động của bạn.
+        
+      div.glass-panel.p-4.rounded-2xl.flex.items-center.gap-5.shadow-sm(class='border-border/60')
+        div.text-right
+          p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Đang chờ
+          p.font-mono.text-3xl.font-bold= pendingMemberships.length
+        div.w-12.h-12.rounded-full.text-warning.flex.items-center.justify-center.border(class='bg-warning/10 border-warning/20')
+          i.ph-bold.ph-clock.text-xl
+
+    if feedback
+      .alert-primary.animate-in.fade-in= feedback
+
+    //- Join Classroom Form (Glassmorphism)
+    .glass-panel.p-6.sm_p-8.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 100ms;')
+      form.flex.flex-col.sm_flex-row.gap-4.items-end(method='POST', action='/student/classrooms/join')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        .field.flex-1.w-full
+          label.field-label.font-bold.uppercase.tracking-widest.text-xs.text-muted-foreground(for='code') Mã lớp học
+          .input-icon
+            .icon
+              i.ph-bold.ph-hash.text-lg.text-muted-foreground
+            input#code.uppercase(type='text', name='code', placeholder='ABC12345', maxlength='12', required, class='h-14 rounded-xl border-border bg-card shadow-sm focus:border-primary focus:ring-1 focus:ring-primary w-full tracking-widest font-mono text-lg')
+        button.btn-primary.h-14.px-8.text-base.rounded-xl.shadow-diffused.active_scale-95.transition-transform.flex-shrink-0.w-full.sm_w-auto(type='submit')
+          i.ph-bold.ph-plus
+          | Tham gia Lớp học
+
+    if approvedMemberships.length
+      .space-y-6.animate-in.slide-in-up(style='animation-delay: 200ms;')
+        h2.text-2xl.font-extrabold.tracking-tight Lớp học Hoạt động
+        .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-8
+          each membership in approvedMemberships
+            a.group.block.glass-panel.p-8.transition-all(class='rounded-[2rem] border-border/60 hover_border-primary/50 hover_bg-primary/5', href='/student/classrooms/' + membership.classroom.id)
+              .flex.items-start.justify-between.mb-8
+                div.w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.border(class='bg-primary/10 border-primary/20')
+                  i.ph-bold.ph-book-open.text-2xl
+                .w-10.h-10.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_bg-primary.group-hover_text-primary-foreground.transition-colors
+                  i.ph-bold.ph-arrow-up-right.text-sm
+                  
+              h3.font-extrabold.text-2xl.tracking-tight.group-hover_text-primary.transition-colors.mb-2.truncate= membership.classroom.name
+              p.text-sm.font-mono.text-muted-foreground Mã: #{membership.classroom.code}
+              
+              div.mt-8.pt-6.border-t.flex.items-center.justify-between(class='border-border/60')
+                span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Xem Giáo trình
+                i.ph-bold.ph-caret-right.text-muted-foreground.group-hover_text-primary.transition-colors
+    else
+      .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
+        div.w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
+          i.ph-fill.ph-book-open.text-5xl(class='text-muted-foreground/30')
+        h2.text-3xl.font-extrabold.text-foreground.tracking-tighter Không có lớp học nào được phê duyệt
+        p.text-lg.text-muted-foreground.mt-3.max-w-md Bạn chưa tham gia lớp học nào. Nhập mã từ giảng viên để yêu cầu quyền truy cập.
+        a.btn-primary.h-12.px-7.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2.mt-8(href='#code')
+          i.ph-bold.ph-hash
+          | Nhập mã lớp học

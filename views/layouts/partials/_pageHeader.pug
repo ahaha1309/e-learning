@@ -1,0 +1,26 @@
+//- Reusable page header. Eliminates ad-hoc inline-style eyebrow/h1 drift.
+//- Usage:
+//-   include ../layouts/partials/_pageHeader
+//-   +pageHeader({ eyebrow: 'Student Cockpit', ping: true, h1: 'Good evening', subtitle: 'Pick up where you left off.' })
+//-     .flex.items-center.gap-3
+//-       a.btn-primary.h-11.px-6.rounded-full(href='/catalog') Browse
+mixin pageHeader(opts)
+  header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-6.animate-in.slide-in-up
+    div
+      if opts.eyebrow
+        .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-5(class='py-[0.4375rem] bg-primary/5 border-primary/20')
+          if opts.ping
+            span.relative.flex.h-2.w-2(aria-hidden='true')
+              span.animate-ping.absolute.inline-flex.h-full.w-full.rounded-full.bg-primary.opacity-75
+              span.relative.inline-flex.rounded-full.h-2.w-2.bg-primary
+          = opts.eyebrow
+      h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter
+        = opts.h1 || ''
+        if opts.h1Accent
+          | &nbsp;
+          span.text-primary= opts.h1Accent
+      if opts.subtitle
+        p.text-lg.text-muted-foreground.mt-3= opts.subtitle
+    if block
+      .flex.items-center.gap-3.flex-wrap
+        block

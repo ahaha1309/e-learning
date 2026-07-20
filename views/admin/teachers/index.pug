@@ -1,0 +1,131 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    header
+      p.eyebrow Danh mục Giảng viên
+      h1.text-3xl.font-extrabold.tracking-tight Giảng viên
+      p.text-muted-foreground.mt-2.text-sm Xem xét và quản lý tài khoản giảng viên.
+
+    .flex.border-b.border-border.mb-6
+      a.px-4.py-3.text-sm.font-semibold.border-b-2.transition-colors(class=tab === 'pending' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover_text-foreground', href='/admin/teachers?tab=pending')
+        | Chờ phê duyệt
+        if pendingCount > 0
+          span.ml-2.rounded-full.bg-destructive.text-white.text-xs.font-bold.shadow-sm(class='px-2 py-0.5')= pendingCount
+      a.px-4.py-3.text-sm.font-semibold.border-b-2.transition-colors(class=tab === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover_text-foreground', href='/admin/teachers?tab=all')
+        | Tất cả Giảng viên
+
+    if tab === 'pending'
+      if pendingTeachers && pendingTeachers.length > 0
+        .grid.grid-cols-1.lg_grid-cols-2.gap-6
+          each teacher in pendingTeachers
+            article.bento-card.p-6.flex.flex-col.gap-6
+              .flex.items-start.justify-between.gap-4
+                .flex.items-center.gap-4
+                  div.w-12.h-12.rounded-full.text-warning.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-warning/10')
+                    if teacher.avatarUrl
+                      img.w-full.h-full.rounded-full.object-cover(src=teacher.avatarUrl, alt=teacher.name)
+                    else
+                      = teacher.name ? teacher.name.charAt(0).toUpperCase() : '?'
+                  div
+                    h3.text-lg.font-bold.text-foreground= teacher.name
+                    p.text-sm.text-muted-foreground= teacher.email
+                span.badge-warning.badge-sm.shadow-sm Đang chờ xét duyệt
+              
+              div.rounded-xl.p-4.space-y-3.border.border-border(class='bg-muted/30')
+                .flex.items-center.justify-between.text-sm
+                  span.text-muted-foreground Điện thoại
+                  span.font-medium.text-foreground= teacher.phone || 'Không cung cấp'
+                .flex.items-center.justify-between.text-sm
+                  span.text-muted-foreground Đã nộp đơn
+                  span.font-medium.text-foreground= teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+
+              .flex.items-center.gap-3.mt-auto
+                form.flex-1(method='POST', action='/admin/teachers/' + teacher.id + '/approve')
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.btn-primary.w-full.h-10.rounded-lg(type='submit')
+                    i.ph-bold.ph-check
+                    | Phê duyệt
+                form.flex-1(method='POST', action='/admin/teachers/' + teacher.id + '/reject')
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.btn-outline.w-full.h-10.rounded-lg(type='submit')
+                    | Từ chối
+      else
+        .empty-state.py-20
+          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+            i.ph-fill.ph-check-circle.text-3xl(class='text-success/80')
+          h2.text-lg.font-bold.text-foreground Đã xử lý xong
+          p.text-sm.text-muted-foreground.mt-1 Không có giảng viên nào đang chờ phê duyệt vào lúc này.
+
+    else
+      .bento-card.p-0.overflow-hidden
+        if allTeachers && allTeachers.length > 0
+          .overflow-x-auto.scroll-thin
+            .table-wrap.shadow-sm
+              table.w-full.text-left.text-sm
+                thead.border-b.border-border(class='bg-muted/50')
+                  tr
+                    th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.w-10
+                      input(type='checkbox', class='rounded border-input')
+                    th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Giảng viên
+                    th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Trạng thái
+                    th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.lg_table-cell Ngày tham gia
+                    th.px-6.py-3.text-center.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Thao tác
+                tbody.divide-y.divide-border
+                  each teacher in allTeachers
+                    tr.group.transition-colors(class='hover_bg-muted/30')
+                      td.px-6.py-4
+                        input(type='checkbox', class='rounded border-input', value=teacher.id)
+                      td.px-6.py-4
+                        .flex.items-center.gap-3
+                          div.w-10.h-10.rounded-full.text-primary.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-primary/10')
+                            if teacher.avatarUrl
+                              img.w-full.h-full.rounded-full.object-cover(src=teacher.avatarUrl, alt=teacher.name)
+                            else
+                              = teacher.name ? teacher.name.charAt(0).toUpperCase() : '?'
+                          .flex-1.min-w-0
+                            p.text-sm.font-bold.text-foreground.truncate= teacher.name
+                            p.text-xs.text-muted-foreground.truncate= teacher.email
+                      td.px-6.py-4.hidden.md_table-cell
+                        if teacher.status === 'active'
+                          .flex.items-center.gap-2
+                            .w-2.h-2.rounded-full.bg-success
+                            span.text-sm.text-foreground.capitalize= teacher.status
+                        else if teacher.status === 'pending'
+                          .flex.items-center.gap-2
+                            .w-2.h-2.rounded-full.bg-warning.animate-pulse
+                            span.text-sm.text-foreground.capitalize= teacher.status
+                        else
+                          .flex.items-center.gap-2
+                            .w-2.h-2.rounded-full.bg-destructive
+                            span.text-sm.text-foreground.capitalize= teacher.status
+                      td.px-6.py-4.hidden.lg_table-cell
+                        span.text-sm.text-muted-foreground= teacher.createdAt ? new Date(teacher.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+                      td.px-6.py-4.text-right
+                        .flex.items-center.justify-end.gap-1
+                          a.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                            href='/admin/users/' + teacher.id,
+                            class='hover_bg-info/10 hover_text-info',
+                            title='Xem'
+                          )
+                            i.bi.bi-eye.text-base
+                          a.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                            href='/admin/users/' + teacher.id + '/edit',
+                            class='hover_bg-primary/10 hover_text-primary',
+                            title='Sửa'
+                          )
+                            i.bi.bi-pencil.text-base
+                          form(method='POST', action='/admin/users/' + teacher.id + '/delete', onsubmit="return confirm('Xóa vĩnh viễn giảng viên này?');", style='display:inline')
+                            input(type='hidden', name='_csrf', value=csrfToken)
+                            button.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                              type='submit',
+                              class='hover_bg-destructive/10 hover_text-destructive',
+                              title='Xóa'
+                            )
+                              i.bi.bi-trash.text-base
+        else
+          .empty-state.border-0.rounded-none.bg-transparent.py-16
+            .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+              i.ph-fill.ph-chalkboard-teacher.text-3xl(class='text-muted-foreground/50')
+            h2.text-lg.font-bold.text-foreground Không tìm thấy giảng viên nào
+            p.text-sm.text-muted-foreground.mt-1 Chưa có tài khoản giảng viên nào.

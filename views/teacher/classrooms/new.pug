@@ -1,0 +1,65 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-4xl.mx-auto.pt-8.pb-32
+    //- Cinematic Header
+    .mb-12.animate-in.slide-in-up
+      nav.breadcrumb.mb-6
+        a(href='/teacher') Bảng điều khiển
+        span.breadcrumb-sep /
+        a(href='/teacher/classrooms') Lớp học
+        span.breadcrumb-sep /
+        span.text-foreground.font-bold Lớp học mới
+
+      p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-3 Studio Tạo mới
+      h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.text-foreground Tạo Lớp học
+      p.text-lg.text-muted-foreground.max-w-prose.mt-4.leading-relaxed Đặt tên cho lớp, thêm một mô tả ngắn và cấu hình cài đặt phê duyệt.
+
+    .glass-panel.p-8.md_p-12.animate-in.slide-in-up(class='rounded-[2.5rem] border-border/60 shadow-diffused', style='animation-delay: 150ms;')
+      form(method='POST', action='/teacher/classrooms')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        
+        if errorMessage
+          .alert-destructive.mb-8.rounded-2xl= errorMessage
+          
+        .space-y-8
+          .space-y-3
+            label.text-sm.font-bold.text-foreground.uppercase.tracking-widest(for='name') Tên lớp học
+            input#name.w-full.h-14.px-5.rounded-2xl.border.bg-background.text-foreground.transition-all(class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', type='text', name='name', value=formData.name || '', placeholder='ví dụ: Các Pattern React Nâng cao', required)
+            
+          .space-y-3
+            label.text-sm.font-bold.text-foreground.uppercase.tracking-widest(for='description') Mô tả
+            textarea#description.w-full.p-5.rounded-2xl.border.bg-background.text-foreground.transition-all.resize-y(class='border-border/60 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', name='description', rows='4', placeholder='Học sinh sẽ học được gì trong lớp này?')= formData.description || ''
+            
+          .space-y-3
+            label.text-sm.font-bold.text-foreground.uppercase.tracking-widest(for='approvalRequired') Yêu cầu phê duyệt học sinh
+            .relative
+              select#approvalRequired.w-full.h-14.px-5.rounded-2xl.border.bg-background.text-foreground.transition-all.appearance-none(class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', name='approvalRequired')
+                option(value='true', selected=(formData.approvalRequired || 'true') !== 'false') Có, học sinh phải yêu cầu phê duyệt
+                option(value='false', selected=formData.approvalRequired === 'false') Không, học sinh tham gia ngay lập tức
+              i.ph-bold.ph-caret-down.absolute.right-5.top-1_2.text-muted-foreground.pointer-events-none(class='-translate-y-1/2')
+
+          .grid.grid-cols-1.gap-8(class='md_grid-cols-2')
+            .space-y-3
+              label.text-sm.font-bold.text-foreground.uppercase.tracking-widest(for='category') Danh mục
+              .relative
+                select#category.w-full.h-14.px-5.rounded-2xl.border.bg-background.text-foreground.transition-all.appearance-none(class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', name='category')
+                  option(value='') — Chưa phân loại —
+                  each cat in categories
+                    option(value=cat._id, selected=formData.category && formData.category.toString() === cat._id.toString())= cat.name
+                i.ph-bold.ph-caret-down.absolute.right-5.top-1_2.text-muted-foreground.pointer-events-none(class='-translate-y-1/2')
+
+            .space-y-3
+              label.text-sm.font-bold.text-foreground.uppercase.tracking-widest(for='level') Mức độ
+              .relative
+                select#level.w-full.h-14.px-5.rounded-2xl.border.bg-background.text-foreground.transition-all.appearance-none(class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent', name='level')
+                  option(value='Beginner', selected=(formData.level || 'Beginner') === 'Beginner') Beginner (Cơ bản)
+                  option(value='Intermediate', selected=formData.level === 'Intermediate') Intermediate (Trung cấp)
+                  option(value='Advanced', selected=formData.level === 'Advanced') Advanced (Nâng cao)
+                i.ph-bold.ph-caret-down.absolute.right-5.top-1_2.text-muted-foreground.pointer-events-none(class='-translate-y-1/2')
+
+        .pt-10.flex.flex-col.sm_flex-row.items-center.gap-4
+          button.btn-primary.w-full.sm_w-auto.h-14.px-10.rounded-full.text-base.font-bold.shadow-diffused.active_scale-95.transition-transform(type='submit')
+            i.ph-bold.ph-plus.text-lg
+            | Tạo Lớp học
+          a.btn-outline.w-full.sm_w-auto.h-14.px-8.rounded-full.text-base.font-bold(class='hover_bg-muted/50', href='/teacher/classrooms') Hủy

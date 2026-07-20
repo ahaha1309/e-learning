@@ -1,0 +1,107 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    //- Header
+    .grid.grid-cols-1.gap-8.items-start.animate-in.slide-in-up(class='lg_grid-cols-[1fr_360px]')
+      div
+        nav.breadcrumb.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Sổ điểm
+        p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-3 Điểm theo Trọng số
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.text-foreground Sổ điểm
+        p.text-lg.text-muted-foreground.max-w-prose.mt-4.leading-relaxed
+          | Phần trăm tổng thể tổng hợp các bài tập và bài thi đã được chấm điểm của mỗi học sinh.
+          if classroom.gradeWeights && classroom.gradeWeights.length
+            |  Được tính theo trọng số cấu hình cho từng loại.
+          else
+            |  Trung bình cộng đơn giản không tính trọng số.
+
+      aside.glass-panel.p-8.border.shadow-sm.text-center(class='rounded-[2rem] border-border/60')
+        p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.mb-4 Xuất
+        .flex.flex-col.gap-3
+          a.btn-primary.h-12.px-6.rounded-full.text-sm.font-bold.shadow-diffused(href='/teacher/classrooms/' + classroom.id + '/gradebook.csv')
+            i.ph-bold.ph-file-csv.mr-2
+            | Tải xuống CSV
+        p.text-sm.text-muted-foreground.mt-2 Bản sao điểm hiện tại của mọi học sinh đã được phê duyệt.
+
+    if feedback
+      .alert-primary.animate-in.fade-in.rounded-2xl= feedback
+
+    section.animate-in.slide-in-up(style='animation-delay: 200ms;')
+      if loading
+        .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60', aria-busy='true', aria-label='Loading gradebook')
+          .table-wrap
+            table.w-full.text-left.border-collapse
+              thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
+                tr
+                  th.px-8.py-5.font-bold Học sinh
+                  th.px-8.py-5.font-bold.text-center Bài tập
+                  th.px-8.py-5.font-bold.text-center Bài thi
+                  th.px-8.py-5.font-bold.text-center Tổng thể
+                  th.px-8.py-5.font-bold.text-center Điểm
+              tbody(class='divide-y divide-border/60')
+                - var skeletonRows = [1,2,3,4,5,6]
+                each _ in skeletonRows
+                  tr
+                    td.px-8.py-6
+                      .flex.items-center.gap-4
+                        .skeleton.skeleton-avatar(class='!w-10 !h-10 !rounded-full')
+                        .space-y-2
+                          .skeleton.skeleton-text(class='!w-40')
+                          .skeleton.skeleton-text-short(class='!w-56')
+                    td.px-8.py-6.text-center: .skeleton.skeleton-text-short.ml-auto
+                    td.px-8.py-6.text-center: .skeleton.skeleton-text-short.ml-auto
+                    td.px-8.py-6.text-center: .skeleton.rounded(class='!h-6 !w-12 ml-auto')
+                    td.px-8.py-6.text-center: .skeleton.rounded-xl.ml-auto(class='!h-10 !w-12')
+      else if rows.length
+        .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+          .table-wrap
+            table.w-full.text-left.border-collapse
+              thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
+                tr
+                  th.px-8.py-5.font-bold Học sinh
+                  th.px-8.py-5.font-bold.text-center Bài tập
+                  th.px-8.py-5.font-bold.text-center Bài thi
+                  th.px-8.py-5.font-bold.text-center Tổng thể
+                  th.px-8.py-5.font-bold.text-center Điểm
+              tbody(class='divide-y divide-border/60')
+                each row in rows
+                  tr.transition-colors(class='hover_bg-muted/10')
+                    td.px-8.py-6
+                      .flex.items-center.gap-4
+                        div.w-10.h-10.rounded-full.flex.items-center.justify-center.font-bold.border(class='bg-primary/10 text-primary border-primary/20')
+                          = (row.studentName || '?').charAt(0).toUpperCase()
+                        div
+                          p.font-bold.text-base.text-foreground= row.studentName
+                          p.font-mono.text-sm.text-muted-foreground= row.studentEmail
+                    td.px-8.py-6.text-center
+                      if row.byType.ASSIGNMENT
+                        span.font-mono.text-base.text-foreground= row.byType.ASSIGNMENT.percent + '%'
+                        p.text-xs.text-muted-foreground= row.byType.ASSIGNMENT.count + ' đã chấm'
+                      else
+                        span.text-muted-foreground.text-sm —
+                    td.px-8.py-6.text-center
+                      if row.byType.EXAM
+                        span.font-mono.text-base.text-foreground= row.byType.EXAM.percent + '%'
+                        p.text-xs.text-muted-foreground= row.byType.EXAM.count + ' đã chấm'
+                      else
+                        span.text-muted-foreground.text-sm —
+                    td.px-8.py-6.text-center
+                      span.font-mono.text-xl.font-bold.text-foreground= row.overallPercent + '%'
+                    td.px-8.py-6.text-center
+                      if row.letter
+                        span.inline-flex.items-center.justify-center.w-12.h-10.rounded-xl.font-extrabold.text-lg(class='bg-primary/10 text-primary border border-primary/20')= row.letter
+                      else
+                        span.text-muted-foreground.text-sm —
+      else
+        .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 300ms;')
+          .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
+            i.ph-fill.ph-list-numbers.text-5xl(class='text-muted-foreground/30')
+          h2.text-3xl.font-extrabold.text-foreground Chưa có học sinh nào được chấm điểm
+          p.text-lg.text-muted-foreground.mt-3 Điểm sẽ xuất hiện sau khi học sinh nộp bài và bạn chấm bài của họ.

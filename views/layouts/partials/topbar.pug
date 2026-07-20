@@ -1,0 +1,116 @@
+//- ── TOPBAR PARTIAL ──────────────────────────────────────────────────────
+//- Receives: currentUser, siteName, unreadCount, csrfToken, path
+
+header.topbar(role='banner', aria-label='Điều hướng chung')
+  .flex.items-center(class='gap-3')
+    //- Mobile hamburger — only on authenticated pages
+    button#sidebar-toggle.btn-ghost.btn-icon.md_hidden(
+      type='button',
+      aria-label='Mở điều hướng',
+      aria-expanded='false',
+      aria-controls='sidebar'
+    )
+      i.ph-bold.ph-list.text-xl
+
+    //- Logo
+    a.flex.items-center(href='/', class='gap-2.5', aria-label='#{siteName} home')
+      .w-8.h-8.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.flex-shrink-0.transition-transform.duration-200(class='hover_scale-105')
+        i.ph-bold.ph-graduation-cap
+      .hidden.sm_block
+        span.font-bold.text-sm.tracking-tight= siteName || 'EduSpace'
+
+    //- Role badge pill
+    if currentUser
+      .hidden.md_flex.items-center
+        span.inline-flex.items-center.gap-1.rounded-full.border.border-border.bg-muted.px-3.font-bold.uppercase.tracking-widest.text-muted-foreground(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em', class='py-1')
+          if currentUser.role === 'admin'
+            i.ph-bold.ph-shield-check.text-primary
+            | Quản trị viên
+          else if currentUser.role === 'teacher'
+            i.ph-bold.ph-chalkboard-teacher.text-primary
+            | Giáo viên
+          else
+            i.ph-bold.ph-student.text-primary
+            | Học sinh
+
+  //- Right section: actions + user
+  .flex.items-center(class='gap-1')
+
+    //- Command Palette trigger (§13 Search)
+    button.btn-ghost.btn-sm.hidden.md_inline-flex.items-center.gap-2.bg-muted.rounded-lg.px-3.text-muted-foreground.border.border-border.transition-colors.cursor-pointer(type='button', data-cmd-palette, aria-label='Mở bảng lệnh (Ctrl+K)', aria-haspopup='dialog', aria-expanded='false', class='hover_bg-card hover_text-foreground hover_border-primary/30 h-8')
+      i.ph-bold.ph-magnifying-glass.text-sm
+      span.text-xs Tìm kiếm hoặc đi đến...
+      kbd.inline-flex.items-center.gap-1.rounded.border.border-border.bg-background.font-mono.font-medium.text-muted-foreground.ml-4(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em;padding-left:0.375rem;padding-right:0.375rem', aria-hidden='true')
+        span ⌘
+        span K
+
+    //- Dark-mode toggle
+    button.btn-ghost.btn-icon(
+      type='button',
+      data-theme-toggle,
+      aria-label='Chuyển đổi giao diện màu'
+    )
+      i.ph-bold.ph-moon.text-lg.dark_hidden
+      i.ph-bold.ph-sun.text-lg.hidden.dark_block
+
+    //- Language Toggle
+    button.btn-ghost.btn-icon(
+      type='button',
+      onclick='toggleLanguage()',
+      aria-label='Chuyển đổi ngôn ngữ EN/VI'
+    )
+      i.ph-bold.ph-translate.text-lg
+
+    //- Notification bell
+    a.btn-ghost.btn-icon.relative(
+      href='/notifications',
+      aria-label='Thông báo#{unreadCount > 0 ? " (" + unreadCount + " chưa đọc)" : ""}'
+    )
+      i.ph-bold.ph-bell.text-lg
+      if unreadCount > 0
+        span.absolute.top-1.right-1.flex.h-4.w-4.items-center.justify-center.rounded-full.bg-destructive.font-bold.text-destructive-foreground.shadow-sm(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em', aria-hidden='true')
+          span.absolute.inline-flex.h-full.w-full.rounded-full.bg-destructive.opacity-40.animate-ping
+          span.relative= unreadCount > 9 ? '9+' : unreadCount
+
+    //- User dropdown
+    .relative.ml-1(class='group')
+      button.flex.items-center.rounded-lg.p-1.transition-colors.cursor-pointer(
+        class='gap-1.5 hover_bg-muted',
+        aria-label='Menu người dùng',
+        aria-haspopup='true',
+        aria-expanded='false'
+      )
+        .avatar.avatar-md
+          if currentUser.avatarUrl
+            img(src=currentUser.avatarUrl, alt=currentUser.name, loading='lazy')
+          else
+            span(aria-hidden='true')= currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'
+        i.ph-bold.ph-caret-down.text-xs.text-muted-foreground.transition-transform.duration-200(class='group-hover_rotate-180', aria-hidden='true')
+
+      .dropdown(role='menu', aria-label='Menu người dùng')
+        .px-3.py-2.border-b.border-border.mb-1
+          p.text-sm.font-semibold.truncate= currentUser.name
+          p.text-xs.text-muted-foreground.truncate= currentUser.email
+
+        a.dropdown-item(href='/profile', role='menuitem')
+          i.ph-bold.ph-user-circle(aria-hidden='true')
+          | Hồ sơ &amp; Cài đặt
+
+        a.dropdown-item(href='/notifications', role='menuitem')
+          i.ph-bold.ph-bell(aria-hidden='true')
+          | Thông báo
+          if unreadCount > 0
+            span.ml-auto.badge.badge-danger.badge-sm= unreadCount
+
+        .border-t.border-border.mt-1.pt-1
+          form(method='POST', action='/auth/logout')
+            input(type='hidden', name='_csrf', value=csrfToken)
+            button.dropdown-item.dropdown-item-danger(type='submit', role='menuitem')
+              i.ph-bold.ph-sign-out(aria-hidden='true')
+              | Đăng xuất
+
+//- Mobile overlay backdrop
+#sidebar-overlay.fixed.inset-0.bg-black.bg-opacity-50.z-sidebar.hidden.md_hidden(
+  aria-hidden='true',
+  style='z-index: 290;'
+)

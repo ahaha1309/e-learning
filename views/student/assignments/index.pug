@@ -1,0 +1,40 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href=`/student/classrooms/${membership.classroom.id}`)= membership.classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Bài tập
+
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-file-text', h1: 'Bài tập', subtitle: 'Kiểm tra hạn chót, mở yêu cầu bài tập và chuẩn bị nộp bài đúng hạn.' })
+      .glass-panel.rounded-2xl.p-4.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
+          i.ph-bold.ph-stack.text-lg
+        div
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Đã xuất bản
+          p.font-mono.text-2xl.font-bold.tracking-tighter= assignments.length
+
+    if assignments.length
+      .space-y-4.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each assignment in assignments
+          article.card.p-5.transition-colors(class='hover_border-primary/50')
+            .flex.flex-col.md_flex-row.md_items-start.justify-between.gap-4
+              .flex-1
+                h3.text-lg.font-bold= assignment.title
+                p.text-sm.text-muted-foreground.mt-1= assignment.description || 'Chưa có mô tả.'
+                .flex.flex-wrap.items-center.gap-3.mt-3
+                  span.badge-warning= assignment.totalPoints + ' điểm'
+                  span.text-xs.text-muted-foreground Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
+            .flex.flex-wrap.gap-2.mt-4.pt-4.border-t.border-border
+              a.btn-secondary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment.id}`)
+                | Mở bài tập
+              a.btn-primary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment.id}/submission/new`)
+                i.ph-bold.ph-upload-simple
+                | Nộp bài
+    else
+      +emptyState({ icon: 'ph-fill ph-file-text', title: 'Chưa có bài tập nào', desc: 'Bài tập sẽ xuất hiện ở đây khi giảng viên của bạn xuất bản chúng. Vui lòng quay lại sau, hoặc khám phá các lớp học khác của bạn để xem bài tập khác.', ctaText: 'Duyệt các lớp học', ctaHref: '/student/classrooms' })

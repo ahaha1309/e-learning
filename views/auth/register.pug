@@ -1,0 +1,181 @@
+extends ../layouts/base
+
+block content
+  //- §2.1 Guest Journey: role picker as visual cards (not a dropdown)
+  //- §6 Responsive: single column mobile, split-screen lg+
+  .min-h-screen.flex
+
+    //- ── LEFT BRAND PANEL (desktop only) ─────────────────────────────────
+    .hidden.lg_flex.flex-col.justify-between.p-12.relative.overflow-hidden.flex-shrink-0(class='w-[480px] bg-primary/5 border-r border-border/60')
+      .absolute.inset-0.pointer-events-none(aria-hidden='true')
+        div.absolute.top-0.left-0.w-80.h-80.rounded-full.bg-primary.opacity-10(style='filter:blur(100px);')
+        div.absolute.bottom-0.right-0.w-64.h-64.rounded-full.bg-success.opacity-10(style='filter:blur(80px);')
+
+      a.inline-flex.items-center.gap-3.relative.z-10(href='/', aria-label='EduSpace home')
+        .w-10.h-10.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.shadow-sm
+          i.ph-bold.ph-graduation-cap.text-xl(aria-hidden='true')
+        span.font-bold.text-lg.tracking-tight= siteName || 'EduSpace'
+
+      .space-y-8.relative.z-10
+        div
+          h2.text-3xl.font-extrabold.tracking-tighter.mb-3 Tham gia EduSpace.
+          p.text-muted-foreground.leading-relaxed Tạo tài khoản miễn phí và bắt đầu học hoặc giảng dạy ngay hôm nay.
+
+        .space-y-4
+          -
+            var helpItems = [
+              {icon:'ph-student', text:'Học sinh: tham gia lớp học bằng mã 6 ký tự'},
+              {icon:'ph-chalkboard-teacher', text:'Giáo viên: tạo lớp học, bài thi & bài giảng'},
+              {icon:'ph-shield-check', text:'Bảo mật: thi chống gian lận, phân quyền người dùng'}
+            ];
+          each item in helpItems
+            .flex.items-center.gap-4
+              .w-9.h-9.rounded-xl.flex.items-center.justify-center.flex-shrink-0(class='bg-primary/10 text-primary')
+                i.ph-bold(class=item.icon + ' text-base', aria-hidden='true')
+              p.text-sm.font-medium.text-foreground= item.text
+
+      .relative.z-10
+        p.text-xs.text-muted-foreground &copy; #{new Date().getFullYear()} #{siteName || 'EduSpace'}. Được thiết kế cho lớp học thực tế.
+
+    //- ── RIGHT FORM PANEL ─────────────────────────────────────────────────
+    .flex-1.flex.items-center.justify-center.p-6.sm_p-10.bg-background.overflow-y-auto
+      .relative.z-10.w-full.max-w-lg.py-8
+
+        //- Mobile logo
+        .flex.items-center.gap-3.mb-8.lg_hidden
+          a.inline-flex.items-center.gap-2(href='/', aria-label='EduSpace home')
+            .w-8.h-8.rounded-xl.bg-primary.flex.items-center.justify-center.text-primary-foreground
+              i.ph-bold.ph-graduation-cap.text-sm(aria-hidden='true')
+            span.font-bold.text-base.tracking-tight= siteName || 'EduSpace'
+
+        h1.text-3xl.font-extrabold.tracking-tighter.mb-2 Tạo tài khoản
+        p.text-muted-foreground.text-sm.mb-8 Thiết lập hồ sơ của bạn để bắt đầu. Chỉ mất một phút.
+
+        form.space-y-6(method='POST', action='/auth/register', novalidate)
+          input(type='hidden', name='_csrf', value=csrfToken)
+
+          //- Error alert
+          if errorMessage
+            div.flex.items-start.gap-3.p-4.rounded-xl.border.animate-in.slide-in-down(role='alert', class='bg-destructive/5 border-destructive/20 text-destructive')
+              i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+              p.text-sm.font-medium.leading-snug= errorMessage
+
+          //- ── ROLE PICKER — Visual card selection ────────────────
+          //- §9 UX Improvements: role as card picker, not dropdown
+          .space-y-3
+            p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tôi là...
+            .grid.grid-cols-2.gap-3
+              //- Student card
+              label.block.cursor-pointer.group(for='role-student')
+                input#role-student.sr-only(type='radio', name='role', value='student', checked=(formData.role === 'teacher' ? false : true))
+                div.flex.flex-col.items-center.gap-3.p-5.rounded-2xl.border.transition-all.duration-200(class='peer-checked_bg-primary/8', 
+                  class='border-border bg-card hover_border-primary/40 hover_bg-primary/5 group-[:has(input:checked)]_border-primary group-[:has(input:checked)]_bg-primary/8'
+                )
+                  .w-12.h-12.rounded-xl.flex.items-center.justify-center.transition-colors.duration-200(class='bg-muted group-[:has(input:checked)]_bg-primary/10 group-[:has(input:checked)]_text-primary text-muted-foreground')
+                    i.ph-bold.ph-student.text-2xl(aria-hidden='true')
+                  p.text-sm.font-bold.text-center Học sinh
+                  p.text-xs.text-muted-foreground.text-center.leading-snug Tham gia lớp học, làm bài thi, theo dõi tiến độ
+
+              //- Teacher card
+              label.block.cursor-pointer.group(for='role-teacher')
+                input#role-teacher.sr-only(type='radio', name='role', value='teacher', checked=(formData.role === 'teacher'))
+                .flex.flex-col.items-center.gap-3.p-5.rounded-2xl.border.transition-all.duration-200(
+                  class='border-border bg-card hover_border-primary/40 hover_bg-primary/5 group-[:has(input:checked)]_border-primary group-[:has(input:checked)]_bg-primary/8'
+                )
+                  .w-12.h-12.rounded-xl.flex.items-center.justify-center.transition-colors.duration-200(class='bg-muted group-[:has(input:checked)]_bg-primary/10 group-[:has(input:checked)]_text-primary text-muted-foreground')
+                    i.ph-bold.ph-chalkboard-teacher.text-2xl(aria-hidden='true')
+                  p.text-sm.font-bold.text-center Giáo viên
+                  p.text-xs.text-muted-foreground.text-center.leading-snug Tạo lớp học, bài giảng và bài thi
+
+          //- Teacher pending-approval note
+          .flex.items-start.gap-3.p-4.rounded-xl.border.hidden.js-teacher-note(id='teacher-note', class='bg-warning/5 border-warning/20')
+            i.ph-bold.ph-clock.text-warning.flex-shrink-0(aria-hidden='true')
+            p.text-xs.text-muted-foreground Tài khoản giáo viên cần được admin phê duyệt trước khi có thể tạo lớp học. Bạn sẽ được thông báo qua email.
+
+          //- Name + Email
+          .grid.grid-cols-1.sm_grid-cols-2.gap-4
+            .field
+              label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='name') Họ và tên
+              .input-icon
+                .icon: i.ph-bold.ph-user.text-lg.text-muted-foreground(aria-hidden='true')
+                input#name(type='text', name='name', value=formData.name || '', required, autocomplete='name', placeholder='Họ và tên của bạn', class='h-12 rounded-xl')
+
+            .field
+              label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='email') Địa chỉ Email
+              .input-icon
+                .icon: i.ph-bold.ph-envelope-simple.text-lg.text-muted-foreground(aria-hidden='true')
+                input#email(type='email', name='email', value=formData.email || '', required, autocomplete='email', placeholder='name@example.com', class='h-12 rounded-xl')
+
+          //- Password + Confirm
+          .grid.grid-cols-1.sm_grid-cols-2.gap-4
+            .field
+              label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='password') Mật khẩu
+              .input-icon
+                .icon: i.ph-bold.ph-lock.text-lg.text-muted-foreground(aria-hidden='true')
+                input#password(type='password', name='password', required, autocomplete='new-password', placeholder='8+ characters', class='h-12 rounded-xl pr-12')
+                button.absolute.inset-y-0.right-0.flex.items-center.pr-4.text-muted-foreground.hover_text-foreground.transition-colors(type='button', data-toggle-password='password', aria-label='Hiển thị mật khẩu')
+                  i.ph-bold.ph-eye.text-lg(data-toggle-password-icon='password', aria-hidden='true')
+              //- §9 UX: Password strength indicator
+              .flex.gap-1.mt-2
+                .h-1.w-full.rounded-full.bg-muted#pstr-1
+                .h-1.w-full.rounded-full.bg-muted#pstr-2
+                .h-1.w-full.rounded-full.bg-muted#pstr-3
+                .h-1.w-full.rounded-full.bg-muted#pstr-4
+
+            .field
+              label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='confirmPassword') Xác nhận mật khẩu
+              .input-icon
+                .icon: i.ph-bold.ph-lock-key.text-lg.text-muted-foreground(aria-hidden='true')
+                input#confirmPassword(type='password', name='confirmPassword', required, autocomplete='new-password', placeholder='Nhập lại mật khẩu', class='h-12 rounded-xl pr-12')
+                button.absolute.inset-y-0.right-0.flex.items-center.pr-4.text-muted-foreground.hover_text-foreground.transition-colors(type='button', data-toggle-password='confirmPassword', aria-label='Hiển thị mật khẩu')
+                  i.ph-bold.ph-eye.text-lg(data-toggle-password-icon='confirmPassword', aria-hidden='true')
+
+          //- Phone (optional)
+          .field
+            label.field-label.text-xs.uppercase.tracking-widest.text-muted-foreground(for='phone')
+              | Số điện thoại 
+              span.text-muted-foreground.font-normal (tùy chọn)
+            .input-icon
+              .icon: i.ph-bold.ph-phone.text-lg.text-muted-foreground(aria-hidden='true')
+              input#phone(type='tel', name='phone', value=formData.phone || '', autocomplete='tel', placeholder='+1 (555) 000-0000', class='h-12 rounded-xl')
+
+          button.btn-primary.w-full.h-12.text-base.rounded-xl.shadow-sm.active_scale-95.transition-transform(type='submit')
+            | Tạo tài khoản
+            i.ph-bold.ph-arrow-right(aria-hidden='true')
+
+        .mt-6.pt-6.border-t.text-center(class='border-border/60')
+          p.text-sm.text-muted-foreground
+            | Đã có tài khoản?&nbsp;
+            a.font-bold.text-primary.hover_underline(href='/auth/login') Đăng nhập
+
+block scripts
+  script.
+    (function() {
+      // Role picker: show teacher note
+      var teacherInputs = document.querySelectorAll('input[name="role"]');
+      var note = document.getElementById('teacher-note');
+      teacherInputs.forEach(function(input) {
+        input.addEventListener('change', function() {
+          if (note) {
+            note.classList.toggle('hidden', input.value !== 'teacher' || !input.checked);
+          }
+        });
+      });
+
+      // Password strength indicator
+      var pw = document.getElementById('password');
+      var bars = [document.getElementById('pstr-1'), document.getElementById('pstr-2'), document.getElementById('pstr-3'), document.getElementById('pstr-4')];
+      var colors = ['bg-destructive', 'bg-warning', 'bg-warning', 'bg-success'];
+      if (pw && bars[0]) {
+        pw.addEventListener('input', function() {
+          var v = pw.value, score = 0;
+          if (v.length >= 8) score++;
+          if (/[A-Z]/.test(v)) score++;
+          if (/[0-9]/.test(v)) score++;
+          if (/[^A-Za-z0-9]/.test(v)) score++;
+          bars.forEach(function(b, i) {
+            b.className = 'h-1 w-full rounded-full ' + (i < score ? colors[Math.max(score - 1, 0)] : 'bg-muted');
+          });
+        });
+      }
+    })();

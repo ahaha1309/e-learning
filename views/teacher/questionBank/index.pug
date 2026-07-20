@@ -1,0 +1,66 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-10.pt-8
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4.animate-in.slide-in-up
+      div
+        p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-1 Giảng viên
+        h1.text-3xl.md_text-5xl.font-extrabold.tracking-tighter Ngân hàng Câu hỏi
+        p.text-lg.text-muted-foreground.mt-2 Quản lý kho câu hỏi chung của bạn.
+      .flex.gap-3
+        a.btn-outline.h-12.px-5.rounded-xl(href='/teacher') Quay lại Bảng điều khiển
+        a.btn-primary.h-12.px-6.rounded-xl.shadow-diffused(href='/teacher/question-banks/new')
+          i.ph-bold.ph-plus
+          | Thêm Câu hỏi
+
+    if feedback
+      .alert-success.animate-in.fade-in= feedback
+
+    form.glass-panel.p-6.rounded-2xl.flex.flex-col.md_flex-row.items-end.gap-5.animate-in.slide-in-up(style='animation-delay: 100ms;', method='GET', action='/teacher/question-banks')
+      .flex-1.w-full
+        label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground(for='subject') Môn học
+        input#subject.mt-2.w-full.h-12.px-4.rounded-xl.bg-background.border.border-border(type='text', name='subject', value=query.subject, placeholder='ví dụ: Toán')
+      .flex-1.w-full
+        label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground(for='chapter') Chương
+        input#chapter.mt-2.w-full.h-12.px-4.rounded-xl.bg-background.border.border-border(type='text', name='chapter', value=query.chapter, placeholder='ví dụ: Chương 1')
+      .flex-1.w-full
+        label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground(for='difficulty') Độ khó
+        select#difficulty.mt-2.w-full.h-12.px-4.rounded-xl.bg-background.border.border-border(name='difficulty')
+          option(value='') — Tất cả —
+          option(value='nhan_biet', selected=query.difficulty==='nhan_biet') Nhận biết
+          option(value='thong_hieu', selected=query.difficulty==='thong_hieu') Thông hiểu
+          option(value='van_dung', selected=query.difficulty==='van_dung') Vận dụng
+      button.btn-primary.h-12.px-8.rounded-xl.shadow-sm(type='submit')
+        i.ph-bold.ph-funnel-simple
+        | Lọc
+
+    if questions.length
+      .grid.gap-4.animate-in.slide-in-up(style='animation-delay: 200ms;')
+        each question in questions
+          article.bento-card.p-6.flex.flex-col.md_flex-row.justify-between.gap-6.transition-all.hover_border-primary
+            .flex-1
+              .flex.items-center.gap-3.mb-4
+                span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest [#{question.subject} - #{question.chapter}]
+                span.badge-muted.shadow-sm.text-xs= question.difficulty.toUpperCase()
+                span.text-xs.font-bold.text-primary #{question.points} điểm
+              .prose.prose-slate.dark_prose-invert.text-base.font-medium.leading-relaxed.text-foreground !{question.content}
+              if question.options && question.options.length
+                ul.mt-4.space-y-2
+                  each opt in question.options
+                    li.flex.items-center.gap-2.text-sm
+                      if opt.isCorrect
+                        i.ph-fill.ph-check-circle.text-success.text-lg
+                        span.font-medium.text-success= opt.text
+                      else
+                        i.ph-bold.ph-circle.text-muted-foreground.text-lg
+                        span.text-muted-foreground= opt.text
+            form.flex-shrink-0(method='POST', action='/teacher/question-banks/' + question.id + '/delete', onsubmit='return confirm("Bạn có chắc chắn muốn xóa câu hỏi này không?");')
+              input(type='hidden', name='_csrf', value=csrfToken)
+              button.w-10.h-10.rounded-xl.text-destructive.flex.items-center.justify-center.hover_bg-destructive.hover_text-white.transition-colors(class='bg-destructive/10', type='submit', title='Xóa Câu hỏi')
+                i.ph-bold.ph-trash.text-lg
+    else
+      .empty-state.h-64.animate-in.fade-in(style='animation-delay: 200ms;')
+        .w-20.h-20.rounded-3xl.bg-muted.flex.items-center.justify-center.mb-6
+          i.ph-fill.ph-database.text-4xl(class='text-muted-foreground/50')
+        h2.text-2xl.font-extrabold.text-foreground Không tìm thấy câu hỏi nào
+        p.text-base.text-muted-foreground.mt-2 Hãy thử xóa bộ lọc hoặc thêm câu hỏi mới vào ngân hàng.

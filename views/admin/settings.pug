@@ -1,0 +1,421 @@
+extends ./layouts/admin
+
+block admin-content
+  .max-w-6xl.mx-auto.space-y-8.animate-in.fade-in(style='animation-duration: 400ms;')
+    header
+      p.eyebrow Cấu hình Hệ thống
+      h1.text-3xl.font-extrabold.tracking-tight Cài đặt Hệ thống
+      p.text-muted-foreground.mt-2.text-sm Quản lý tất cả cấu hình nền tảng chung.
+
+    form(method='POST', action='/admin/settings', enctype='multipart/form-data', data-settings-form='true', class='space-y-8 pb-20')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      if feedback
+        .alert-success.rounded-xl.mb-6
+          i.ph-bold.ph-check-circle.text-lg
+          span= feedback
+
+      //- General
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Chung
+          p.text-sm.text-muted-foreground.mt-1 Nhận diện và thương hiệu nền tảng.
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .field
+            label.field-label(for='siteName') Tên trang web
+            input#siteName(type='text', name='siteName', value=config.siteName, placeholder='E-Learning LMS')
+          .field
+            label.field-label(for='siteDescription') Mô tả trang web
+            textarea#siteDescription(name='siteDescription', rows='2', placeholder='Khẩu hiệu cho nền tảng')= config.siteDescription
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='supportEmail') Email Hỗ trợ
+              input#supportEmail(type='email', name='supportEmail', value=config.supportEmail, placeholder='support@example.com')
+            .field
+              label.field-label(for='supportPhone') Điện thoại Hỗ trợ
+              input#supportPhone(type='text', name='supportPhone', value=config.supportPhone, placeholder='+84 123 456 789')
+          .field
+            label.field-label(for='supportHours') Giờ Hỗ trợ
+            input#supportHours(type='text', name='supportHours', value=config.supportHours, placeholder='T2-T6 9:00-18:00')
+          .field
+            label.field-label(for='footerText') Văn bản Chân trang
+            input#footerText(type='text', name='footerText', value=config.footerText, placeholder='&copy; 2026 E-Learning Inc.')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='logo') Biểu trưng
+              input#logo(type='file', name='logo', accept='image/jpeg,image/png,image/gif,image/webp')
+              input(type='hidden', name='logoUrl', value=config.logoUrl || '')
+              p.field-hint Tải lên hình ảnh (JPG, PNG, GIF, WEBP). Để trống để giữ biểu trưng hiện tại.
+              if config.logoUrl
+                .mt-3.flex.items-center.gap-3(data-logo-preview='true', data-current-src=config.logoUrl)
+                  img.inline-block.h-10.w-auto.rounded.border.border-border.p-1.bg-background(src=config.logoUrl, alt='Biểu trưng hiện tại')
+                  span.text-xs.text-muted-foreground Biểu trưng hiện tại
+            .field
+              label.field-label(for='favicon') Biểu tượng trang web (Favicon)
+              input#favicon(type='file', name='favicon', accept='image/jpeg,image/png,image/gif,image/webp,image/x-icon')
+              input(type='hidden', name='faviconUrl', value=config.faviconUrl || '')
+              p.field-hint Tải lên hình ảnh (JPG, PNG, GIF, WEBP). Để trống để giữ biểu tượng hiện tại.
+              if config.faviconUrl
+                .mt-3.flex.items-center.gap-3(data-favicon-preview='true', data-current-src=config.faviconUrl)
+                  img.inline-block.h-8.w-8.rounded.border.border-border.p-1.bg-background(src=config.faviconUrl, alt='Biểu tượng hiện tại')
+                  span.text-xs.text-muted-foreground Biểu tượng hiện tại
+
+      //- Registration & Access
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Đăng ký & Truy cập
+          p.text-sm.text-muted-foreground.mt-1 Kiểm soát đăng ký người dùng và quyền mặc định.
+        .md_col-span-2.bento-card.p-0.overflow-hidden
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Cho phép Đăng ký Mới
+              p.text-xs.text-muted-foreground Học sinh và giảng viên có thể tạo tài khoản mới.
+            label.relative.inline-flex.items-center.cursor-pointer(for='allowRegistration')
+              input#allowRegistration.peer.sr-only(type='checkbox', name='allowRegistration', value='true', checked=config.allowRegistration !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+          .p-6.border-b.border-border
+            .field
+              label.field-label(for='defaultUserRole') Vai trò Đăng ký Mặc định
+              select#defaultUserRole(name='defaultUserRole')
+                option(value='student', selected=config.defaultUserRole === 'student') Học sinh
+                option(value='teacher', selected=config.defaultUserRole === 'teacher') Giảng viên
+
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Tự động Phê duyệt Giảng viên
+              p.text-xs.text-muted-foreground Bỏ qua hàng đợi phê duyệt cho giảng viên mới.
+            label.relative.inline-flex.items-center.cursor-pointer(for='autoApproveTeachers')
+              input#autoApproveTeachers.peer.sr-only(type='checkbox', name='autoApproveTeachers', value='true', checked=config.autoApproveTeachers === true)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+          .p-6.border-b.border-border
+            .field
+              label.field-label(for='maintenanceMessage') Thông báo Chế độ Bảo trì
+              textarea#maintenanceMessage(name='maintenanceMessage', rows='2', placeholder='Hiển thị cho người dùng khi chế độ bảo trì được kích hoạt.')= config.maintenanceMessage
+
+          .flex.items-start.justify-between.gap-4.p-6
+            .space-y-1.pr-6
+              p.font-bold.text-sm Kích hoạt Chế độ Bảo trì
+              p.text-xs.text-muted-foreground Hạn chế mọi quyền truy cập ngoại trừ Quản trị viên.
+            label.relative.inline-flex.items-center.cursor-pointer(for='maintenanceMode')
+              input#maintenanceMode.peer.sr-only(type='checkbox', name='maintenanceMode', value='true', checked=config.maintenanceMode === true)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-destructive peer-checked_border-destructive')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+      //- Security & Limits
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Bảo mật & Giới hạn
+          p.text-sm.text-muted-foreground.mt-1 Giới hạn nền tảng và chính sách phiên làm việc.
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='sessionTimeout') Thời gian chờ phiên (phút)
+              input#sessionTimeout(type='number', name='sessionTimeout', value=config.sessionTimeout, min='5')
+            .field
+              label.field-label(for='passwordMinLength') Độ dài Mật khẩu Tối thiểu
+              input#passwordMinLength(type='number', name='passwordMinLength', value=config.passwordMinLength, min='4', max='128')
+          .flex.items-start.justify-between.gap-4.p-4.bg-muted_50.rounded-xl.border.border-border
+            .space-y-1
+              p.font-bold.text-sm Yêu cầu Chữ in hoa trong Mật khẩu
+              p.text-xs.text-muted-foreground Mật khẩu phải chứa ít nhất một chữ cái in hoa.
+            label.relative.inline-flex.items-center.cursor-pointer(for='passwordRequireUppercase')
+              input#passwordRequireUppercase.peer.sr-only(type='checkbox', name='passwordRequireUppercase', value='true', checked=config.passwordRequireUppercase !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-4.bg-muted_50.rounded-xl.border.border-border
+            .space-y-1
+              p.font-bold.text-sm Yêu cầu Ký tự Đặc biệt trong Mật khẩu
+              p.text-xs.text-muted-foreground Mật khẩu phải chứa ít nhất một ký tự đặc biệt.
+            label.relative.inline-flex.items-center.cursor-pointer(for='passwordRequireSpecialChar')
+              input#passwordRequireSpecialChar.peer.sr-only(type='checkbox', name='passwordRequireSpecialChar', value='true', checked=config.passwordRequireSpecialChar !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='passwordExpiryDays') Hạn Mật khẩu (0 = không bao giờ)
+              input#passwordExpiryDays(type='number', name='passwordExpiryDays', value=config.passwordExpiryDays, min='0')
+            .field
+              label.field-label(for='maxLoginAttempts') Số lần Đăng nhập Tối đa
+              input#maxLoginAttempts(type='number', name='maxLoginAttempts', value=config.maxLoginAttempts, min='1')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='lockoutDurationMinutes') Thời gian Khóa (phút)
+              input#lockoutDurationMinutes(type='number', name='lockoutDurationMinutes', value=config.lockoutDurationMinutes, min='1')
+            .field
+              label.field-label(for='maxClassroomsPerTeacher') Số Lớp học Tối đa / Giảng viên
+              input#maxClassroomsPerTeacher(type='number', name='maxClassroomsPerTeacher', value=config.maxClassroomsPerTeacher, min='1')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='maxStudentsPerClassroom') Số Học sinh Tối đa / Lớp học
+              input#maxStudentsPerClassroom(type='number', name='maxStudentsPerClassroom', value=config.maxStudentsPerClassroom, min='1')
+
+      //- Authentication
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Xác thực
+          p.text-sm.text-muted-foreground.mt-1 Các tùy chọn và mặc định nhà cung cấp OAuth.
+        .md_col-span-2.bento-card.p-0.overflow-hidden
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Xác thực Google
+              p.text-xs.text-muted-foreground Cho phép đăng nhập bằng tài khoản Google.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableGoogleAuth')
+              input#enableGoogleAuth.peer.sr-only(type='checkbox', name='enableGoogleAuth', value='true', checked=config.enableGoogleAuth !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6
+            .space-y-1.pr-6
+              p.font-bold.text-sm Xác thực Facebook
+              p.text-xs.text-muted-foreground Cho phép đăng nhập bằng tài khoản Facebook.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableFacebookAuth')
+              input#enableFacebookAuth.peer.sr-only(type='checkbox', name='enableFacebookAuth', value='true', checked=config.enableFacebookAuth === true)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+      //- Localization
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Khu vực hóa
+          p.text-sm.text-muted-foreground.mt-1 Mặc định múi giờ và ngôn ngữ.
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='defaultTimezone') Múi giờ Mặc định
+              select#defaultTimezone(name='defaultTimezone')
+                option(value='UTC', selected=config.defaultTimezone === 'UTC') UTC
+                option(value='Asia/Ho_Chi_Minh', selected=config.defaultTimezone === 'Asia/Ho_Chi_Minh') Asia/Ho_Chi_Minh (GMT+7)
+                option(value='Asia/Bangkok', selected=config.defaultTimezone === 'Asia/Bangkok') Asia/Bangkok (GMT+7)
+                option(value='Asia/Singapore', selected=config.defaultTimezone === 'Asia/Singapore') Asia/Singapore (GMT+8)
+                option(value='America/New_York', selected=config.defaultTimezone === 'America/New_York') America/New_York (GMT-5)
+                option(value='Europe/London', selected=config.defaultTimezone === 'Europe/London') Europe/London (GMT+0)
+            .field
+              label.field-label(for='defaultLocale') Ngôn ngữ Mặc định
+              select#defaultLocale(name='defaultLocale')
+                option(value='en', selected=config.defaultLocale === 'en') Tiếng Anh
+                option(value='vi', selected=config.defaultLocale === 'vi') Tiếng Việt
+                option(value='ja', selected=config.defaultLocale === 'ja') 日本語
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='theme') Giao diện Mặc định
+              select#theme(name='theme')
+                option(value='light', selected=config.theme === 'light') Sáng
+                option(value='dark', selected=config.theme === 'dark') Tối
+                option(value='system', selected=config.theme === 'system') Hệ thống
+
+      //- Notifications
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Thông báo
+          p.text-sm.text-muted-foreground.mt-1 Cấu hình các kênh thông báo.
+        .md_col-span-2.bento-card.p-0.overflow-hidden
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Thông báo Email
+              p.text-xs.text-muted-foreground Gửi cảnh báo email cho điểm số, thông báo, v.v.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableEmailNotifications')
+              input#enableEmailNotifications.peer.sr-only(type='checkbox', name='enableEmailNotifications', value='true', checked=config.enableEmailNotifications !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6
+            .space-y-1.pr-6
+              p.font-bold.text-sm Thông báo SMS
+              p.text-xs.text-muted-foreground Gửi cảnh báo SMS (yêu cầu cấu hình Twilio).
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableSMSNotifications')
+              input#enableSMSNotifications.peer.sr-only(type='checkbox', name='enableSMSNotifications', value='true', checked=config.enableSMSNotifications === true)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+      //- Email / SMTP
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Email / SMTP
+          p.text-sm.text-muted-foreground.mt-1 Cấu hình máy chủ thư đi.
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='smtpHost') Máy chủ SMTP
+              input#smtpHost(type='text', name='smtpHost', value=config.smtpHost, placeholder='smtp.gmail.com')
+            .field
+              label.field-label(for='smtpPort') Cổng SMTP
+              input#smtpPort(type='number', name='smtpPort', value=config.smtpPort, min='1', max='65535')
+          .flex.items-start.justify-between.gap-4.p-4.bg-muted_50.rounded-xl.border.border-border
+            .space-y-1
+              p.font-bold.text-sm Sử dụng Kết nối An toàn (TLS)
+              p.text-xs.text-muted-foreground Bật SSL/TLS cho SMTP.
+            label.relative.inline-flex.items-center.cursor-pointer(for='smtpSecure')
+              input#smtpSecure.peer.sr-only(type='checkbox', name='smtpSecure', value='true', checked=config.smtpSecure === true)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='smtpUser') Tên đăng nhập SMTP
+              input#smtpUser(type='text', name='smtpUser', value=config.smtpUser, placeholder='user@gmail.com')
+            .field
+              label.field-label(for='smtpPass') Mật khẩu SMTP
+              input#smtpPass(type='password', name='smtpPass', value=config.smtpPass, placeholder='app-password')
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='smtpFromName') Tên Người gửi
+              input#smtpFromName(type='text', name='smtpFromName', value=config.smtpFromName, placeholder='E-Learning LMS')
+            .field
+              label.field-label(for='smtpFromEmail') Email Người gửi
+              input#smtpFromEmail(type='email', name='smtpFromEmail', value=config.smtpFromEmail, placeholder='noreply@example.com')
+
+      //- Features
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Tính năng
+          p.text-sm.text-muted-foreground.mt-1 Bật hoặc tắt các tính năng của nền tảng.
+        .md_col-span-2.bento-card.p-0.overflow-hidden
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Thảo luận Học sinh
+              p.text-xs.text-muted-foreground Cho phép học sinh tham gia các chủ đề thảo luận.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableStudentDiscussion')
+              input#enableStudentDiscussion.peer.sr-only(type='checkbox', name='enableStudentDiscussion', value='true', checked=config.enableStudentDiscussion !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Tin nhắn Học sinh
+              p.text-xs.text-muted-foreground Cho phép học sinh gửi tin nhắn trực tiếp.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableStudentMessaging')
+              input#enableStudentMessaging.peer.sr-only(type='checkbox', name='enableStudentMessaging', value='true', checked=config.enableStudentMessaging !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Tải lên Tệp
+              p.text-xs.text-muted-foreground Cho phép học sinh tải tệp lên trong bài nộp.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableFileUploads')
+              input#enableFileUploads.peer.sr-only(type='checkbox', name='enableFileUploads', value='true', checked=config.enableFileUploads !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .p-6.border-b.border-border
+            .grid.grid-cols-2.gap-4
+              .field
+                label.field-label(for='maxFileSizeMB') Kích thước Tệp Tối đa (MB)
+                input#maxFileSizeMB(type='number', name='maxFileSizeMB', value=config.maxFileSizeMB, min='1')
+              .field
+                label.field-label(for='allowedFileTypes') Các loại Tệp cho phép
+                input#allowedFileTypes(type='text', name='allowedFileTypes', value=config.allowedFileTypes, placeholder='pdf,doc,docx,ppt,pptx,zip')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Giám thị Bài thi
+              p.text-xs.text-muted-foreground Bật giám sát chống gian lận trong các bài thi.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableExamProctoring')
+              input#enableExamProctoring.peer.sr-only(type='checkbox', name='enableExamProctoring', value='true', checked=config.enableExamProctoring !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Tự động chấm điểm trắc nghiệm
+              p.text-xs.text-muted-foreground Tự động chấm điểm các câu hỏi trắc nghiệm.
+            label.relative.inline-flex.items-center.cursor-pointer(for='autoGradeMCQ')
+              input#autoGradeMCQ.peer.sr-only(type='checkbox', name='autoGradeMCQ', value='true', checked=config.autoGradeMCQ !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Chứng chỉ
+              p.text-xs.text-muted-foreground Cho phép cấp chứng chỉ hoàn thành.
+            label.relative.inline-flex.items-center.cursor-pointer(for='certificateEnabled')
+              input#certificateEnabled.peer.sr-only(type='checkbox', name='certificateEnabled', value='true', checked=config.certificateEnabled !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Phê duyệt Đăng ký
+              p.text-xs.text-muted-foreground Yêu cầu giảng viên phê duyệt để học sinh đăng ký.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enrollmentApprovalRequired')
+              input#enrollmentApprovalRequired.peer.sr-only(type='checkbox', name='enrollmentApprovalRequired', value='true', checked=config.enrollmentApprovalRequired !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
+            .space-y-1.pr-6
+              p.font-bold.text-sm Danh mục Khóa học
+              p.text-xs.text-muted-foreground Hiển thị danh mục khóa học công khai để duyệt.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableCourseCatalog')
+              input#enableCourseCatalog.peer.sr-only(type='checkbox', name='enableCourseCatalog', value='true', checked=config.enableCourseCatalog !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+          .flex.items-start.justify-between.gap-4.p-6
+            .space-y-1.pr-6
+              p.font-bold.text-sm Theo dõi Tiến độ
+              p.text-xs.text-muted-foreground Theo dõi tiến độ của học sinh trong các khóa học.
+            label.relative.inline-flex.items-center.cursor-pointer(for='enableProgressTracking')
+              input#enableProgressTracking.peer.sr-only(type='checkbox', name='enableProgressTracking', value='true', checked=config.enableProgressTracking !== false)
+              .w-10.h-6.bg-muted.rounded-full.border.border-input.transition-colors(class='peer-checked_bg-primary peer-checked_border-primary')
+              .absolute.left-1.top-1.bg-white.w-4.h-4.rounded-full.transition-transform(class='peer-checked_translate-x-4')
+
+      //- Data & API
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold Dữ liệu & API
+          p.text-sm.text-muted-foreground.mt-1 Chính sách lưu giữ và giới hạn tần suất.
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='dataRetentionDays') Lưu giữ Dữ liệu (ngày)
+              input#dataRetentionDays(type='number', name='dataRetentionDays', value=config.dataRetentionDays, min='30')
+            .field
+              label.field-label(for='backupFrequency') Tần suất Sao lưu
+              select#backupFrequency(name='backupFrequency')
+                option(value='never', selected=config.backupFrequency === 'never') Không bao giờ
+                option(value='daily', selected=config.backupFrequency === 'daily') Hàng ngày
+                option(value='weekly', selected=config.backupFrequency === 'weekly') Hàng tuần
+                option(value='monthly', selected=config.backupFrequency === 'monthly') Hàng tháng
+          .grid.grid-cols-2.gap-4
+            .field
+              label.field-label(for='apiRateLimit') Giới hạn Tần suất API (req/min)
+              input#apiRateLimit(type='number', name='apiRateLimit', value=config.apiRateLimit, min='30')
+            .field
+              label.field-label(for='apiRateLimitWindow') Cửa sổ Giới hạn Tần suất (phút)
+              input#apiRateLimitWindow(type='number', name='apiRateLimitWindow', value=config.apiRateLimitWindow, min='1')
+
+      //- Legal
+
+      //- Sticky Bottom Action Bar
+      div.fixed.bottom-0.left-0.right-0.backdrop-blur-md.border-t.border-border.p-4.z-40(class='bg-card/80', class='md_left-[260px]')
+        .max-w-6xl.mx-auto.flex.items-center.justify-end.gap-3
+          a.btn-outline.h-10.px-5.rounded-lg(href='/admin') Hủy
+          button.btn-primary.h-10.px-6.rounded-lg.shadow-sm(type='submit', data-settings-submit='true')
+            i.ph-bold.ph-floppy-disk
+            | Lưu Cài đặt
+          span.hidden.text-sm.text-muted-foreground(data-settings-uploading='true')
+            i.ph-bold.ph-spinner
+            |  Đang lưu…
+
+    script.
+      (function () {
+        var form = document.querySelector('[data-settings-form="true"]');
+        if (!form) return;
+        var submitBtn = form.querySelector('[data-settings-submit="true"]');
+        var uploading = form.querySelector('[data-settings-uploading="true"]');
+
+        // Live image preview on file selection for logo & favicon.
+        ['logo', 'favicon'].forEach(function (field) {
+          var input = document.getElementById(field);
+          if (!input) return;
+          input.addEventListener('change', function () {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var preview = form.querySelector('[data-' + field + '-preview="true"]');
+            var currentImg = preview ? preview.querySelector('img') : null;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              if (currentImg) { currentImg.src = e.target.result; }
+            };
+            reader.readAsDataURL(file);
+          });
+        });
+
+        form.addEventListener('submit', function () {
+          if (submitBtn) { submitBtn.disabled = true; }
+          if (uploading) { uploading.classList.remove('hidden'); }
+        });
+      })();

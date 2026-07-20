@@ -1,0 +1,12 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6
+    header
+      p.eyebrow Lỗi 404
+      h1.text-3xl.font-bold.tracking-tight Không tìm thấy trang
+      p.text-muted-foreground.mt-2 Tuyến đường #{path} không tồn tại trong bảng quản trị.
+    .flex.gap-3
+      a.btn-primary(href='/admin')
+        i.ph-bold.ph-house
+        | Quay lại bảng điều khiển

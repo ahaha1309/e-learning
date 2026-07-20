@@ -1,0 +1,84 @@
+//- ── TEACHER SIDEBAR ─────────────────────────────────────────────────────
+//- Receives: currentUser, path (current URL)
+//- Spec ref: §2.1 IA (Teacher Zone), §3.2 Components, §8 Accessibility
+
+.flex.flex-col.h-full
+
+  //- Brand header
+  .flex.items-center.gap-3.px-4.py-5.border-b.border-border
+    .w-8.h-8.rounded-lg.flex.items-center.justify-center.text-primary.flex-shrink-0(class='bg-primary/10')
+      i.ph-bold.ph-chalkboard-teacher.text-base(aria-hidden='true')
+    div
+      p.text-sm.font-bold.tracking-tight Trung tâm Giảng viên
+      p.text-muted-foreground.truncate(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em')= currentUser.name
+
+  nav.flex-1.px-2.py-3.overflow-y-auto.scroll-thin(aria-label='Điều hướng giảng viên')
+
+    //- Overview
+    a.shell-sidebar-link(
+      href='/teacher',
+      class=path === '/teacher' ? 'shell-sidebar-link-active' : '',
+      aria-current=path === '/teacher' ? 'page' : false
+    )
+      i.ph-bold.ph-squares-four.text-base(aria-hidden='true')
+      span Bảng điều khiển
+
+    //- ── Teaching ─────────────────────────────────────
+    .section-label Giảng dạy
+
+    a.shell-sidebar-link(
+      href='/teacher/classrooms',
+      class=path && path.startsWith('/teacher/classrooms') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/teacher/classrooms') ? 'page' : false
+    )
+      i.ph-bold.ph-chalkboard.text-base(aria-hidden='true')
+      span Lớp học
+
+    a.shell-sidebar-link(
+      href='/teacher/question-banks',
+      class=path && path.startsWith('/teacher/question-banks') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/teacher/question-banks') ? 'page' : false
+    )
+      i.ph-bold.ph-bank.text-base(aria-hidden='true')
+      span Ngân hàng câu hỏi
+
+    //- ── Management ───────────────────────────────────
+    .section-label Quản lý
+
+    a.shell-sidebar-link(
+      href='/teacher/analytics',
+      class=path && path.startsWith('/teacher/analytics') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/teacher/analytics') ? 'page' : false
+    )
+      i.ph-bold.ph-chart-bar.text-base(aria-hidden='true')
+      span Phân tích
+
+    //- ── Account ──────────────────────────────────────
+    .section-label Tài khoản
+
+    a.shell-sidebar-link(
+      href='/notifications',
+      class=path === '/notifications' ? 'shell-sidebar-link-active' : '',
+      aria-current=path === '/notifications' ? 'page' : false
+    )
+      i.ph-bold.ph-bell.text-base(aria-hidden='true')
+      .flex.items-center.justify-between.flex-1
+        span Thông báo
+        if unreadCount > 0
+          span.badge.badge-danger.badge-sm= unreadCount
+
+  //- Footer: profile shortcut & logout
+  .border-t.border-border.px-2.py-3.flex.items-center.gap-1
+    a.shell-sidebar-link.flex-1(href='/profile', aria-label='Xem hồ sơ')
+      if currentUser.avatarUrl
+        img.w-6.h-6.rounded-full.object-cover.flex-shrink-0(src=currentUser.avatarUrl, alt=currentUser.name, loading='lazy')
+      else
+        .avatar.avatar-sm.flex-shrink-0(aria-hidden='true')
+          span= currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'
+      .flex-1.min-w-0
+        p.text-xs.font-semibold.truncate= currentUser.name
+        p.text-muted-foreground.truncate(style='font-size:0.625rem;line-height:0.875rem') Hồ sơ & Cài đặt
+    form(method='POST', action='/auth/logout')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      button.w-8.h-8.rounded-lg.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_bg-destructive/10 hover_text-destructive', type='submit', aria-label='Đăng xuất', title='Đăng xuất')
+        i.ph-bold.ph-sign-out

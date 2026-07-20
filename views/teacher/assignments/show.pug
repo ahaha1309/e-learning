@@ -1,0 +1,22 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight= assignment.title
+        p.text-muted-foreground.max-w-prose.mt-2= assignment.description || 'Chưa có mô tả.'
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Hạn chót
+        strong.text-2xl.font-mono= assignment.dueDate.toLocaleString('en-GB')
+        p.text-sm.text-muted-foreground.mt-3 Điểm: #{assignment.totalPoints}
+
+    .card.p-6
+      p.text-lg.font-bold.mb-2 Hướng dẫn
+      p.text-muted.whitespace-pre-wrap= assignment.instructions || 'Chưa có hướng dẫn.'
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions') Đánh giá bài nộp
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments') Quay lại các bài tập
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại lớp học

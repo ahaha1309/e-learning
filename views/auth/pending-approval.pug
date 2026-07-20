@@ -1,0 +1,13 @@
+extends ../layouts/base
+
+block content
+  .page.space-y-8
+    .w-24.h-24.mx-auto.rounded-2xl.flex.items-center.justify-center.mb-8(class='bg-warning/10')
+      i.ph-bold.ph-clock.text-5xl.text-warning
+    p.eyebrow Account Status
+    h1.text-3xl.font-bold.tracking-tight.mb-4 Pending administrator approval
+    p.text-lg.text-muted-foreground.max-w-md.mx-auto Your teacher account has been created, but access to classroom tools will be enabled after an administrator approves it.
+    .mt-8
+      a.btn-primary(href='/')
+        i.ph-bold.ph-house
+        | Back to home

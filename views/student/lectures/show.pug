@@ -1,0 +1,290 @@
+//- ── LEARNING HUB: Split-pane Lecture + Chat (Student) ───────────────
+//- vars: lecture, membership, mediaUrls, currentUser, csrfToken, messages
+
+extends ../../layouts/base
+
+block head
+  //- Override body overflow for the split-pane shell
+  style.
+    body { overflow: hidden; }
+
+block content
+  //- Connection banner (Socket.io offline indicator)
+  #chat-connection-banner.connection-banner(aria-live='polite', role='status')
+    i.ph-bold.ph-wifi-slash(aria-hidden='true')
+    span#chat-connection-msg Đã ngắt kết nối trò chuyện — đang thử lại...
+
+  .split-pane
+
+    //- ── LEFT PANE: Media viewer ──────────────────────────────────────────
+    section.split-pane-media(aria-label='Lecture content')
+
+      //- Lecture header strip
+      .flex.items-center.justify-between.px-6.py-4.border-b.border-border.flex-shrink-0
+        .flex.items-center.min-w-0(class='gap-3')
+          a.btn-ghost.btn-icon.flex-shrink-0(
+            href='/student/classrooms/' + membership.classroom.id + '/lectures',
+            aria-label='Quay lại các bài giảng'
+          )
+            i.ph-bold.ph-arrow-left(aria-hidden='true')
+          div.min-w-0
+            .flex.items-center.gap-2(class='mb-0.5')
+              span.font-bold.uppercase.tracking-widest.text-muted-foreground.text-2xs= membership.classroom.name
+              span.text-muted-foreground.text-2xs(aria-hidden='true') /
+              span.font-bold.uppercase.tracking-widest.text-primary.text-2xs= lecture.chapterTitle || 'Chương'
+            h1.text-base.font-bold.tracking-tight.truncate= lecture.title
+
+        .flex.items-center.gap-2.flex-shrink-0
+          if lecture.resourceUrl
+            a.btn-outline.btn-sm.rounded-full(
+              href=lecture.resourceUrl,
+              target='_blank',
+              rel='noreferrer noopener',
+              aria-label='Tải xuống tài nguyên gốc'
+            )
+              i.ph-bold.ph-download-simple(aria-hidden='true')
+              span.hidden.md_inline Tải xuống
+
+      //- Media embed area
+      .media-embed#media-embed(
+        aria-label='Trình xem phương tiện bài giảng',
+        data-resource-url=lecture.resourceUrl,
+        data-resource-type=lecture.resourceType
+      )
+        //- Rendered server-side based on resource type
+        if lecture.resourceType === 'video'
+          video#lecture-video.w-full.h-full.bg-black(
+            controls,
+            preload='metadata',
+            aria-label='Video bài giảng: ' + lecture.title
+          )
+            source(src=lecture.resourceUrl, type='video/mp4')
+            p Trình duyệt của bạn không hỗ trợ phát lại video.
+
+        else if lecture.resourceType === 'pdf' || lecture.resourceType === 'ppt'
+          iframe#lecture-iframe(
+            src=lecture.previewUrl || lecture.resourceUrl,
+            title='Tài liệu bài giảng: ' + lecture.title,
+            loading='lazy',
+            allowfullscreen
+          )
+
+        else
+          //- Text / rich content fallback
+          .p-8.prose.prose-slate.dark_prose-invert.max-w-none.overflow-y-auto.h-full
+            != lecture.content || '<p class="text-muted-foreground">Không có nội dung cho bài giảng này.</p>'
+
+        //- Fallback panel — shown when embed fails
+        .media-embed-fallback#media-fallback(aria-hidden='true')
+          .w-16.h-16.rounded-2xl.flex.items-center.justify-center.mb-4.bg-muted
+            i.ph-bold.ph-file.text-3xl.text-muted-foreground(aria-hidden='true')
+          h3.text-lg.font-bold.tracking-tight Không thể tải phương tiện
+          p.text-sm.text-muted-foreground.mt-1.mb-6 Tệp có thể không khả dụng hoặc trình duyệt của bạn không hỗ trợ xem trước trực tiếp.
+          if lecture.resourceUrl
+            a.btn-primary.rounded-full(
+              href=lecture.resourceUrl,
+              download,
+              target='_blank',
+              rel='noreferrer'
+            )
+              i.ph-bold.ph-download-simple(aria-hidden='true')
+              | Tải tệp xuống
+
+      //- Lecture info strip (below embed)
+      if lecture.summary
+        .px-6.py-4.border-t.border-border.flex-shrink-0(class='bg-muted/40')
+          p.text-sm.text-muted-foreground.line-clamp-2= lecture.summary
+
+    //- ── RIGHT PANE: Real-time Chat ───────────────────────────────────────
+    section.split-pane-chat(aria-label='Classroom chat')
+
+      //- Chat header
+      .flex.items-center.justify-between.px-4.py-3.border-b.border-border.flex-shrink-0
+        .flex.items-center(class='gap-2.5')
+          .w-7.h-7.rounded-lg.flex.items-center.justify-center.flex-shrink-0(class='bg-primary/10')
+            i.ph-bold.ph-chats.text-sm.text-primary(aria-hidden='true')
+          h2.text-sm.font-bold.tracking-tight Trò chuyện Trực tiếp
+        .flex.items-center(class='gap-1.5')
+          //- Online indicator
+          #online-count.inline-flex.items-center.gap-1.font-bold.text-muted-foreground.text-2xs
+            span.rounded-full.bg-success.animate-pulse-soft(class='w-1.5 h-1.5', aria-hidden='true')
+            span 1 trực tuyến
+
+      //- Message list
+      .chat-list#chat-messages(
+        role='log',
+        aria-label='Chat messages',
+        aria-live='polite',
+        aria-relevant='additions'
+      )
+        //- Empty state (hidden once messages load)
+        if !messages || messages.length === 0
+          .flex.flex-col.items-center.justify-center.h-full.gap-3.text-center.py-12(id='chat-empty')
+            .w-12.h-12.rounded-2xl.flex.items-center.justify-center.bg-muted
+              i.ph-bold.ph-chat-dots.text-xl.text-muted-foreground(aria-hidden='true')
+            p.text-sm.font-semibold.text-muted-foreground Chưa có tin nhắn nào
+            p.text-xs.text-muted-foreground Hãy là người đầu tiên nói điều gì đó
+
+        //- Initial messages (server-rendered)
+        each msg in (messages || [])
+          - const isMine = msg.sender._id.toString() === currentUser.id.toString()
+          - const timeStr = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          .chat-row(class=isMine ? 'mine' : '', data-msg-id=msg._id)
+            //- Avatar
+            if !isMine
+              .avatar.avatar-sm.flex-shrink-0(aria-hidden='true')
+                if msg.sender.avatarUrl
+                  img(src=msg.sender.avatarUrl, alt=msg.sender.name, loading='lazy')
+                else
+                  span= msg.sender.name ? msg.sender.name.charAt(0).toUpperCase() : '?'
+            //- Bubble
+            div
+              .chat-bubble(class=isMine ? 'chat-bubble-self' : 'chat-bubble-other')= msg.content
+              .chat-meta
+                if !isMine
+                  span.font-medium.mr-1= msg.sender.name
+                span= timeStr
+
+        //- Typing indicator
+        .chat-typing#typing-indicator(aria-hidden='true')
+          span
+          span
+          span
+          span.ml-2.text-xs.text-muted-foreground(id='typing-name') đang nhập...
+
+      //- Chat input bar
+      form.chat-input-bar#chat-form(
+        autocomplete='off',
+        aria-label='Send a message'
+      )
+        input#chat-input(
+          type='text',
+          placeholder='Nhắn tin cho lớp...',
+          maxlength='1000',
+          aria-label='Type your message',
+          autocomplete='off'
+        )
+        button.chat-send-btn#chat-send(
+          type='submit',
+          aria-label='Send message',
+          disabled
+        )
+          i.ph-bold.ph-paper-plane-tilt.text-sm(aria-hidden='true')
+
+  //- ── SCRIPTS ─────────────────────────────────────────────────────────────
+  script(src='/socket.io/socket.io.js')
+  script.
+    (function () {
+      var CLASSROOM_ID = '#{membership.classroom.id}';
+      var SENDER_ID    = '#{currentUser.id}';
+      var SENDER_NAME  = '#{currentUser.name}';
+      var SENDER_AVATAR = '#{currentUser.avatarUrl || ""}';
+
+      var chatList   = document.getElementById('chat-messages');
+      var chatInput  = document.getElementById('chat-input');
+      var chatSend   = document.getElementById('chat-send');
+      var chatForm   = document.getElementById('chat-form');
+      var chatEmpty  = document.getElementById('chat-empty');
+      var typingEl   = document.getElementById('typing-indicator');
+      var typingName = document.getElementById('typing-name');
+      var banner     = document.getElementById('chat-connection-banner');
+      var bannerMsg  = document.getElementById('chat-connection-msg');
+
+      // ── Input enable/disable ────────────────────────────────────────────
+      chatInput.addEventListener('input', function () {
+        chatSend.disabled = chatInput.value.trim().length === 0;
+      });
+
+      // ── Socket.io ───────────────────────────────────────────────────────
+      var socket = io('/chat', { reconnectionDelay: 1000, reconnectionAttempts: 10 });
+
+      socket.on('connect', function () {
+        socket.emit('join_chat', { classroomId: CLASSROOM_ID });
+        hideBanner();
+        chatInput.disabled = false;
+      });
+
+      socket.on('disconnect', function () {
+        showBanner('offline', 'Đã ngắt kết nối trò chuyện — đang thử lại...');
+        chatInput.disabled = true;
+        chatSend.disabled = true;
+      });
+
+      socket.on('reconnecting', function (attempt) {
+        showBanner('reconnecting', 'Đang kết nối lại... (lần thử ' + attempt + ')');
+      });
+
+      socket.on('reconnect_failed', function () {
+        showBanner('offline', 'Không thể kết nối lại. Tải lại trang để tiếp tục.');
+      });
+
+      // ── Send message ────────────────────────────────────────────────────
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var content = chatInput.value.trim();
+        if (!content || chatSend.disabled) return;
+        socket.emit('send_message', { classroomId: CLASSROOM_ID, senderId: SENDER_ID, content: content });
+        chatInput.value = '';
+        chatSend.disabled = true;
+      });
+
+      // ── Receive message ─────────────────────────────────────────────────
+      socket.on('receive_message', function (msg) {
+        if (chatEmpty) chatEmpty.remove();
+        var isMine = msg.sender._id === SENDER_ID;
+        var time   = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Sanitise content
+        var safe = String(msg.content).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        var avatarHtml = '';
+        if (!isMine) {
+          var initial = msg.sender.name ? msg.sender.name.charAt(0).toUpperCase() : '?';
+          avatarHtml = '<div class="avatar avatar-sm flex-shrink-0" aria-hidden="true"><span>' + initial + '</span></div>';
+        }
+        var metaHtml = '<div class="chat-meta">'
+          + (isMine ? '' : '<span class="font-medium mr-1">' + msg.sender.name + '</span>')
+          + '<span>' + time + '</span></div>';
+
+        var row = document.createElement('div');
+        row.className = 'chat-row' + (isMine ? ' mine' : '');
+        row.innerHTML = avatarHtml
+          + '<div>'
+          + '<div class="chat-bubble ' + (isMine ? 'chat-bubble-self' : 'chat-bubble-other') + '">' + safe + '</div>'
+          + metaHtml + '</div>';
+
+        chatList.insertBefore(row, typingEl);
+        chatList.scrollTop = chatList.scrollHeight;
+      });
+
+      // ── Media embed fallback ─────────────────────────────────────────────
+      var iframe = document.getElementById('lecture-iframe');
+      var video  = document.getElementById('lecture-video');
+      var fallback = document.getElementById('media-fallback');
+
+      if (iframe) {
+        iframe.addEventListener('error', function () {
+          if (fallback) { fallback.classList.add('visible'); iframe.style.display = 'none'; }
+        });
+      }
+      if (video) {
+        video.addEventListener('error', function () {
+          if (fallback) { fallback.classList.add('visible'); video.style.display = 'none'; }
+        });
+      }
+
+      // ── Connection banner helpers ────────────────────────────────────────
+      function showBanner(type, msg) {
+        banner.className = 'connection-banner connection-banner-' + type + ' visible';
+        bannerMsg.textContent = msg;
+      }
+      function hideBanner() {
+        banner.classList.remove('visible');
+        setTimeout(function () { banner.className = 'connection-banner'; }, 400);
+      }
+
+      // Initial scroll
+      chatList.scrollTop = chatList.scrollHeight;
+    })();
+
+block scripts

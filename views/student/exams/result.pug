@@ -1,0 +1,70 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    nav.breadcrumb
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + classroom.id)= classroom.name
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + classroom.id + '/exams') Bài thi
+      span.breadcrumb-sep /
+      span.text-foreground Kết quả #{exam.title}
+
+    div
+      p.eyebrow Học sinh
+      h1.text-3xl.font-bold.tracking-tight= 'Kết quả ' + exam.title
+      p.text-muted-foreground.mt-2 Lớp học: #{classroom.name}
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/student/classrooms/' + classroom.id + '/exams') Quay lại bài thi
+
+    if exam.showResult === 'none'
+      article.card.p-6
+        h2.text-lg.font-bold Kết quả bị ẩn
+        p.text-muted-foreground.mt-2 Bài thi này được cấu hình không hiển thị kết quả cho học sinh. Vui lòng đợi thông báo từ giảng viên.
+    else if exam.showResult === 'after_exam_ends' && exam.endTime && new Date() < exam.endTime
+      article.card.p-6
+        h2.text-lg.font-bold Kết quả bị ẩn
+        p.text-muted-foreground.mt-2 Kết quả sẽ có sẵn sau khi hạn chót bài thi kết thúc (#{exam.endTime.toLocaleString('en-GB')}).
+    else
+      if submissions.length
+        each sub, idx in submissions
+          article.card.p-6.mb-4
+            .flex.items-center.justify-between.mb-6
+              div
+                h2.text-lg.font-bold Lần thử #{submissions.length - idx}
+                p.text-sm.text-muted-foreground Đã nộp lúc: #{sub.submittedAt ? sub.submittedAt.toLocaleString('en-GB') : 'N/A'}
+              div.text-right
+                p.text-3xl.font-mono.font-bold.text-primary Điểm: #{sub.score} / #{exam.totalPoints}
+                if sub.score !== null && exam.totalPoints > 0
+                  .progress.mt-2
+                    .progress-bar(style='width:' + Math.round(sub.score / exam.totalPoints * 100) + '%')
+
+            h3.text-sm.font-semibold.text-muted-foreground.uppercase.tracking-wider.mb-4 Tóm tắt câu trả lời
+            .grid.gap-4
+              each ans, index in sub.answers
+                .p-4.rounded-xl.border.border-border
+                  strong.text-sm Q. #{ans.question ? ans.question.content.replace(/<[^>]+>/g, '') : 'Câu hỏi đã xóa'}
+                  if ans.question && ans.question.type === 'essay'
+                    p.text-sm.text-muted-foreground.mt-2 Bài tự luận của bạn đã được nộp. Đang chờ giảng viên chấm điểm.
+                  else
+                    .flex.justify-between.mt-2
+                      span.text-sm(class=ans.isCorrect ? 'text-success' : 'text-destructive')
+                        i(class=ans.isCorrect ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle')
+                        |  #{ans.isCorrect ? 'Đúng' : 'Sai'}
+                      span.text-sm.font-medium Điểm: #{ans.pointsAchieved} / #{ans.question ? ans.question.points : 0}
+            if sub.violations && sub.violations.length > 0
+              .mt-6
+                h4.text-sm.font-bold.text-destructive Nhật ký vi phạm
+                .grid.gap-2.mt-2
+                  each v in sub.violations
+                    .p-3.rounded-lg.border.text-sm(class='border-destructive/20 bg-destructive/5 text-destructive')
+                      strong #{new Date(v.time).toLocaleTimeString()}
+                      |  - #{v.details} (#{v.type})
+      else
+        .empty-state
+          .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+            i.ph-bold.ph-exam.text-3xl.text-muted-foreground
+          h2.text-xl.font-bold.text-foreground Không tìm thấy bài nộp nào
+          p.text-sm.text-muted-foreground.mt-2 Bạn chưa nộp bài thi này.

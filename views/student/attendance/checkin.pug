@@ -1,0 +1,37 @@
+extends ../../layouts/base
+
+block content
+  .flex.flex-col.items-center.text-center.p-8(class='min-h-[70dvh]')
+    p.eyebrow Điểm danh
+    h1.text-3xl.font-bold.tracking-tight.mb-2 #{classroom.name}
+
+    if feedback
+      .alert-success.max-w-md.w-full.mb-8
+        p.font-bold= feedback
+        p.text-sm.mt-1 Bạn có thể đóng trang này bây giờ.
+
+    if errorMessage
+      .alert-danger.max-w-md.w-full.mb-8
+        p.font-bold= errorMessage
+
+    if activeSession && !feedback
+      p.text-muted-foreground.text-lg.mb-8.max-w-md Nhìn vào màn hình và nhập mã PIN 6 chữ số trước khi hết hạn.
+
+      form.card.p-8.max-w-sm.w-full(method='POST', action='/student/classrooms/' + classroom.id + '/attendance').space-y-6
+        input(type='hidden', name='_csrf', value=csrfToken)
+        div
+          input.text-center.text-3xl.p-4.rounded-xl.font-mono.font-bold(class='tracking-[0.5em]', type='text', name='code', placeholder='------', required, maxlength='6')
+        button.btn-primary.w-full.h-14.text-lg.rounded-xl(type='submit')
+          | Điểm danh
+
+    else if !feedback
+      .card.p-8.max-w-sm.w-full.text-center
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-4
+          i.ph-bold.ph-clock.text-3xl.text-muted-foreground
+        h3.text-lg.font-bold Không có Phiên hoạt động
+        p.text-sm.text-muted-foreground.mt-2 Giảng viên của bạn chưa mở phiên điểm danh nào.
+
+    .mt-8
+      a.btn-outline(href='/student/classrooms/' + classroom.id)
+        i.ph-bold.ph-arrow-left
+        | Quay lại Lớp học

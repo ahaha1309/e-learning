@@ -1,0 +1,37 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Học sinh
+        h1.text-3xl.font-bold.tracking-tight= 'Bài nộp ' + assignment.title
+        p.text-muted-foreground.max-w-prose.mt-2 Trạng thái bài nộp và xem trước tệp đã tải lên.
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Trạng thái
+        strong.text-2xl.font-mono.capitalize= submission ? submission.status : 'Chưa nộp'
+        p.text-sm.text-muted-foreground.mt-3 Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
+
+    if feedback
+      .alert-success= feedback
+
+    if submission
+      .card.p-6
+        p.text-lg.font-bold.mb-2 Câu trả lời của bạn
+        p.text-muted.whitespace-pre-wrap= submission.textAnswer || 'Chưa có câu trả lời viết.'
+      if submission.attachment && submission.attachment.url
+        .card.p-5
+          p.text-sm.font-medium.mb-2 Tệp đính kèm
+          a.pill(href=submission.attachment.url, target='_blank', rel='noreferrer') Mở tệp
+      .flex.gap-3.flex-wrap
+        a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Sửa bài nộp
+        a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-file-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Chưa nộp bài
+        p.text-sm.text-muted-foreground.mt-2 Bạn chưa nộp bài tập này.
+        .mt-6
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Bắt đầu nộp bài
+          a.pill.ml-2(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id) Quay lại bài tập

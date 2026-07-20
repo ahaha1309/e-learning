@@ -1,0 +1,41 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions') Quay lại các bài nộp
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
+
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight= 'Bài nộp của ' + submission.student.name
+        p.text-muted-foreground.mt-2= submission.student.email
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Trạng thái
+        strong.text-2xl.font-mono.capitalize= submission.status
+        p.text-sm.text-muted-foreground.mt-3 Bài tập: #{assignment.title}
+
+    if errorMessage
+      .alert-danger= errorMessage
+
+    .card.p-6
+      p.text-lg.font-bold.mb-2 Câu trả lời của học sinh
+      p.text-muted.whitespace-pre-wrap= submission.textAnswer || 'Chưa có câu trả lời bằng văn bản.'
+
+    if submission.attachment && submission.attachment.url
+      .card.p-5
+        p.text-sm.font-medium.mb-2 Tệp đính kèm
+        a.pill(href=submission.attachment.url, target='_blank', rel='noreferrer') Mở tệp
+
+    form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id + '/grade').space-y-4
+      input(type='hidden', name='_csrf', value=csrfToken)
+      div
+        label.text-sm.font-medium(for='score') Điểm
+        input#score.mt-2(type='number', min='0', step='0.5', name='score', value=submission.score === null ? '' : submission.score, required)
+      div
+        label.text-sm.font-medium(for='teacherComment') Nhận xét
+        textarea#teacherComment.mt-2(name='teacherComment', rows='4')= submission.teacherComment || ''
+      .flex.gap-3.flex-wrap
+        button.btn-primary(type='submit') Lưu điểm
+        a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions') Quay lại các bài nộp

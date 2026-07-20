@@ -1,0 +1,61 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Giảng viên
+    h1.text-3xl.font-bold.tracking-tight Thảo luận
+    p.text-muted-foreground.mt-2 Lớp học: #{classroom.name}
+
+    if feedback
+      .alert-success= feedback
+
+    .flex.flex-wrap.gap-3
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại Lớp học
+
+    .card.mb-8.p-6
+      h3.text-lg.font-bold.mb-4 Bắt đầu một cuộc thảo luận mới
+      form.grid.gap-4(method='POST', action='/teacher/classrooms/' + classroom.id + '/discussions')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        div
+          label.text-sm.font-medium(for='title') Tiêu đề chủ đề
+          input#title.mt-2(type='text', name='title', placeholder='Tiêu đề chủ đề', required)
+        div
+          label.text-sm.font-medium(for='content') Nội dung
+          textarea#content.tinymce.mt-2(name='content', placeholder='Bạn muốn thảo luận về điều gì?')
+        .text-right
+          button.btn-primary(type='submit') Đăng chủ đề
+
+    if topics.length
+      .space-y-4
+        each topic in topics
+          article.card.p-5.flex.gap-4
+            .avatar.avatar-md.flex-shrink-0
+              if topic.author && topic.author.avatar
+                img(src=topic.author.avatar, alt=topic.author.name)
+              else
+                = topic.author ? topic.author.name.charAt(0) : 'U'
+            .flex-1
+              .flex.items-start.justify-between.gap-3
+                div
+                  h3.text-lg.font-bold
+                    a.text-foreground.hover_text-primary.transition-colors(href='/teacher/classrooms/' + classroom.id + '/discussions/' + topic.id)= topic.title
+                  p.text-sm.text-muted-foreground.mt-1
+                    | Đăng bởi #{topic.author ? topic.author.name : 'Không rõ'} vào lúc #{topic.createdAt.toLocaleString('en-GB')} — #{topic.replyCount} phản hồi
+              .flex.flex-wrap.gap-2.mt-3
+                form(method='POST', action='/teacher/classrooms/' + classroom.id + '/discussions/' + topic.id + '/pin')
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.pill(type='submit')= topic.isPinned ? 'Bỏ ghim' : 'Ghim'
+                form(method='POST', action='/teacher/classrooms/' + classroom.id + '/discussions/' + topic.id + '/delete', onsubmit="return confirm('Xóa chủ đề này và tất cả các phản hồi của nó?');")
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.btn-ghost.btn-sm.text-destructive(type='submit')
+                    i.ph-bold.ph-trash
+                    | Xóa
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-chats.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Không tìm thấy cuộc thảo luận nào
+        p.text-sm.text-muted-foreground.mt-2 Bắt đầu một cuộc thảo luận ở trên!
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')

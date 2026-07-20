@@ -1,0 +1,482 @@
+//- ── LEARNING HUB: Split-pane Lecture + Chat ─────────────────────────────
+//- vars: lecture, classroom, preview, currentUser, csrfToken, messages
+
+extends ../../layouts/base
+
+block head
+  //- Override body overflow for the split-pane shell
+  style.
+    body { overflow: hidden; }
+
+block content
+  //- Connection banner (Socket.io offline indicator)
+  #chat-connection-banner.connection-banner(aria-live='polite', role='status')
+    i.ph-bold.ph-wifi-slash(aria-hidden='true')
+    span#chat-connection-msg Đã ngắt kết nối trò chuyện — đang thử lại...
+
+  .split-pane
+
+    //- ── LEFT PANE: Media viewer ──────────────────────────────────────────
+    section.split-pane-media(aria-label='Nội dung bài giảng')
+
+      //- Reading progress bar (visible on scroll for text content)
+      .lecture-reading-progress(role='progressbar', aria-hidden='true')
+        #lecture-progress-bar.lecture-reading-progress-bar
+
+      //- Lecture header strip
+      .flex.items-center.justify-between.px-6.py-4.border-b.border-border.flex-shrink-0
+        .flex.items-center.min-w-0(class='gap-3')
+          a.btn-ghost.btn-icon.flex-shrink-0(
+            href='/teacher/classrooms/' + classroom.id + '/lectures',
+            aria-label='Quay lại các bài giảng'
+          )
+            i.ph-bold.ph-arrow-left(aria-hidden='true')
+          div.min-w-0
+            .flex.items-center.gap-2(class='mb-0.5')
+              span.font-bold.uppercase.tracking-widest.text-muted-foreground.text-2xs= classroom.name
+              span.text-muted-foreground.text-2xs(aria-hidden='true') /
+              span.font-bold.uppercase.tracking-widest.text-primary.text-2xs= lecture.chapterTitle || 'Chương'
+            h1.text-base.font-bold.tracking-tight.truncate= lecture.title
+
+        .flex.items-center.gap-2.flex-shrink-0
+          if lecture.resourceUrl
+            a.btn-outline.btn-sm.rounded-full(
+              href=lecture.resourceUrl,
+              download,
+              aria-label='Tải xuống tài nguyên gốc'
+            )
+              i.ph-bold.ph-download-simple(aria-hidden='true')
+              span.hidden.md_inline Tải xuống
+          //- Fullscreen button — no navigation needed
+          button#fullscreen-btn.btn-ghost.btn-sm.rounded-full(
+            type='button',
+            aria-label='Chuyển đổi toàn màn hình'
+          )
+            i.ph-bold.ph-arrows-out(aria-hidden='true')
+            span.hidden.md_inline Toàn màn hình
+
+      //- ── Media embed area ─────────────────────────────────────────────
+      .media-embed#media-embed(
+        aria-label='Trình xem phương tiện bài giảng',
+        data-resource-url=lecture.resourceUrl || '',
+        data-resource-type=lecture.resourceType
+      )
+
+        //- Loading skeleton (removed by JS on load)
+        #lecture-skeleton.lecture-skeleton(aria-hidden='true')
+          .lecture-skeleton-bar(style='width:60%')
+          .lecture-skeleton-bar(style='width:40%;height:0.75rem;margin-top:0.5rem')
+          .lecture-skeleton-body
+          .lecture-skeleton-bar(style='width:80%;margin-top:1rem')
+          .lecture-skeleton-bar(style='width:55%;height:0.75rem;margin-top:0.5rem')
+
+        //- VIDEO
+        if preview && preview.mode === 'video'
+          video#lecture-video.w-full.h-full.bg-black(
+            controls,
+            preload='metadata',
+            aria-label='Video bài giảng: ' + lecture.title
+          )
+            source(src=preview.resourceUrl, type='video/mp4')
+            p Trình duyệt của bạn không hỗ trợ phát lại video.
+
+        //- PDF — embedded viewer
+        else if preview && preview.mode === 'pdf'
+          iframe#lecture-iframe.w-full.h-full(
+            src=preview.resourceUrl,
+            title='PDF bài giảng: ' + lecture.title,
+            loading='lazy',
+            allowfullscreen
+          )
+
+        //- DOCX / PPT / external link — Office Online viewer (external URLs only)
+        else if preview && preview.mode === 'office'
+          iframe#lecture-iframe.w-full.h-full(
+            src=preview.officeUrl,
+            title='Tài liệu bài giảng: ' + lecture.title,
+            loading='lazy',
+            allowfullscreen
+          )
+
+        //- LOCAL DOCX — render inline with mammoth.js (client-side conversion)
+        else if preview && preview.mode === 'download'
+          .lecture-prose-wrap#lecture-docx-viewer(
+            tabindex='0',
+            role='article',
+            aria-label='Nội dung tài liệu',
+            data-resource-url=preview.resourceUrl
+          )
+            //- Placeholder shown while mammoth loads — JS replaces it
+            .lecture-docx-loading#docx-loading-state
+              i.ph-bold.ph-file-doc.text-4xl(aria-hidden='true')
+              p.mt-3.text-sm.font-medium Đang hiển thị tài liệu...
+
+        //- TEXT / RICH CONTENT — inline prose
+        else if preview && preview.mode === 'text'
+          .lecture-prose-wrap#lecture-prose(
+            tabindex='0',
+            role='article',
+            aria-label='Nội dung bài giảng'
+          )
+            if lecture.content
+              != lecture.content
+            else
+              p.text-muted-foreground Chưa có nội dung nào được thêm vào bài giảng này.
+
+        //- EMPTY — no resource attached
+        else
+          .media-embed-fallback#media-empty.visible(aria-label='Không có bản xem trước')
+            .w-16.h-16.rounded-2xl.flex.items-center.justify-center.mb-4.bg-muted
+              i.ph-bold.ph-file-slash.text-3xl.text-muted-foreground(aria-hidden='true')
+            h3.text-lg.font-bold.tracking-tight Không có tệp đính kèm
+            p.text-sm.text-muted-foreground.mt-1.mb-4 Bài giảng này chưa có tệp hoặc URL tài nguyên.
+            a.btn-outline.rounded-full(
+              href='/teacher/classrooms/' + classroom.id + '/lectures/' + lecture.id + '/edit'
+            )
+              i.ph-bold.ph-pencil-simple(aria-hidden='true')
+              | Chỉnh sửa bài giảng
+
+        //- Error fallback panel — shown by JS when embed fails (hidden by default)
+        .media-embed-fallback#media-fallback(aria-hidden='true')
+          .w-16.h-16.rounded-2xl.flex.items-center.justify-center.mb-4.bg-muted
+            i.ph-bold.ph-file.text-3xl.text-muted-foreground(aria-hidden='true')
+          h3.text-lg.font-bold.tracking-tight Không thể tải phương tiện
+          p.text-sm.text-muted-foreground.mt-1.mb-6 Tệp có thể không có sẵn hoặc trình duyệt của bạn không hỗ trợ xem trước trực tuyến.
+          .flex.flex-col.sm_flex-row.items-center.gap-3.justify-center
+            if lecture.resourceUrl
+              a.btn-primary.rounded-full(
+                href=lecture.resourceUrl,
+                download,
+                target='_blank',
+                rel='noreferrer'
+              )
+                i.ph-bold.ph-download-simple(aria-hidden='true')
+                | Tải xuống tệp
+              a.btn-outline.rounded-full(
+                href=lecture.resourceUrl,
+                target='_blank',
+                rel='noreferrer noopener'
+              )
+                i.ph-bold.ph-arrow-square-out(aria-hidden='true')
+                | Mở ở ngoài
+            button#retry-embed.btn-ghost.rounded-full(type='button')
+              i.ph-bold.ph-arrow-clockwise(aria-hidden='true')
+              | Thử lại
+
+      //- Lecture info strip (below embed)
+      if lecture.summary
+        .px-6.py-4.border-t.border-border.flex-shrink-0(class='bg-muted/40')
+          p.text-sm.text-muted-foreground.line-clamp-2= lecture.summary
+
+    //- ── RIGHT PANE: Real-time Chat ───────────────────────────────────────
+    section.split-pane-chat(aria-label='Trò chuyện lớp học')
+
+      //- Chat header
+      .flex.items-center.justify-between.px-4.py-3.border-b.border-border.flex-shrink-0
+        .flex.items-center(class='gap-2.5')
+          .w-7.h-7.rounded-lg.flex.items-center.justify-center.flex-shrink-0(class='bg-primary/10')
+            i.ph-bold.ph-chats.text-sm.text-primary(aria-hidden='true')
+          h2.text-sm.font-bold.tracking-tight Trò chuyện Trực tiếp
+        .flex.items-center(class='gap-1.5')
+          //- Online indicator
+          #online-count.inline-flex.items-center.gap-1.font-bold.text-muted-foreground.text-2xs
+            span.rounded-full.bg-success.animate-pulse-soft(class='w-1.5 h-1.5', aria-hidden='true')
+            span 1 trực tuyến
+
+      //- Message list
+      .chat-list#chat-messages(
+        role='log',
+        aria-label='Tin nhắn trò chuyện',
+        aria-live='polite',
+        aria-relevant='additions'
+      )
+        //- Empty state (hidden once messages load)
+        if !messages || messages.length === 0
+          .flex.flex-col.items-center.justify-center.h-full.gap-3.text-center.py-12(id='chat-empty')
+            .w-12.h-12.rounded-2xl.flex.items-center.justify-center.bg-muted
+              i.ph-bold.ph-chat-dots.text-xl.text-muted-foreground(aria-hidden='true')
+            p.text-sm.font-semibold.text-muted-foreground Chưa có tin nhắn nào
+            p.text-xs.text-muted-foreground Hãy là người đầu tiên nói điều gì đó
+
+        //- Initial messages (server-rendered)
+        each msg in (messages || [])
+          - const isMine = msg.sender._id.toString() === currentUser.id.toString()
+          - const timeStr = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          .chat-row(class=isMine ? 'mine' : '', data-msg-id=msg._id)
+            //- Avatar
+            if !isMine
+              .avatar.avatar-sm.flex-shrink-0(aria-hidden='true')
+                if msg.sender.avatarUrl
+                  img(src=msg.sender.avatarUrl, alt=msg.sender.name, loading='lazy')
+                else
+                  span= msg.sender.name ? msg.sender.name.charAt(0).toUpperCase() : '?'
+            //- Bubble
+            div
+              .chat-bubble(class=isMine ? 'chat-bubble-self' : 'chat-bubble-other')= msg.content
+              .chat-meta
+                if !isMine
+                  span.font-medium.mr-1= msg.sender.name
+                span= timeStr
+
+        //- Typing indicator
+        .chat-typing#typing-indicator(aria-hidden='true')
+          span
+          span
+          span
+          span.ml-2.text-xs.text-muted-foreground(id='typing-name') đang gõ...
+
+      //- Chat input bar
+      form.chat-input-bar#chat-form(
+        autocomplete='off',
+        aria-label='Gửi tin nhắn'
+      )
+        input#chat-input(
+          type='text',
+          placeholder='Nhắn tin cho lớp học...',
+          maxlength='1000',
+          aria-label='Nhập tin nhắn của bạn',
+          autocomplete='off'
+        )
+        button.chat-send-btn#chat-send(
+          type='submit',
+          aria-label='Gửi tin nhắn',
+          disabled
+        )
+          i.ph-bold.ph-paper-plane-tilt.text-sm(aria-hidden='true')
+
+  //- ── SCRIPTS ─────────────────────────────────────────────────────────────
+  script(src='/socket.io/socket.io.js')
+  script.
+    (function () {
+      var CLASSROOM_ID  = '#{classroom.id}';
+      var SENDER_ID     = '#{currentUser.id}';
+      var SENDER_NAME   = '#{currentUser.name}';
+      var RESOURCE_TYPE = '#{lecture.resourceType}';
+
+      var chatList    = document.getElementById('chat-messages');
+      var chatInput   = document.getElementById('chat-input');
+      var chatSend    = document.getElementById('chat-send');
+      var chatForm    = document.getElementById('chat-form');
+      var chatEmpty   = document.getElementById('chat-empty');
+      var typingEl    = document.getElementById('typing-indicator');
+      var banner      = document.getElementById('chat-connection-banner');
+      var bannerMsg   = document.getElementById('chat-connection-msg');
+      var mediaEmbed  = document.getElementById('media-embed');
+      var skeleton    = document.getElementById('lecture-skeleton');
+      var iframe      = document.getElementById('lecture-iframe');
+      var video       = document.getElementById('lecture-video');
+      var fallback    = document.getElementById('media-fallback');
+      var retryBtn    = document.getElementById('retry-embed');
+      var fsBtn       = document.getElementById('fullscreen-btn');
+      var fsIcon      = fsBtn ? fsBtn.querySelector('i') : null;
+      var progressBar = document.getElementById('lecture-progress-bar');
+      var prose       = document.getElementById('lecture-prose');
+      var docxViewer  = document.getElementById('lecture-docx-viewer');
+
+      // ── Skeleton: remove when content loads ─────────────────────────────
+      function hideSkeleton() {
+        if (skeleton) {
+          skeleton.style.opacity = '0';
+          skeleton.style.transition = 'opacity 0.3s';
+          setTimeout(function () { if (skeleton) skeleton.remove(); }, 300);
+        }
+      }
+
+      if (iframe) {
+        iframe.addEventListener('load', hideSkeleton);
+        iframe.addEventListener('error', function () {
+          hideSkeleton();
+          if (fallback) { fallback.classList.add('visible'); iframe.style.display = 'none'; }
+        });
+      } else if (video) {
+        video.addEventListener('loadedmetadata', hideSkeleton);
+        video.addEventListener('error', function () {
+          hideSkeleton();
+          if (fallback) { fallback.classList.add('visible'); video.style.display = 'none'; }
+        });
+      } else if (docxViewer) {
+        // DOCX — skeleton stays until mammoth renders
+        renderDocx(docxViewer);
+      } else {
+        // Text or empty — no async load
+        hideSkeleton();
+      }
+
+      // ── DOCX rendering via mammoth.js ─────────────────────────────────
+      function renderDocx(container) {
+        var url = container.dataset.resourceUrl;
+        if (!url) { hideSkeleton(); return; }
+
+        if (typeof mammoth === 'undefined') {
+          // mammoth.js not yet loaded — wait for it
+          var checkInterval = setInterval(function () {
+            if (typeof mammoth !== 'undefined') {
+              clearInterval(checkInterval);
+              doRender(container, url);
+            }
+          }, 100);
+          return;
+        }
+        doRender(container, url);
+      }
+
+      function doRender(container, url) {
+        fetch(url)
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.arrayBuffer();
+          })
+          .then(function (buffer) {
+            return mammoth.convertToHtml({ arrayBuffer: buffer });
+          })
+          .then(function (result) {
+            var loadingEl = document.getElementById('docx-loading-state');
+            container.innerHTML = result.value ||
+              '<p class="text-muted-foreground">Tài liệu có vẻ trống.</p>';
+            hideSkeleton();
+            wireProgressBar(container);
+          })
+          .catch(function (err) {
+            var loadingEl = document.getElementById('docx-loading-state');
+            container.innerHTML =
+              '<div class="docx-render-error">'
+              + '<i class="ph-bold ph-warning-circle" aria-hidden="true"></i>'
+              + '<p>Không thể hiển thị tài liệu.</p>'
+              + '<p class="text-xs mt-1">' + err.message + '</p>'
+              + '<a class="btn-outline btn-sm rounded-full mt-4" style="display:inline-flex;gap:0.5rem;align-items:center;" href="' + url + '" download>'
+              + '<i class="ph-bold ph-download-simple" aria-hidden="true"></i> Tải xuống thay thế</a>'
+              + '</div>';
+            hideSkeleton();
+          });
+      }
+
+      // ── Reading progress ─────────────────────────────────────────────────
+      function wireProgressBar(scrollEl) {
+        if (!progressBar || !scrollEl) return;
+        scrollEl.addEventListener('scroll', function () {
+          var max = scrollEl.scrollHeight - scrollEl.clientHeight;
+          if (max > 0) {
+            progressBar.style.width = ((scrollEl.scrollTop / max) * 100).toFixed(1) + '%';
+          }
+        });
+      }
+
+      // Wire reading progress for text content
+      if (prose) wireProgressBar(prose);
+
+      // ── Retry button ────────────────────────────────────────────────────
+      if (retryBtn) {
+        retryBtn.addEventListener('click', function () {
+          if (iframe) {
+            var src = iframe.src;
+            iframe.src = '';
+            iframe.style.display = '';
+            if (fallback) fallback.classList.remove('visible');
+            setTimeout(function () { iframe.src = src; }, 100);
+          } else if (video) {
+            video.load();
+            if (fallback) fallback.classList.remove('visible');
+          }
+        });
+      }
+
+
+      // ── Fullscreen button ────────────────────────────────────────────────
+      if (fsBtn && mediaEmbed) {
+        fsBtn.addEventListener('click', function () {
+          if (!document.fullscreenElement) {
+            mediaEmbed.requestFullscreen().catch(function () {});
+          } else {
+            document.exitFullscreen().catch(function () {});
+          }
+        });
+        document.addEventListener('fullscreenchange', function () {
+          var isFs = !!document.fullscreenElement;
+          if (fsIcon) {
+            fsIcon.className = isFs ? 'ph-bold ph-arrows-in' : 'ph-bold ph-arrows-out';
+          }
+          fsBtn.setAttribute('aria-label', isFs ? 'Thoát toàn màn hình' : 'Chuyển đổi toàn màn hình');
+        });
+      }
+
+
+      // ── Input enable/disable ─────────────────────────────────────────────
+      chatInput.addEventListener('input', function () {
+        chatSend.disabled = chatInput.value.trim().length === 0;
+      });
+
+      // ── Socket.io ────────────────────────────────────────────────────────
+      var socket = io('/chat', { reconnectionDelay: 1000, reconnectionAttempts: 10 });
+
+      socket.on('connect', function () {
+        socket.emit('join_chat', { classroomId: CLASSROOM_ID });
+        hideBanner();
+        chatInput.disabled = false;
+      });
+      socket.on('disconnect', function () {
+        showBanner('offline', 'Đã ngắt kết nối trò chuyện — đang thử lại...');
+        chatInput.disabled = true;
+        chatSend.disabled = true;
+      });
+      socket.on('reconnecting', function (attempt) {
+        showBanner('reconnecting', 'Đang kết nối lại... (lần thử ' + attempt + ')');
+      });
+      socket.on('reconnect_failed', function () {
+        showBanner('offline', 'Không thể kết nối lại. Tải lại trang để tiếp tục.');
+      });
+
+      // ── Send message ─────────────────────────────────────────────────────
+      chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var content = chatInput.value.trim();
+        if (!content || chatSend.disabled) return;
+        socket.emit('send_message', { classroomId: CLASSROOM_ID, senderId: SENDER_ID, content: content });
+        chatInput.value = '';
+        chatSend.disabled = true;
+      });
+
+      // ── Receive message ──────────────────────────────────────────────────
+      socket.on('receive_message', function (msg) {
+        if (chatEmpty) chatEmpty.remove();
+        var isMine = msg.sender._id === SENDER_ID;
+        var time   = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        var safe   = String(msg.content).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var avatarHtml = '';
+        if (!isMine) {
+          var initial = msg.sender.name ? msg.sender.name.charAt(0).toUpperCase() : '?';
+          avatarHtml = '<div class="avatar avatar-sm flex-shrink-0" aria-hidden="true"><span>' + initial + '</span></div>';
+        }
+        var metaHtml = '<div class="chat-meta">'
+          + (isMine ? '' : '<span class="font-medium mr-1">' + msg.sender.name + '</span>')
+          + '<span>' + time + '</span></div>';
+        var row = document.createElement('div');
+        row.className = 'chat-row' + (isMine ? ' mine' : '');
+        row.innerHTML = avatarHtml
+          + '<div>'
+          + '<div class="chat-bubble ' + (isMine ? 'chat-bubble-self' : 'chat-bubble-other') + '">' + safe + '</div>'
+          + metaHtml + '</div>';
+        chatList.insertBefore(row, typingEl);
+        chatList.scrollTop = chatList.scrollHeight;
+      });
+
+      // ── Connection banner helpers ─────────────────────────────────────────
+      function showBanner(type, msg) {
+        banner.className = 'connection-banner connection-banner-' + type + ' visible';
+        bannerMsg.textContent = msg;
+      }
+      function hideBanner() {
+        banner.classList.remove('visible');
+        setTimeout(function () { banner.className = 'connection-banner'; }, 400);
+      }
+
+      // Initial scroll
+      chatList.scrollTop = chatList.scrollHeight;
+    })();
+
+block scripts
+  //- mammoth.js — loaded only for local DOCX lectures
+  if preview && preview.mode === 'download'
+    script(
+      src='https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
+      crossorigin='anonymous'
+    )

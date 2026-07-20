@@ -1,0 +1,36 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + classroom.id)= classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Bài thi
+
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-exam', h1: 'Bài thi', subtitle: 'Lớp học: ' + classroom.name })
+
+    if exams.length
+      .space-y-4.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each exam in exams
+          article.card.p-5.card-hover
+            .flex.flex-col.md_flex-row.md_items-start.justify-between.gap-4
+              .flex-1
+                h3.text-lg.font-bold= exam.title
+                p.text-sm.text-muted-foreground.mt-1= exam.description || 'Không có mô tả'
+                .flex.flex-wrap.items-center.gap-3.mt-3
+                  span.badge-muted= exam.totalPoints + ' điểm / ' + exam.questionCount + ' câu'
+                  span.text-xs.text-muted-foreground Thời lượng: #{exam.duration > 0 ? exam.duration + ' phút' : 'Không giới hạn'}
+                  if exam.endTime
+                    span.text-xs.text-muted-foreground Hạn chót: #{exam.endTime.toLocaleString('en-GB')}
+            .flex.flex-wrap.gap-2.mt-4.pt-4.border-t.border-border
+              a.btn-primary.btn-sm(href='/student/classrooms/' + classroom.id + '/exams/' + exam.id + '/take')
+                i.ph-bold.ph-play
+                | Làm bài thi
+              a.btn-outline.btn-sm.rounded-full(href='/student/classrooms/' + classroom.id + '/exams/' + exam.id + '/result')
+                | Xem Kết quả
+    else
+      +emptyState({ icon: 'ph-fill ph-exam', title: 'Không có bài thi nào', desc: 'Vui lòng đợi giảng viên xuất bản bài thi cho lớp học này.' })

@@ -1,0 +1,73 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + membership.classroom.id)= membership.classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Thảo luận
+
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-chats', h1: 'Thảo luận', subtitle: 'Lớp học: ' + classroom.name })
+
+    if feedback
+      .alert-success.animate-in.fade-in= feedback
+
+    .card.p-6.animate-in.slide-in-up
+      h3.text-lg.font-bold.mb-4 Bắt đầu một cuộc thảo luận mới
+      form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/discussions').space-y-4
+        input(type='hidden', name='_csrf', value=csrfToken)
+        .field
+          label.field-label(for='title') Tiêu đề Thảo luận
+          input#title(type='text', name='title', placeholder='Bạn muốn thảo luận về điều gì?', required)
+        .field
+          label.field-label(for='content') Nội dung
+          textarea#content.tinymce(name='content', placeholder='Chia sẻ suy nghĩ của bạn...', class='min-h-[150px]')
+        .flex.justify-end
+          button.btn-primary(type='submit')
+            i.ph-bold.ph-paper-plane-tilt
+            | Đăng Bài
+
+    if topics.length
+      +sectionHead({ title: 'Chủ đề Gần đây' })
+      .space-y-4
+        each topic in topics
+          article.card.p-5.transition-colors(class='hover_border-primary/50')
+            .flex.items-start.gap-4
+              .avatar.avatar-md.flex-shrink-0
+                if topic.author && topic.author.avatar
+                  img(src=topic.author.avatar, alt=topic.author.name)
+                else
+                  = topic.author ? topic.author.name.charAt(0) : 'U'
+              .flex-1.min-w-0
+                .flex.items-start.justify-between.gap-3
+                  div
+                    h3.font-semibold
+                      a.text-foreground.hover_text-primary.transition-colors(href='/student/classrooms/' + membership.classroom.id + '/discussions/' + topic.id)= topic.title
+                    p.text-xs.text-muted-foreground.mt-1
+                      | Đăng bởi #{topic.author ? topic.author.name : 'Không rõ'} vào #{topic.createdAt.toLocaleString()} — #{topic.replyCount} phản hồi
+                  if topic.isPinned
+                    span.badge-primary.badge-sm
+                      i.ph-fill.ph-push-pin.text-xs
+                      | Đã ghim
+                if topic.author && topic.author._id.toString() === currentUser.id
+                  .mt-3.pt-3.border-t.border-border
+                    form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/discussions/' + topic.id + '/delete')
+                      input(type='hidden', name='_csrf', value=csrfToken)
+                      button.btn-ghost.btn-sm.text-destructive(
+                        type='submit',
+                        data-confirm='',
+                        data-confirm-title='Xóa cuộc thảo luận',
+                        data-confirm-body='Xóa chủ đề này và tất cả các phản hồi của nó? Hành động này không thể hoàn tác.',
+                        data-confirm-label='Xóa'
+                      )
+                        i.ph-bold.ph-trash
+                        | Xóa
+    else
+      +emptyState({ icon: 'ph-fill ph-chats', title: 'Chưa có cuộc thảo luận nào', desc: 'Bắt đầu một cuộc thảo luận ở trên để cuộc trò chuyện diễn ra.' })
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')

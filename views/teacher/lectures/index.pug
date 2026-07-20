@@ -1,0 +1,43 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight= 'Các bài giảng của ' + classroom.name
+        p.text-muted-foreground.max-w-prose.mt-2 Tổ chức bài giảng theo chương, giữ thứ tự rõ ràng và chỉ xuất bản những gì học sinh nên thấy.
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Bài giảng đã xuất bản
+        strong.text-3xl.font-mono= lectures.length
+        p.text-sm.text-muted-foreground.mt-3 Được nhóm theo chương và sắp xếp theo thứ tự.
+
+    if feedback
+      .alert-success= feedback
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/lectures/new') Tạo bài giảng
+      a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại lớp học
+      a.pill(href='/teacher/classrooms') Tất cả lớp học
+
+    if lectures.length
+      .space-y-4
+        each lecture in lectures
+          article.card.p-5
+            .flex.justify-between.gap-4.flex-wrap
+              div
+                p.text-xs.text-muted-foreground.uppercase.tracking-wider.mb-1= lecture.chapterTitle
+                h2.text-lg.font-bold= lecture.title
+              span.badge-muted.badge-sm.self-start= lecture.resourceType
+            p.text-sm.text-muted-foreground.mt-1= lecture.summary || 'Chưa có tóm tắt.'
+            .flex.gap-4.flex-wrap.text-sm.text-muted-foreground.mt-3
+              span Thứ tự #{lecture.orderIndex}
+              span Đã xuất bản #{lecture.isPublished ? 'Có' : 'Không'}
+            .mt-3
+              a.pill(href='/teacher/classrooms/' + classroom.id + '/lectures/' + lecture.id) Mở bài giảng
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-book-open.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Chưa có bài giảng nào
+        p.text-sm.text-muted-foreground.mt-2 Tạo bài giảng đầu tiên trong lớp học này để bắt đầu xây dựng khóa học.

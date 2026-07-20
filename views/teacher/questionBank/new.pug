@@ -1,0 +1,71 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/question-banks') Quay lại Ngân hàng Câu hỏi
+
+    p.eyebrow Ngân hàng Câu hỏi
+    h1.text-3xl.font-bold.tracking-tight Thêm Câu hỏi
+
+    if errorMessage
+      .alert-danger= errorMessage
+
+    form.grid.gap-6(method='POST', action='/teacher/question-banks')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      .grid.grid-cols-1.gap-4(class='md_grid-cols-2')
+        div
+          label.text-sm.font-medium(for='subject') Môn học
+          input#subject.mt-2(type='text', name='subject', value=formData.subject, required, placeholder='ví dụ: Toán học')
+        div
+          label.text-sm.font-medium(for='chapter') Chương / Chủ đề
+          input#chapter.mt-2(type='text', name='chapter', value=formData.chapter, required, placeholder='ví dụ: Đại số')
+
+      .grid.grid-cols-1.gap-4(class='md_grid-cols-2')
+        div
+          label.text-sm.font-medium(for='difficulty') Độ khó
+          select#difficulty.mt-2(name='difficulty', required)
+            option(value='nhan_biet', selected=formData.difficulty === 'nhan_biet') Nhận biết (Dễ)
+            option(value='thong_hieu', selected=formData.difficulty === 'thong_hieu') Thông hiểu (Trung bình)
+            option(value='van_dung', selected=formData.difficulty === 'van_dung') Vận dụng (Khó)
+        div
+          label.text-sm.font-medium(for='points') Điểm
+          input#points.mt-2(type='number', name='points', value=formData.points || 1, required, min='0', step='0.1')
+
+      div
+        label.text-sm.font-medium(for='type') Loại Câu hỏi
+        select#type.mt-2(name='type')
+          option(value='multiple_choice', selected=formData.type === 'multiple_choice') Trắc nghiệm (Một đáp án đúng)
+          option(value='multiple_answer', selected=formData.type === 'multiple_answer') Nhiều đáp án (Nhiều đáp án đúng)
+          option(value='essay', selected=formData.type === 'essay') Tự luận
+
+      div
+        label.text-sm.font-medium(for='content') Nội dung Câu hỏi
+        textarea#content.tinymce.mt-2(name='content', rows='6', required)= formData.content
+
+      #options-container.card.p-6
+        h3.text-lg.font-bold.mt-0.mb-4 Các lựa chọn (Dành cho Trắc nghiệm)
+        p.text-sm.text-muted-foreground.mb-4 Đánh dấu vào ô bên cạnh các lựa chọn đúng.
+        #options-list.grid.gap-2
+          - for (var i = 0; i < 4; i++)
+            .flex.items-center.gap-2
+              input(type='checkbox', name='optionCorrect[]', value=i)
+              input.flex-1(type='text', name='optionText[]', placeholder='Lựa chọn ' + (i + 1))
+
+      .flex.flex-wrap.gap-4
+        button.btn-primary(type='submit') Lưu Câu hỏi
+        a.pill(href='/teacher/question-banks') Hủy
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')
+  script.
+    (function() {
+      var typeSelect = document.getElementById('type');
+      var optionsContainer = document.getElementById('options-container');
+      typeSelect.addEventListener('change', function() {
+        optionsContainer.style.display = typeSelect.value === 'essay' ? 'none' : 'block';
+      });
+      if (typeSelect.value === 'essay') {
+        optionsContainer.style.display = 'none';
+      }
+    })();

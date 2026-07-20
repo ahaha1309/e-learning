@@ -1,0 +1,69 @@
+extends ../layouts/base
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/') Trang chủ
+      span.breadcrumb-sep /
+      a(href='/profile') Hồ sơ
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Chỉnh sửa
+
+    .page-header
+      p.eyebrow Hồ sơ
+      h1.page-header-title Chỉnh sửa chi tiết tài khoản của bạn
+      p.page-header-desc Cập nhật tên hiển thị, số điện thoại và hình đại diện của bạn.
+
+    .grid.grid-cols-1.gap-8.items-start(style='grid-template-columns: minmax(0, 1fr) 320px;')
+      form.card.p-8(method='POST', action='/profile/edit', enctype='multipart/form-data', data-profile-form='true')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        if errorMessage
+          .alert-danger.mb-6
+            i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0
+            span= errorMessage
+
+        .space-y-6
+          .field
+            label.field-label(for='name') Họ và tên
+            input#name(type='text', name='name', value=formData.name || '', required, autocomplete='name', placeholder='Họ và tên của bạn')
+
+          .field
+            label.field-label(for='avatar') Hình đại diện
+            input#avatar(type='file', name='avatar', accept='image/jpeg,image/png,image/gif,image/webp')
+            p.field-hint Chọn tệp hình ảnh (JPG, PNG, GIF, WEBP). Để trống để giữ hình đại diện hiện tại của bạn.
+            if formData.avatarUrl
+              p.text-xs.text-muted-foreground.mt-2(data-current-avatar='true')
+                | Hình đại diện hiện tại:
+                img.inline-block.w-6.h-6.rounded-full.object-cover.align-middle.ml-2(src=formData.avatarUrl, alt='Hình đại diện hiện tại')
+
+          .field
+            label.field-label(for='phone') Số điện thoại
+            input#phone(type='tel', name='phone', value=formData.phone || '', autocomplete='tel', placeholder='+1 (555) 000-0000')
+
+          label.inline-flex.items-center.gap-3.cursor-pointer
+            input#emailNotifications(type='checkbox', name='emailNotifications', checked=formData.emailNotifications !== false, value='true')
+            span.text-sm.font-medium Nhận thông báo qua email
+
+          .flex.gap-3.pt-4
+            button.btn-primary(type='submit', data-profile-submit='true')
+              i.ph-bold.ph-check
+              | Lưu thay đổi
+            a.btn-outline(href='/profile') Hủy
+            span.hidden.text-sm.text-muted-foreground(data-avatar-uploading='true')
+              i.ph-bold.ph-spinner
+              |  Đang tải lên…
+
+        .flex.gap-3.mt-6.pt-6.border-t.border-border
+          a.btn-ghost.btn-sm(href='/profile/password')
+            i.ph-bold.ph-lock-key
+            | Đổi mật khẩu
+
+      aside.card.p-6
+        h3.text-sm.font-bold.text-foreground.mb-4 Xem trước
+        .w-full.aspect-square.rounded-xl.bg-muted.flex.items-center.justify-center(data-avatar-preview='true', data-current-avatar-url=formData.avatarUrl || '')
+          i.ph-bold.ph-user.text-4xl.text-muted-foreground
+        p.text-xs.text-muted-foreground.mt-3 Bản xem trước hiển thị hình đại diện hiện tại của bạn, được cập nhật khi bạn chọn hình ảnh mới.
+
+block scripts
+  script(src='/js/profile.js')
+

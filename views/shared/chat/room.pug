@@ -1,0 +1,218 @@
+extends ../../layouts/base
+
+block content
+  style.
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 75vh;
+      max-height: 600px;
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px hsl(222 47% 11% / 0.04), 0 8px 24px -8px hsl(222 47% 11% / 0.08);
+    }
+    @media (max-width: 768px) {
+      .chat-container { height: 50vh; max-height: 400px; }
+    }
+    .chat-header {
+      padding: 1.25rem 1.5rem;
+      background: hsl(var(--primary));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: hsl(var(--background));
+    }
+    .message {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 80%;
+    }
+    .message.mine {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: hsl(var(--muted));
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+    .message-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .message-content {
+      background: hsl(var(--card));
+      padding: 0.75rem 1rem;
+      border-radius: 1rem;
+      border: 1px solid hsl(var(--border));
+      box-shadow: 0 1px 2px hsl(222 47% 11% / 0.04);
+    }
+    .message.mine .message-content {
+      background: hsl(var(--primary));
+      color: white;
+      border-color: hsl(var(--primary));
+    }
+    .message-author {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      margin-bottom: 0.25rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .message.mine .message-author {
+      justify-content: flex-end;
+    }
+    .message.mine .message-author span:first-child {
+      display: none;
+    }
+    .message-text {
+      margin: 0;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    .chat-input {
+      padding: 1rem 1.5rem;
+      background: hsl(var(--card));
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      gap: 0.75rem;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid hsl(var(--border));
+      border-radius: 2rem;
+      outline: none;
+      background: hsl(var(--background));
+      color: hsl(var(--foreground));
+      font-size: 0.875rem;
+    }
+    .chat-input input:focus {
+      border-color: hsl(var(--primary));
+      box-shadow: 0 0 0 2px hsl(var(--primary) / 0.15);
+    }
+    .chat-input button {
+      background: hsl(var(--primary));
+      color: white;
+      border: none;
+      border-radius: 2rem;
+      padding: 0 1.5rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .chat-input button:hover {
+      opacity: 0.9;
+    }
+
+  .page-shell.space-y-6
+    .actions
+      a.btn-secondary(href=backUrl)
+        i.ph-bold.ph-arrow-left
+        | Quay lại lớp học
+
+    .chat-container
+      .chat-header
+        div
+          h2.text-lg.font-bold #{classroom.name} Trò chuyện trực tiếp
+          p.text-sm.opacity-80 Phòng thảo luận theo thời gian thực
+      
+      .chat-messages#chat-messages
+        each msg in messages
+          .message(class=msg.sender._id.toString() === currentUser.id.toString() ? 'mine' : '')
+            .message-avatar
+              if msg.sender.avatar
+                img(src=msg.sender.avatar alt=msg.sender.name)
+              else
+                span= msg.sender.name.charAt(0)
+            
+            div
+              .message-author
+                span= msg.sender.name
+                span= new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+              .message-content
+                p.message-text= msg.content
+
+      .chat-input
+        input#chat-input-field(type='text' placeholder='Nhập tin nhắn của bạn tại đây...' autocomplete='off' required)
+        button#chat-send-btn(type='button') Gửi
+
+  script(src='/socket.io/socket.io.js')
+  script.
+    const classroomId = '#{classroom.id}';
+    const senderId = '#{currentUser.id}';
+    const socket = io('/chat');
+    const messagesContainer = document.getElementById('chat-messages');
+    const inputField = document.getElementById('chat-input-field');
+    const sendBtn = document.getElementById('chat-send-btn');
+    
+    socket.emit('join_chat', { classroomId });
+    
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+    
+    function sendMessage() {
+      const content = inputField.value.trim();
+      if (content) {
+        socket.emit('send_message', { classroomId, senderId, content });
+        inputField.value = '';
+      }
+    }
+    
+    sendBtn.addEventListener('click', sendMessage);
+    inputField.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+    
+    socket.on('receive_message', function(msg) {
+      const isMine = msg.sender._id === senderId;
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'message' + (isMine ? ' mine' : '');
+      
+      let avatarHtml = `<div class="message-avatar"><span>${msg.sender.name.charAt(0)}</span></div>`;
+      if (msg.sender.avatar) {
+        avatarHtml = `<div class="message-avatar"><img src="${msg.sender.avatar}" alt="${msg.sender.name}"></div>`;
+      }
+      
+      const timeString = new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      
+      messageDiv.innerHTML = `
+        ${avatarHtml}
+        <div>
+          <div class="message-author">
+            <span>${msg.sender.name}</span>
+            <span>${timeString}</span>
+          </div>
+          <div class="message-content">
+            <p class="message-text">${msg.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+          </div>
+        </div>
+      `;
+      
+      messagesContainer.appendChild(messageDiv);
+      scrollToBottom();
+    });

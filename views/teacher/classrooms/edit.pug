@@ -1,0 +1,60 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.pt-8.pb-32.space-y-10
+    nav.breadcrumb.mb-6
+      a(href='/teacher') Bảng điều khiển
+      span.breadcrumb-sep /
+      a(href='/teacher/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Cài đặt
+
+    .max-w-2xl
+      h1.text-3xl.font-extrabold.tracking-tight Cài đặt Lớp học
+      p.text-muted-foreground.mt-2 Quản lý cấu hình lớp học của bạn.
+
+      if errorMessage
+        .alert-danger.mt-6
+          i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0
+          span= errorMessage
+
+      form.card.p-8.mt-8(method='POST', action='/teacher/classrooms/' + classroom.id + '/edit')
+        input(type='hidden', name='_csrf', value=csrfToken)
+
+        .space-y-6
+          .field
+            label.field-label(for='name') Tên lớp học
+            input#name(type='text', name='name', value=formData.name, required, maxlength='160', placeholder='Nhập tên lớp học')
+
+          .field
+            label.field-label(for='description') Mô tả
+            textarea#description(name='description', rows='4', placeholder='Mô tả lớp học của bạn...')= formData.description
+
+          .field
+            label.field-label(for='approvalRequired') Phê duyệt ghi danh
+            select#approvalRequired(name='approvalRequired')
+              option(value='true', selected=formData.approvalRequired === 'true') Bắt buộc — học sinh cần phê duyệt để tham gia
+              option(value='false', selected=formData.approvalRequired === 'false') Mở — học sinh có thể tự do tham gia
+
+          .grid.grid-cols-1.gap-6(class='md_grid-cols-2')
+            .field
+              label.field-label(for='category') Danh mục
+              select#category(name='category')
+                option(value='') — Chưa phân loại —
+                each cat in categories
+                  option(value=cat._id, selected=formData.category && formData.category.toString() === cat._id.toString())= cat.name
+
+            .field
+              label.field-label(for='level') Mức độ
+              select#level(name='level')
+                option(value='Beginner', selected=formData.level === 'Beginner') Beginner (Cơ bản)
+                option(value='Intermediate', selected=formData.level === 'Intermediate') Intermediate (Trung cấp)
+                option(value='Advanced', selected=formData.level === 'Advanced') Advanced (Nâng cao)
+
+          .flex.gap-3.pt-4
+            button.btn-primary(type='submit')
+              i.ph-bold.ph-check
+              | Lưu Thay đổi
+            a.btn-outline(href='/teacher/classrooms/' + classroom.id) Hủy

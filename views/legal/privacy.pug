@@ -1,0 +1,25 @@
+extends ../layouts/base
+
+block content
+  .page-narrow.max-w-4xl.mx-auto.pt-16.pb-32
+    .animate-in.slide-in-up
+      p.eyebrow Pháp lý
+      h1.text-4xl.font-extrabold.tracking-tighter.mb-4 Chính sách bảo mật
+      p.text-muted-foreground.mb-12 Cập nhật lần cuối: #{new Date().toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+    .prose.prose-lg.text-muted-foreground.space-y-8.animate-in.slide-in-up(style='animation-delay: 100ms;')
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Thông tin chúng tôi thu thập
+        p Khi bạn đăng ký tài khoản, chúng tôi thu thập tên, địa chỉ email và thông tin hồ sơ của bạn. Chúng tôi cũng thu thập dữ liệu về các hoạt động học tập của bạn bao gồm tiến độ khóa học, bài nộp và kết quả thi.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Cách chúng tôi sử dụng thông tin của bạn
+        p Chúng tôi sử dụng thông tin của bạn để cung cấp và cải thiện nền tảng học tập, thông báo các cập nhật quan trọng và đảm bảo tính toàn vẹn học thuật.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Bảo mật dữ liệu
+        p Chúng tôi áp dụng các biện pháp bảo mật theo tiêu chuẩn công nghiệp để bảo vệ dữ liệu của bạn. Mật khẩu của bạn được mã hóa và tất cả việc truyền dữ liệu đều sử dụng các giao thức bảo mật.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Liên hệ
+        p Nếu bạn có thắc mắc về chính sách này, vui lòng liên hệ với nhóm hỗ trợ của chúng tôi.

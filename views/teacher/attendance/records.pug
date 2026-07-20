@@ -1,0 +1,77 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.flex-wrap.justify-between.gap-4.items-end
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight Bản ghi Điểm danh
+        p.text-muted-foreground.mt-2 Lớp học: #{classroom.name} | Ngày: #{session.date.toLocaleDateString('en-GB')}
+      .flex.gap-3
+        if session.status === 'open'
+          a.pill(href='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/live') Tiếp tục Trực tiếp
+        a.btn-outline.btn-sm(href='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/export-csv')
+          i.ph-bold.ph-download-simple
+          | Xuất CSV
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/attendance') Quay lại các Buổi
+
+    if feedback
+      .alert-success= feedback
+
+    .grid-dashboard
+      .stat
+        p.text-lg.font-mono.font-bold.text-success #{stats.present}
+        p.text-sm.text-muted-foreground Có mặt
+      .stat
+        p.text-lg.font-mono.font-bold.text-destructive #{stats.absent}
+        p.text-sm.text-muted-foreground Vắng mặt
+      .stat
+        p.text-lg.font-mono.font-bold.text-warning #{stats.late}
+        p.text-sm.text-muted-foreground Đến muộn
+      .stat
+        p.text-lg.font-mono.font-bold.text-info #{stats.excused}
+        p.text-sm.text-muted-foreground Có phép
+
+    if records.length
+      .table-wrap
+        table
+          thead
+            tr
+              th Tên học sinh
+              th Thời gian điểm danh
+              th Trạng thái
+              th Chỉnh sửa thủ công
+          tbody
+            each record in records
+              tr
+                td.text-sm.font-medium= record.student ? record.student.name : 'Không rõ'
+                td.text-sm.text-muted-foreground
+                  if record.status === 'present' || record.status === 'late'
+                    | #{record.time ? record.time.toLocaleTimeString() : 'N/A'}
+                  else
+                    | —
+                td
+                  if record.status === 'present'
+                    span.badge-success.badge-sm Có mặt
+                  else if record.status === 'absent'
+                    span.badge-danger.badge-sm Vắng mặt
+                  else if record.status === 'late'
+                    span.badge-warning.badge-sm Đến muộn
+                  else
+                    span.badge-primary.badge-sm Có phép
+                td
+                  form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/records/' + record.id, class='flex gap-2')
+                    input(type='hidden', name='_csrf', value=csrfToken)
+                    select.text-sm(name='status', onchange='this.form.submit()', class='h-8')
+                      option(value='present', selected=record.status==='present') Có mặt
+                      option(value='absent', selected=record.status==='absent') Vắng mặt
+                      option(value='late', selected=record.status==='late') Đến muộn
+                      option(value='excused', selected=record.status==='excused') Có phép
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-clipboard-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Không tìm thấy bản ghi nào
+        p.text-sm.text-muted-foreground.mt-2 Không có bản ghi điểm danh nào cho buổi này.

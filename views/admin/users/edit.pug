@@ -1,0 +1,85 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-5xl.mx-auto.space-y-8.animate-in.fade-in(style='animation-duration: 400ms;')
+    nav.breadcrumb
+      a(href='/admin/users') Người dùng
+      span.breadcrumb-sep /
+      span.text-foreground= editUser.name
+
+    header.flex.items-start.justify-between.gap-4
+      div
+        h1.text-3xl.font-extrabold.tracking-tight Sửa #{editUser.name}
+        p.text-muted-foreground.mt-2.text-sm Cập nhật chi tiết người dùng và quyền truy cập.
+      form(method='POST', action=`/admin/users/${editUser.id}/delete`, onsubmit="return confirm('Bạn có chắc chắn muốn xóa hoàn toàn người dùng này không? Hành động này không thể hoàn tác.');")
+        input(type="hidden", name="_csrf", value=csrfToken)
+        button.btn-outline.h-10.px-4.rounded-lg.text-destructive(class='border-destructive/30 hover_bg-destructive/10', type='submit')
+          i.ph-bold.ph-trash
+          | Xóa Người dùng
+
+    form(method='POST', action=`/admin/users/${editUser.id}`, class='space-y-8 pb-20')
+      input(type="hidden", name="_csrf", value=csrfToken)
+      
+      if errorMessage
+        .alert-danger.rounded-xl.mb-6
+          i.ph-bold.ph-warning-circle.text-lg
+          span= errorMessage
+
+      //- Profile Section
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold.text-foreground Thông tin Hồ sơ
+          p.text-sm.text-muted-foreground.mt-1 Các chi tiết cá nhân cơ bản cho tài khoản người dùng.
+        
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .flex.items-center.gap-6.mb-6
+            div.w-20.h-20.rounded-full.text-primary.flex.items-center.justify-center.font-bold.text-2xl.flex-shrink-0(class='bg-primary/10')
+              if editUser.avatarUrl
+                img.w-full.h-full.rounded-full.object-cover(src=editUser.avatarUrl, alt=editUser.name)
+              else
+                = editUser.name ? editUser.name.charAt(0).toUpperCase() : '?'
+            .flex-1
+              p.text-sm.font-bold Ảnh đại diện
+              p.text-xs.text-muted-foreground.mb-3 Ảnh đại diện được quản lý bởi người dùng trong cài đặt hồ sơ của họ.
+
+          .grid.grid-cols-1.sm_grid-cols-2.gap-5
+            .field
+              label.field-label(for='name') Họ và Tên <span class="text-destructive">*</span>
+              input#name(type='text', name='name', value=editUser.name || '', required)
+            .field
+              label.field-label(for='email') Địa chỉ Email <span class="text-destructive">*</span>
+              input#email(type='email', name='email', value=editUser.email || '', required)
+          .field
+            label.field-label(for='phone') Số điện thoại
+            input#phone(type='tel', name='phone', value=editUser.phone || '', placeholder='+84 (0) 123 456 789')
+
+      hr.border-border
+
+      //- Security & Access Section
+      .grid.grid-cols-1.md_grid-cols-3.gap-8
+        .md_col-span-1
+          h2.text-base.font-bold.text-foreground Bảo mật & Truy cập
+          p.text-sm.text-muted-foreground.mt-1 Xác định cách người dùng đăng nhập và các đặc quyền nền tảng của họ.
+        
+        .md_col-span-2.bento-card.p-6.space-y-6
+          .grid.grid-cols-1.sm_grid-cols-2.gap-5
+            .field
+              label.field-label(for='role') Vai trò Hệ thống
+              select#role(name='role')
+                option(value='student', selected=editUser.role === 'student') Học sinh
+                option(value='teacher', selected=editUser.role === 'teacher') Giảng viên
+                option(value='admin', selected=editUser.role === 'admin') Quản trị viên
+            .field
+              label.field-label(for='status') Trạng thái Tài khoản
+              select#status(name='status')
+                option(value='active', selected=editUser.status === 'active') Hoạt động
+                option(value='pending', selected=editUser.status === 'pending') Chờ Phê duyệt
+                option(value='rejected', selected=editUser.status === 'rejected') Bị từ chối
+
+      //- Sticky Bottom Action Bar
+      div.fixed.bottom-0.left-0.right-0.backdrop-blur-md.border-t.border-border.p-4.z-40(class='bg-card/80', class='md_left-[260px]')
+        .max-w-5xl.mx-auto.flex.items-center.justify-end.gap-3
+          a.btn-outline.h-10.px-5.rounded-lg(href='/admin/users') Hủy
+          button.btn-primary.h-10.px-6.rounded-lg.shadow-sm(type='submit')
+            i.ph-bold.ph-floppy-disk
+            | Lưu Thay đổi

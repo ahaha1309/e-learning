@@ -1,0 +1,53 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.gap-3.flex-wrap
+      a.pill(href='/student/classrooms/' + membership.classroom.id + '/discussions') Quay lại Thảo luận
+
+    article.card.p-6
+      .flex.items-center.gap-4.mb-6
+        .avatar.avatar-md
+          if topic.author && topic.author.avatar
+            img(src=topic.author.avatar, alt=topic.author.name)
+          else
+            = topic.author ? topic.author.name.charAt(0) : 'U'
+        div
+          h1.text-2xl.font-bold= topic.title
+          p.text-sm.text-muted-foreground Đăng bởi #{topic.author ? topic.author.name : 'Không rõ'} vào #{topic.createdAt.toLocaleString()}
+      .text-base.leading-relaxed.text-foreground
+        != topic.content
+
+    h3.text-lg.font-bold.border-b.border-border.pb-2.mt-8 #{replies.length} Phản hồi
+
+    if replies.length
+      .grid.gap-4.mb-8
+        each reply in replies
+          article.card.p-6.flex.gap-4
+            .avatar.avatar-md.flex-shrink-0
+              if reply.author && reply.author.avatar
+                img(src=reply.author.avatar, alt=reply.author.name)
+              else
+                = reply.author ? reply.author.name.charAt(0) : 'U'
+            .flex-1
+              .flex.justify-between
+                p.text-xs.text-muted-foreground.mb-2
+                  strong #{reply.author ? reply.author.name : 'Không rõ'}
+                  |  đã phản hồi vào #{reply.createdAt.toLocaleString()}
+                if reply.author && reply.author.id === currentUser.id
+                  form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/discussions/' + topic.id + '/replies/' + reply.id + '/delete', onsubmit="return confirm('Xóa phản hồi này?');")
+                    input(type='hidden', name='_csrf', value=csrfToken)
+                    button.text-destructive.text-sm.underline.border-none.bg-transparent.cursor-pointer(type='submit') Xóa
+              .text-base.leading-relaxed
+                != reply.content
+
+    div.card.p-6(class='border-primary/30')
+      h4.text-lg.font-bold.mb-4 Viết một Phản hồi
+      form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/discussions/' + topic.id + '/replies', class='grid gap-4')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        textarea.tinymce(class='min-h-[120px]')
+        .text-right
+          button.btn-primary(type='submit') Đăng Phản hồi
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')

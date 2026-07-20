@@ -1,0 +1,25 @@
+extends ../layouts/base
+
+block content
+  .page-narrow.max-w-4xl.mx-auto.pt-16.pb-32
+    .animate-in.slide-in-up
+      p.eyebrow Pháp lý
+      h1.text-4xl.font-extrabold.tracking-tighter.mb-4 Điều khoản dịch vụ
+      p.text-muted-foreground.mb-12 Cập nhật lần cuối: #{new Date().toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+    .prose.prose-lg.text-muted-foreground.space-y-8.animate-in.slide-in-up(style='animation-delay: 100ms;')
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Chấp nhận Điều khoản
+        p Bằng cách truy cập và sử dụng nền tảng này, bạn chấp nhận và đồng ý bị ràng buộc bởi các điều khoản này. Nếu bạn không đồng ý, vui lòng không sử dụng dịch vụ.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Tài khoản Người dùng
+        p Bạn có trách nhiệm bảo mật thông tin đăng nhập tài khoản của mình. Bạn phải thông báo cho chúng tôi ngay lập tức về bất kỳ việc sử dụng trái phép nào.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Sử dụng Chấp nhận được
+        p Bạn đồng ý chỉ sử dụng nền tảng cho các mục đích giáo dục hợp pháp. Sự gian lận học thuật, bao gồm đạo văn và gian lận, bị nghiêm cấm.
+
+      section
+        h2.text-2xl.font-bold.text-foreground.tracking-tight.mb-4 Giới hạn Trách nhiệm
+        p Nền tảng được cung cấp nguyên trạng. Chúng tôi không chịu trách nhiệm cho bất kỳ thiệt hại nào phát sinh từ việc bạn sử dụng dịch vụ.

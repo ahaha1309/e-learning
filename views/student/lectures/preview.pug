@@ -1,0 +1,41 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Học sinh
+        h1.text-3xl.font-bold.tracking-tight= lecture.title
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Định dạng
+        strong.text-3xl.font-mono.uppercase= preview.resourceType
+        p.text-sm.text-muted-foreground.mt-3= lecture.chapterTitle
+
+    if preview.mode === 'video'
+      .card.p-6
+        video.w-full.rounded-xl.bg-black(controls, preload='metadata')
+          source(src=preview.resourceUrl)
+          | Trình duyệt của bạn không hỗ trợ thẻ video.
+    else if preview.mode === 'pdf'
+      .card.p-4
+        object.w-full.border-0.rounded-xl(class='min-h-[78dvh]', data=preview.resourceUrl, type='application/pdf')
+          p.text-muted
+            | Trình duyệt của bạn không thể hiển thị PDF này trực tiếp.
+            a.text-primary(href=preview.resourceUrl, target='_blank', rel='noreferrer') Mở trong thẻ mới
+    else if preview.mode === 'office'
+      .card.p-4
+        iframe.w-full.border-0.rounded-xl(class='min-h-[78dvh]', src=preview.officeUrl, allowfullscreen='true')
+    else if preview.mode === 'text'
+      .card.p-6
+        p.whitespace-pre-wrap.text-muted= lecture.content || 'Chưa có nội dung phong phú.'
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-file-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Không có bản xem trước
+        p.text-sm.text-muted-foreground.mt-2 Bài giảng này chưa có tài nguyên có thể xem trước được đính kèm.
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/student/classrooms/' + membership.classroom.id + '/lectures/' + lecture.id) Quay lại bài giảng
+      a.pill(href='/student/classrooms/' + membership.classroom.id + '/lectures') Quay lại các bài giảng
+      a.pill(href='/student/classrooms/' + membership.classroom.id) Quay lại lớp học

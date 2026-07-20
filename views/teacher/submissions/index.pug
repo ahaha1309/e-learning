@@ -1,0 +1,41 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight= 'Bài nộp của ' + assignment.title
+        p.text-muted-foreground.max-w-prose.mt-2 Xem lại bài nộp, chấm điểm và để lại nhận xét ngắn.
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Bài nộp
+        strong.text-3xl.font-mono= submissions.length
+        p.text-sm.text-muted-foreground.mt-3 Sắp xếp theo bài nộp mới nhất.
+
+    if feedback
+      .alert-success= feedback
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments') Quay lại các bài tập
+
+    if submissions.length
+      .space-y-4
+        each submission in submissions
+          article.card.p-5
+            .flex.justify-between.gap-4.flex-wrap
+              div
+                p.text-lg.font-bold.mb-1= submission.student.name
+                p.text-sm.text-muted-foreground= submission.student.email
+              span.badge-muted.badge-sm.self-start.capitalize= submission.status
+            .flex.gap-4.flex-wrap.text-sm.text-muted-foreground.mt-3
+              span Đã nộp #{submission.submittedAt.toLocaleString('en-GB')}
+              span Điểm #{submission.score === null ? 'Chưa chấm điểm' : submission.score}
+            .mt-3
+              a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id) Mở bài nộp
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-file-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Chưa có bài nộp nào
+        p.text-sm.text-muted-foreground.mt-2 Bài nộp của học sinh sẽ xuất hiện ở đây khi được tải lên.

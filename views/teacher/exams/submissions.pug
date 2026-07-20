@@ -1,0 +1,57 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.flex-wrap.justify-between.gap-4.items-end
+      div
+        p.eyebrow Giảng viên
+        h1.text-3xl.font-bold.tracking-tight Bài nộp
+        p.text-muted-foreground.mt-2 Bài thi: #{exam.title}
+      a.btn-outline.btn-sm.rounded-full(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/export-csv')
+        i.ph-bold.ph-download-simple
+        | Xuất CSV
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id) Quay lại Bài thi
+
+    if feedback
+      .alert-success= feedback
+
+    if submissions.length
+      .table-wrap
+        table
+          thead
+            tr
+              th Học sinh
+              th Email
+              th Nộp lúc
+              th Trạng thái
+              th Điểm
+              th Chấm điểm
+              th.text-center Hành động
+          tbody
+            each sub in submissions
+              tr
+                td.text-sm.font-semibold= sub.student ? sub.student.name : 'Không rõ'
+                td.text-sm.text-muted-foreground= sub.student ? sub.student.email : ''
+                td.text-sm.text-muted-foreground= sub.submittedAt ? sub.submittedAt.toLocaleString('en-GB') : 'N/A'
+                td
+                  if sub.status === 'in_progress'
+                    span.badge-warning.badge-sm Đang làm
+                  else
+                    span.badge-success.badge-sm Đã nộp
+                td.text-sm.font-bold #{sub.score} / #{exam.totalPoints}
+                td
+                  if sub.gradingStatus === 'pending_manual_grade'
+                    span.badge-warning.badge-sm Chờ chấm
+                  else
+                    span.badge-success.badge-sm Đã chấm
+                td.text-right
+                  if sub.status === 'submitted'
+                    a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/submissions/' + sub.id + '/grade') Xem & Chấm
+    else
+      .empty-state
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-file-text.text-3xl.text-muted-foreground
+        h2.text-xl.font-bold.text-foreground Chưa có bài nộp nào
+        p.text-sm.text-muted-foreground.mt-2 Đang chờ học sinh nộp bài thi.

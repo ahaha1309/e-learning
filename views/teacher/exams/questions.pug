@@ -1,0 +1,105 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Giảng viên
+    h1.text-3xl.font-bold.tracking-tight Quản lý Câu hỏi
+    p.text-muted-foreground.mt-2 Bài thi: #{exam.title}
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id) Quay lại bài thi
+      a.btn-outline.rounded-full.h-10.px-5(
+        href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/import',
+        title='Nhập câu hỏi từ tệp PDF hoặc DOCX'
+      )
+        i.ph-bold.ph-upload-simple(aria-hidden='true')
+        | Nhập Câu hỏi
+
+    if feedback
+      .alert-success= feedback
+
+    .grid.grid-cols-1.gap-8(class='lg_grid-cols-[repeat(auto-fit,minmax(350px,1fr))] mb-8')
+      form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/generate-matrix')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        h2.text-lg.font-bold.mb-4 Tạo từ Ngân hàng Câu hỏi
+        .space-y-4
+          div
+            label.text-sm.font-medium(for='subject') Môn học
+            input#subject.mt-2(type='text', name='subject', required, placeholder='ví dụ: Toán học')
+          div
+            label.text-sm.font-medium(for='chapter') Chương (Tùy chọn)
+            input#chapter.mt-2(type='text', name='chapter', placeholder='ví dụ: Chương 1')
+          .grid.grid-cols-1.gap-3(class='md_grid-cols-3')
+            div
+              label.text-xs.text-muted-foreground 'Nhận biết'
+              input(type='number', name='num_nhan_biet', value='0', min='0')
+            div
+              label.text-xs.text-muted-foreground 'Thông hiểu'
+              input(type='number', name='num_thong_hieu', value='0', min='0')
+            div
+              label.text-xs.text-muted-foreground 'Vận dụng'
+              input(type='number', name='num_van_dung', value='0', min='0')
+          button.btn-primary(type='submit') Tạo Câu hỏi
+
+      form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        h2.text-lg.font-bold.mb-4 Thêm Từng Câu hỏi Thủ công
+        .space-y-4
+          div
+            label.text-sm.font-medium(for='type') Loại Câu hỏi
+            select#type.mt-2(name='type', onchange='toggleOptions()')
+              option(value='multiple_choice') Trắc nghiệm (Một đáp án đúng)
+              option(value='multiple_answer') Nhiều đáp án (Nhiều đáp án đúng)
+              option(value='essay') Tự luận / Văn bản mở
+          div
+            label.text-sm.font-medium(for='content') Nội dung Câu hỏi
+            textarea#content.tinymce.mt-2(name='content', rows='3')
+          .grid.grid-cols-1.gap-4(class='sm_grid-cols-2')
+            div
+              label.text-sm.font-medium(for='points') Điểm
+              input#points.mt-2(type='number', name='points', value='1', required, min='0')
+            div
+              label.text-sm.font-medium(for='order') Thứ tự
+              input#order.mt-2(type='number', name='order', value='0')
+
+          #options-container.border.border-dashed.border-border.p-4.rounded-xl
+            p.text-sm.font-medium.mb-3 Các Lựa chọn
+            #options-list.space-y-2
+              - for (var i = 1; i <= 4; i++)
+                .flex.items-center.gap-2
+                  input(type='text', name='optionText[]', placeholder='Nội dung lựa chọn ' + i, class='flex-1')
+                  label.inline-flex.items-center.gap-1.text-xs.cursor-pointer
+                    input(type='checkbox', name='optionCorrect[]', value=i - 1)
+                    | Đúng
+            p.text-xs.text-muted-foreground.mt-2 Đánh dấu vào ô bên cạnh các lựa chọn đúng.
+
+          button.btn-primary(type='submit') Thêm Câu hỏi
+
+    h2.text-lg.font-bold.mb-4 Các Câu hỏi Hiện tại
+    if questions.length
+      .space-y-3
+        each question, index in questions
+          article.card.p-4
+            .flex.items-start.justify-between.gap-4
+              div
+                p.text-sm.font-medium Câu #{index + 1}. [#{question.type}] (#{question.points} điểm)
+                div.mt-1.text-sm !{question.content}
+                if question.type === 'multiple_choice' || question.type === 'multiple_answer'
+                  ul.text-xs.text-muted-foreground.mt-2.pl-4
+                    each opt in question.options
+                      li(class=opt.isCorrect ? 'text-success font-bold' : '') #{opt.text} #{opt.isCorrect ? '(Đúng)' : ''}
+              form(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions/' + question.id + '/delete', onsubmit='return confirm("Xóa câu hỏi này?");')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                button.btn-ghost.btn-sm.text-destructive(type='submit')
+                  i.ph-bold.ph-trash
+    else
+      p.text-sm.text-muted-foreground Chưa có câu hỏi nào được thêm.
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')
+  script.
+    function toggleOptions() {
+      var type = document.getElementById('type').value;
+      document.getElementById('options-container').style.display = type === 'essay' ? 'none' : 'block';
+    }
+    toggleOptions();

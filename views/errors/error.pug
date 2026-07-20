@@ -1,0 +1,17 @@
+extends ../layouts/base
+
+block content
+  .error-page
+    .inline-flex.items-center.gap-2.rounded-full.border.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='border-warning/20 bg-warning/5 text-warning')
+      i.ph-bold.ph-warning-circle
+      | Có gì đó đã hỏng
+    .error-code 500
+    h1.text-3xl.font-extrabold.tracking-tighter.text-foreground.mb-2 Đã xảy ra lỗi
+    p.text-base.text-muted-foreground.max-w-md.mx-auto.mb-8 Đã xảy ra lỗi không mong muốn ở phía chúng tôi. Nhóm của chúng tôi đã được thông báo. Vui lòng thử lại.
+    .flex.items-center.gap-3
+      a.btn-primary.h-12.px-6.rounded-xl(href='/')
+        i.ph-bold.ph-house
+        | Trang chủ
+      button.btn-outline.h-12.px-6.rounded-xl(onclick='window.location.reload()')
+        i.ph-bold.ph-arrow-clockwise
+        | Thử lại

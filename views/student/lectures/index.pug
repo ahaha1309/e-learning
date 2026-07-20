@@ -1,0 +1,41 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + membership.classroom.id)= membership.classroom.name
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Bài giảng
+
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-book-open', h1: 'Bài giảng', subtitle: 'Các bài giảng được nhóm theo chương để bạn có thể theo dõi khóa học theo thứ tự.' })
+      aside.glass-panel.rounded-2xl.p-5.text-center.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
+          i.ph-bold.ph-stack.text-lg
+        div.text-left
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Chương
+          p.font-mono.text-3xl.font-bold.tracking-tighter= Object.keys(lecturesByChapter).length
+
+    if Object.keys(lecturesByChapter).length
+      each lectureList, chapterTitle in lecturesByChapter
+        section.space-y-4.animate-in.slide-in-up
+          +sectionHead({ title: chapterTitle })
+          .space-y-3
+            each lecture in lectureList
+              article.card.p-5.transition-colors(class='hover_border-primary/50')
+                .flex.flex-col.md_flex-row.md_items-start.justify-between.gap-4
+                  .flex-1
+                    h3.font-bold.text-lg= lecture.title
+                    p.text-sm.text-muted-foreground.mt-1= lecture.summary || 'Chưa có tóm tắt.'
+                    .flex.flex-wrap.items-center.gap-3.mt-3
+                      span.badge-primary.badge-sm= lecture.resourceType
+                      span.text-xs.text-muted-foreground Thứ tự #{lecture.orderIndex}
+                .mt-4.pt-4.border-t.border-border
+                  a.btn-outline.btn-sm.rounded-full(href='/student/classrooms/' + membership.classroom.id + '/lectures/' + lecture.id)
+                    | Mở bài giảng
+                    i.ph-bold.ph-arrow-right
+    else
+      +emptyState({ icon: 'ph-fill ph-monitor-play', title: 'Chưa có bài giảng nào được xuất bản', desc: 'Giảng viên của bạn sẽ xuất bản bài giảng ở đây.' })

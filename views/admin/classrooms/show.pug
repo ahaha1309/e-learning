@@ -1,0 +1,88 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    .flex.flex-col.gap-6.items-start(class='lg_flex-row lg_items-center lg_justify-between')
+      div
+        nav.breadcrumb.mb-2
+          a(href='/admin/classrooms') Lớp học
+          span.breadcrumb-sep /
+          span.text-foreground Chi tiết
+        h1.text-3xl.font-extrabold.tracking-tight= classroom.name
+        p.text-muted-foreground.max-w-prose.mt-2.text-sm= classroom.description || 'Không có mô tả.'
+      
+      .flex.items-center.gap-3
+        if classroom.isArchived
+          span.badge-muted.badge-lg.shadow-sm
+            i.ph-bold.ph-archive.mr-1
+            | Đã lưu trữ
+        else
+          span.badge-success.badge-lg.shadow-sm
+            i.ph-bold.ph-check-circle.mr-1
+            | Hoạt động
+
+    .grid.grid-cols-1.gap-6(class='lg_grid-cols-3')
+      //- Left Column: Details & Actions
+      .space-y-6(class='lg_col-span-2')
+        .bento-card.p-6
+          .flex.items-center.justify-between.mb-6
+            h2.text-lg.font-bold.tracking-tight Chi tiết Lớp học
+            //- a.btn-ghost.btn-sm(href='/admin/classrooms/' + classroom.id + '/edit')
+            //-   i.ph-bold.ph-pencil-simple
+            //-   | Edit
+
+          .grid.grid-cols-1.sm_grid-cols-2.gap-6
+            .space-y-1
+              p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider Tên
+              p.text-sm.font-medium.text-foreground= classroom.name
+            .space-y-1
+              p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider Giảng viên
+              .flex.items-center.gap-2.mt-1
+                if classroom.teacher
+                  div.w-6.h-6.rounded-full.text-primary.flex.items-center.justify-center.text-xs.font-bold(class='bg-primary/10')
+                    = classroom.teacher.name.charAt(0).toUpperCase()
+                  span.text-sm.font-medium= classroom.teacher.name
+                else
+                  span.text-sm.text-muted-foreground N/A
+            .space-y-1
+              p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider Ngày tạo
+              p.text-sm.font-medium.text-foreground= classroom.createdAt ? new Date(classroom.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+            .space-y-1
+              p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider Trạng thái
+              p.text-sm.font-medium.text-foreground= classroom.isArchived ? 'Đã lưu trữ' : 'Hoạt động'
+
+        .bento-card.p-6
+          h2.text-lg.font-bold.tracking-tight.mb-4 Tổng quan Nội dung
+          .grid.grid-cols-1.sm_grid-cols-3.gap-4
+            div.rounded-xl.p-4.border.border-border.flex.flex-col.items-center.justify-center.text-center(class='bg-muted/30')
+              i.ph-fill.ph-users.text-2xl.text-primary.mb-2
+              p.font-mono.text-3xl.font-extrabold= stats.students || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1 Học sinh đã tham gia
+            div.rounded-xl.p-4.border.border-border.flex.flex-col.items-center.justify-center.text-center(class='bg-muted/30')
+              i.ph-fill.ph-video-camera.text-2xl.text-secondary.mb-2
+              p.font-mono.text-3xl.font-extrabold= stats.lectures || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1 Bài giảng Video
+            div.rounded-xl.p-4.border.border-border.flex.flex-col.items-center.justify-center.text-center(class='bg-muted/30')
+              i.ph-fill.ph-exam.text-2xl.text-warning.mb-2
+              p.font-mono.text-3xl.font-extrabold= stats.exams || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1 Bài thi Đang mở
+
+      //- Right Column: Code & Quick Actions
+      .space-y-6(class='lg_col-span-1')
+        div.bento-card.p-6.text-center(class='bg-primary/5 border-primary/20')
+          p.text-sm.font-bold.text-primary.mb-2 Mã tham gia
+          .bg-background.border.border-border.rounded-xl.p-4.shadow-inner
+            strong.font-mono.text-4xl.text-foreground(class='tracking-[0.2em]')= classroom.code
+          p.text-xs.text-muted-foreground.mt-3 Chia sẻ mã này với học sinh.
+
+        .bento-card.p-6
+          h2.text-sm.font-bold.tracking-tight.mb-4 Thao tác nhanh
+          .space-y-2
+            a.flex.items-center.gap-3.p-3.rounded-xl.text-sm.font-medium.transition-colors.hover_bg-muted.border.border-border(class='bg-muted/50', href='/admin/classrooms')
+              .w-8.h-8.rounded-lg.bg-background.shadow-sm.flex.items-center.justify-center
+                i.ph-bold.ph-arrow-left.text-foreground
+              | Quay lại Danh mục
+            //- a.flex.items-center.gap-3.p-3.rounded-xl.text-sm.font-medium.transition-colors.bg-muted/50.hover_bg-muted.border.border-border(href='/admin/classrooms/' + classroom.id + '/edit')
+            //-   .w-8.h-8.rounded-lg.bg-background.shadow-sm.flex.items-center.justify-center
+            //-     i.ph-bold.ph-pencil-simple.text-foreground
+            //-   | Edit Settings

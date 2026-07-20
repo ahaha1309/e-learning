@@ -1,0 +1,64 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-8.animate-in.fade-in
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Chi tiết Bài tập
+        h1.text-3xl.font-extrabold.tracking-tight= assignment.title
+        p.text-muted-foreground.mt-2= assignment.description || 'Không có mô tả'
+      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/assignments')
+        i.ph-bold.ph-arrow-left
+        | Quay lại
+
+    .grid.grid-cols-1.lg_grid-cols-3.gap-6
+      .lg_col-span-2.space-y-6
+        .bento-card.p-6
+          h2.text-lg.font-bold.mb-4 Hướng dẫn
+          .text-sm.text-muted-foreground.prose.max-w-none
+            p= assignment.instructions || 'Không có hướng dẫn nào được cung cấp.'
+
+        .bento-card.p-6
+          h2.text-lg.font-bold.mb-4 Bài nộp (#{submissions.length})
+          if submissions.length
+            .overflow-x-auto
+              table.w-full.text-left.text-sm
+                thead
+                  tr.border-b.border-border
+                    th.px-4.py-2.font-semibold Học sinh
+                    th.px-4.py-2.font-semibold Trạng thái
+                    th.px-4.py-2.font-semibold Điểm
+                    th.px-4.py-2.font-semibold Đã nộp
+                tbody
+                  each sub in submissions
+                    tr.border-b.border-border
+                      td.px-4.py-2= sub.student ? sub.student.name : 'Không rõ'
+                      td.px-4.py-2
+                        span.badge-muted.badge-sm= sub.status || 'đã nộp'
+                      td.px-4.py-2.font-mono= sub.score != null ? sub.score + '/' + assignment.totalPoints : '—'
+                      td.px-4.py-2.text-muted-foreground= sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-GB') : '—'
+          else
+            .empty-state.py-8.border-0.bg-transparent
+              p.text-sm.text-muted-foreground Chưa có bài nộp nào.
+
+      .space-y-6
+        .bento-card.p-6.space-y-4
+          h2.text-lg.font-bold Thông tin Bài tập
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Lớp học
+            span.text-sm.font-medium= assignment.classroom ? assignment.classroom.name : 'N/A'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Giảng viên
+            span.text-sm.font-medium= assignment.teacher ? assignment.teacher.name : 'N/A'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Tổng điểm
+            span.text-sm.font-mono.font-bold= assignment.totalPoints || 0
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Hạn chót
+            span.text-sm.font-mono= assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB') : 'N/A'
+          .flex.items-center.justify-between
+            span.text-sm.text-muted-foreground Nộp trễ
+            if assignment.allowLateSubmission
+              span.badge-success.badge-sm Cho phép
+            else
+              span.badge-muted.badge-sm Không cho phép

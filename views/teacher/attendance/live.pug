@@ -1,0 +1,52 @@
+extends ../../layouts/base
+
+block content
+  .flex.flex-col.items-center.text-center.py-16(class='min-h-[80dvh]')
+    p.eyebrow.text-lg Điểm danh Trực tiếp
+    h1.text-2xl.font-bold.mt-0.mb-4 #{classroom.name}
+    p.text-muted-foreground.text-xl.mt-0.mb-8 Truy cập vào cổng thông tin học sinh và nhập mã bên dưới để điểm danh.
+
+    .w-full.max-w-xl.h-2.bg-muted.rounded-full.overflow-hidden.mb-8
+      #timer-bar.h-full.w-full(class='bg-primary transition-[width] duration-1000 linear')
+
+    #pin-display.text-8xl.font-extrabold.tracking-widest.font-mono.text-foreground.py-8.px-16.border-4(class='border-primary rounded-xl bg-primary/5 mb-12')
+      | ------
+
+    form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/close')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      button.btn-primary.text-lg.py-4.px-12(type='submit') Đóng Buổi Điểm danh
+
+  script.
+    (function() {
+      var sessionId = '#{session.id}';
+      var classroomId = '#{classroom.id}';
+      var pinDisplay = document.getElementById('pin-display');
+      var timerBar = document.getElementById('timer-bar');
+      var expiresAt = new Date();
+
+      async function fetchNewCode() {
+        try {
+          var response = await fetch('/teacher/classrooms/' + classroomId + '/attendance/' + sessionId + '/code', {
+            method: 'POST',
+            headers: {
+              'CSRF-Token': '#{csrfToken}'
+            }
+          });
+          var data = await response.json();
+          if (data.code) {
+            pinDisplay.textContent = data.code;
+            expiresAt = new Date(data.expiresAt);
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            void timerBar.offsetWidth;
+            timerBar.style.transition = 'width 15s linear';
+            timerBar.style.width = '0%';
+          }
+        } catch (err) {
+          console.error('Error fetching code', err);
+        }
+      }
+
+      fetchNewCode();
+      setInterval(fetchNewCode, 15000);
+    })();

@@ -1,0 +1,43 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-3xl.space-y-12.pt-8.pb-32
+    header.animate-in.slide-in-up
+      nav.breadcrumb.mb-6
+        a(href='/admin') Admin
+        span.breadcrumb-sep /
+        a(href='/admin/categories') Danh mục
+        span.breadcrumb-sep /
+        span.text-foreground.font-bold= category._id ? 'Chỉnh sửa' : 'Thêm mới'
+        
+      h1.text-4xl.font-extrabold.tracking-tighter= title
+
+    form.glass-panel.p-8.space-y-8.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 100ms;', method='POST', action=category._id ? '/admin/categories/' + category._id + '/edit' : '/admin/categories')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      
+      if errorMessage
+        .alert-danger.rounded-2xl= errorMessage
+
+      .space-y-2
+        label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='name') Tên Danh mục *
+        input#name.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='name', value=category.name || '', placeholder='Ví dụ: Lập trình Web', required)
+
+      .space-y-2
+        label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='slug') Đường dẫn (Slug) *
+        input#slug.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='slug', value=category.slug || '', placeholder='Ví dụ: lap-trinh-web', required)
+        p.text-xs.text-muted-foreground Sẽ được dùng trên đường dẫn URL (ví dụ: /category/lap-trinh-web)
+
+      .space-y-2
+        label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='icon') Biểu tượng (Icon class)
+        input#icon.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='icon', value=category.icon || 'ph-folder', placeholder='ph-bold ph-folder')
+        p.text-xs.text-muted-foreground Hỗ trợ Phosphor Icons (ví dụ: ph-code, ph-paint-brush)
+
+      .space-y-2
+        label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Mô tả
+        textarea#description.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='description', rows='4', placeholder='Mô tả ngắn gọn về danh mục này...')= category.description || ''
+
+      .flex.items-center.gap-4.pt-4.border-t(class='border-border/60')
+        button.btn-primary.h-14.px-8.rounded-xl.font-bold.shadow-diffused(type='submit')
+          i.ph-bold.ph-floppy-disk.text-lg
+          | Lưu Danh mục
+        a.btn-outline.h-14.px-6.rounded-xl(href='/admin/categories') Hủy

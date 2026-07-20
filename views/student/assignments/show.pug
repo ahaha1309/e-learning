@@ -1,0 +1,31 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Học sinh
+        h1.text-3xl.font-bold.tracking-tight= assignment.title
+        p.text-muted-foreground.max-w-prose.mt-2= assignment.description || 'Chưa có mô tả.'
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Hạn chót
+        strong.text-2xl.font-mono= assignment.dueDate.toLocaleString('en-GB')
+        p.text-sm.text-muted-foreground.mt-3 Điểm: #{assignment.totalPoints}
+
+    .card.p-6
+      p.text-lg.font-bold.mb-2 Hướng dẫn
+      p.text-muted.whitespace-pre-wrap= assignment.instructions || 'Chưa có hướng dẫn.'
+
+    .flex.gap-3.flex-wrap
+      - var isPastDue = assignment.dueDate && new Date() > new Date(assignment.dueDate)
+      if submission
+        a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission') Xem bài nộp
+        if !isPastDue
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Chỉnh sửa bài nộp
+      else
+        if !isPastDue
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Nộp bài
+        else
+          span.pill.opacity-50.cursor-not-allowed(title="Đã quá hạn nộp bài") Quá hạn nộp bài
+      a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments') Quay lại danh sách bài tập
+      a.pill(href='/student/classrooms/' + membership.classroom.id) Quay lại lớp học

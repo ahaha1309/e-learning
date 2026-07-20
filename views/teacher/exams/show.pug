@@ -1,0 +1,70 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Giảng viên
+    h1.text-3xl.font-bold.tracking-tight= exam.title
+    p.text-muted-foreground.mt-2 Lớp học: #{classroom.name}
+
+    if feedback
+      .alert-success= feedback
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions') Quản lý Câu hỏi
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/submissions') Xem Bài nộp
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams') Quay lại các bài thi
+
+    article.card.p-6.space-y-4
+      div
+        p.font-medium Mô tả
+        p.text-sm.text-muted-foreground.mt-1= exam.description || 'N/A'
+      div
+        p.font-medium Cài đặt
+        ul.text-sm.text-muted-foreground.mt-1.pl-5.space-y-1
+          li Thời lượng: #{exam.duration} phút
+          li Số lần thử tối đa: #{exam.maxAttempts === 0 ? 'Không giới hạn' : exam.maxAttempts}
+          li Bắt đầu: #{exam.startTime ? exam.startTime.toLocaleString('en-GB') : 'N/A'}
+          li Kết thúc: #{exam.endTime ? exam.endTime.toLocaleString('en-GB') : 'N/A'}
+          li Yêu cầu mật khẩu: #{exam.password ? 'Có' : 'Không'}
+          li Hiển thị kết quả: #{exam.showResult}
+          li Chống gian lận: #{exam.strictMode ? 'Đã bật' : 'Đã tắt'}
+          li Vi phạm tối đa: #{exam.maxViolations > 0 ? exam.maxViolations : 'Không giới hạn'}
+      div
+        p.font-medium Số lượng Câu hỏi:
+        span.text-sm #{exam.questionCount}
+      div
+        p.font-medium Tổng Điểm:
+        span.text-sm #{exam.totalPoints}
+
+    .pt-4
+      h2.text-lg.font-bold.mb-4 Tổng quan Câu hỏi
+      if questions.length
+        .space-y-2
+          each question, index in questions
+            .card.p-4
+              p.text-sm.font-medium Câu hỏi #{index + 1} (#{question.points} điểm, #{question.type})
+              .mt-2.text-sm !{question.content}
+      else
+        p.text-sm.text-muted-foreground Chưa có câu hỏi nào. Sử dụng "Quản lý Câu hỏi" để thêm.
+
+  if exam.strictMode
+    script(src='/socket.io/socket.io.js')
+    script.
+      (function() {
+        var examId = '!{exam.id}';
+        var socket = typeof io !== 'undefined' ? io('/exam-monitor') : null;
+        if (socket) {
+          socket.emit('teacher-join', { examId: examId });
+          var container = document.createElement('div');
+          container.className = 'card p-4 mt-6';
+          container.innerHTML = '<h3 class="text-lg font-bold mb-3">Giám sát Bài thi Trực tiếp</h3><div id="live-violations" class="space-y-2"></div>';
+          document.querySelector('.page').appendChild(container);
+          socket.on('student-violation', function(data) {
+            var list = document.getElementById('live-violations');
+            var item = document.createElement('div');
+            item.className = 'p-3 rounded-lg border text-sm';
+            item.innerHTML = '<strong>' + new Date(data.violation.time).toLocaleTimeString() + ' - ' + data.studentName + '</strong>: ' + data.violation.details + ' (' + data.violation.type + ')';
+            list.prepend(item);
+          });
+        }
+      })();

@@ -1,0 +1,89 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Environment
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Build
+# =========================
+public/dist/
+dist/
+build/
+coverage/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+*.code-workspace
+
+# =========================
+# Runtime
+# =========================
+*.pid
+*.seed
+*.pid.lock
+
+# =========================
+# Temporary
+# =========================
+tmp/
+temp/
+.cache/
+
+# =========================
+# Local development scripts
+# =========================
+check-db-status.js
+check-pug.js
+fix-slashes.js
+
+# =========================
+# AI / Claude / Gemini
+# =========================
+skills-lock.json
+ANCHORED_SUMMARY.md
+IMPLEMENTATION_PLAN.md
+MASTER_PROMPT_ELEARNING.md
+PRODUCT_DESIGN_SPEC.md
+PROJECT_STATE.md
+CLAUDE.md
+# =========================
+# Debug
+# =========================
+server_err.txt
+
+# =========================
+# Personal documents
+# =========================
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.pptx
+*.ppt

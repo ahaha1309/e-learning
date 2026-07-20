@@ -1,0 +1,63 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.flex-wrap.gap-3
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/discussions') Quay lại Thảo luận
+
+    article.card.p-6
+      if topic.isPinned
+        span.badge-primary.badge-sm.mb-3
+          i.ph-fill.ph-push-pin.text-xs
+          | Đã ghim
+      .flex.items-center.gap-4.mb-6
+        .avatar.avatar-md
+          if topic.author && topic.author.avatar
+            img(src=topic.author.avatar, alt=topic.author.name)
+          else
+            = topic.author ? topic.author.name.charAt(0) : 'U'
+        div
+          h1.text-2xl.font-bold= topic.title
+          p.text-sm.text-muted-foreground Đăng bởi #{topic.author ? topic.author.name : 'Không rõ'} vào lúc #{topic.createdAt.toLocaleString('en-GB')}
+      .text-base.leading-relaxed
+        != topic.content
+
+    h3.text-lg.font-bold.border-b.border-border.pb-2.mt-8 #{replies.length} Phản hồi
+
+    if replies.length
+      .space-y-4.mb-8
+        each reply in replies
+          article.card.p-5.flex.gap-4
+            .avatar.avatar-md.flex-shrink-0
+              if reply.author && reply.author.avatar
+                img(src=reply.author.avatar, alt=reply.author.name)
+              else
+                = reply.author ? reply.author.name.charAt(0) : 'U'
+            .flex-1
+              .flex.justify-between
+                p.text-sm.text-muted-foreground
+                  strong #{reply.author ? reply.author.name : 'Không rõ'}
+                  |  đã phản hồi vào lúc #{reply.createdAt.toLocaleString('en-GB')}
+                form(method='POST', action='/teacher/classrooms/' + classroom.id + '/discussions/' + topic.id + '/replies/' + reply.id + '/delete', onsubmit="return confirm('Xóa phản hồi này?');")
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.text-destructive.text-sm.underline(type='submit') Xóa
+              .text-base.leading-relaxed.mt-2
+                != reply.content
+
+    .card.p-6(class='border-primary/30')
+      h4.text-lg.font-bold.mb-4 Viết một Phản hồi
+      form.grid.gap-4(method='POST', action='/teacher/classrooms/' + classroom.id + '/discussions/' + topic.id + '/replies')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        textarea.tinymce(name='content')
+        .text-right
+          button.btn-primary(type='submit') Đăng Phản hồi
+
+  script(src='https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js', referrerpolicy='origin')
+  script.
+    tinymce.init({
+      selector: '.tinymce',
+      plugins: 'link image lists code',
+      toolbar: 'bold italic | bullist numlist | link image | code',
+      menubar: false,
+      statusbar: false
+    });

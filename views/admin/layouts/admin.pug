@@ -1,0 +1,146 @@
+doctype html
+html(lang='en', class='light')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+    meta(name='color-scheme', content='light dark')
+    title= title ? title + ' | Enterprise Admin' : 'Enterprise Admin'
+    link(rel='icon', type='image/svg+xml', href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2310b981'/%3E%3Cpath d='M16 8L6 13.5v1L16 20l10-5.5v-1L16 8z' fill='white'/%3E%3Cpath d='M22 16.8v4.7c0 1-2.7 2.5-6 2.5s-6-1.5-6-2.5v-4.7l6 3.3 6-3.3z' fill='white' opacity='0.85'/%3E%3C/svg%3E")
+    link(rel='stylesheet', href='/css/style.css')
+    link(rel='stylesheet', href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css')
+    script(src='https://unpkg.com/@phosphor-icons/web')
+    //- Chart.js is loaded per-page (admin/dashboard) where charts render, not on every admin route.
+
+  body.bg-background.text-foreground.font-sans.antialiased.overflow-hidden
+    a.skip-link(href='#admin-content') Skip to main content
+    //- Shared modal (driven by /js/modal.js). Hidden until .open.
+    include ../../layouts/partials/_modal
+    include ../../layouts/partials/cmd-palette
+    .flex.h-dvh.w-full
+      //- Mobile Overlay
+      div#mobile-overlay.fixed.inset-0.backdrop-blur-sm.z-40.hidden(class='bg-background/80', class='md_hidden', aria-hidden='true')
+
+      //- Enterprise Sidebar
+      aside#admin-sidebar.fixed.inset-y-0.left-0.z-50.w-64.bg-card.border-r.border-border.flex.flex-col.transition-transform.duration-300.ease-in-out.-translate-x-full(class='md_translate-x-0 md_static md_flex-shrink-0')
+        //- Brand Area
+        .h-16.px-6.flex.items-center.border-b.border-border
+          a.flex.items-center.gap-3(href='/admin')
+            .w-8.h-8.rounded-lg.bg-primary.flex.items-center.justify-center.text-primary-foreground.shadow-sm
+              i.ph-bold.ph-shield-check.text-lg
+            .flex.flex-col
+              span.font-bold.text-sm.tracking-tight= siteName || 'E-Learning'
+              span.text-muted-foreground.font-semibold.uppercase.tracking-widest(class='text-[0.65rem]') Admin
+
+        //- Navigation
+        nav.flex-1.overflow-y-auto.py-4.px-3.space-y-6.scroll-thin(aria-label='Điều hướng Admin')
+          div
+            h2.px-3.mb-2.font-bold.text-muted-foreground.uppercase.tracking-widest.mt-4.first_mt-0(class='text-[0.65rem]') Tổng quan
+            .space-y-1
+              a.admin-nav-link(href='/admin' class=activeNav === 'dashboard' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-squares-four.text-lg
+                span Bảng điều khiển
+
+          div
+            h2.px-3.mb-2.font-bold.text-muted-foreground.uppercase.tracking-widest.mt-4.first_mt-0(class='text-[0.65rem]') Quản lý
+            .space-y-1
+              a.admin-nav-link(href='/admin/users' class=activeNav === 'users' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-users.text-lg
+                span Người dùng
+                if pendingCount > 0
+                  span.ml-auto.badge-danger.badge-sm= pendingCount
+              a.admin-nav-link(href='/admin/teachers' class=activeNav === 'teachers' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-chalkboard-teacher.text-lg
+                span Giáo viên
+              a.admin-nav-link(href='/admin/students' class=activeNav === 'students' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-student.text-lg
+                span Học sinh
+              a.admin-nav-link(href='/admin/classrooms' class=activeNav === 'classrooms' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-chalkboard.text-lg
+                span Lớp học
+
+          div
+            h2.px-3.mb-2.font-bold.text-muted-foreground.uppercase.tracking-widest.mt-4.first_mt-0(class='text-[0.65rem]') Nội dung
+            .space-y-1
+              a.admin-nav-link(href='/admin/exams' class=activeNav === 'exams' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-exam.text-lg
+                span Bài thi
+              a.admin-nav-link(href='/admin/assignments' class=activeNav === 'assignments' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-file-code.text-lg
+                span Bài tập
+              a.admin-nav-link(href='/admin/discussions' class=activeNav === 'discussions' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-chats.text-lg
+                span Thảo luận
+
+          div
+            h2.px-3.mb-2.font-bold.text-muted-foreground.uppercase.tracking-widest.mt-4.first_mt-0(class='text-[0.65rem]') Hệ thống
+            .space-y-1
+              a.admin-nav-link(href='/admin/settings' class=activeNav === 'settings' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-gear-six.text-lg
+                span Cài đặt
+
+        //- User Profile Footer
+        .p-4.border-t.border-border
+          .flex.items-center.gap-3.p-2.rounded-xl.hover_bg-muted.transition-colors.cursor-pointer
+            div.w-8.h-8.rounded-full.text-primary.flex.items-center.justify-center.font-bold.text-xs(class='bg-primary/10')
+              = currentUser && currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'A'
+            .flex-1.min-w-0
+              p.text-sm.font-bold.truncate= currentUser ? currentUser.name : 'Quản Trị Viên'
+              p.text-xs.text-muted-foreground.truncate Admin
+            form(method='POST', action='/admin/logout')
+              input(type='hidden', name='_csrf', value=csrfToken)
+              button.w-8.h-8.flex.items-center.justify-center.text-muted-foreground.hover_text-destructive.rounded-lg.transition-colors(class='hover_bg-destructive/10', type='submit', aria-label='Đăng xuất')
+                i.ph-bold.ph-sign-out.text-lg
+
+      //- Main Content Area
+      .flex-1.flex.flex-col.min-w-0.bg-background
+        //- Enterprise Topbar
+        header.h-16.px-6.flex.items-center.justify-between.border-b.border-border.backdrop-blur-md.sticky.top-0.z-30(class='bg-card/80')
+          .flex.items-center.gap-4
+            button#sidebar-toggle.md_hidden.w-8.h-8.flex.items-center.justify-center.rounded-lg.text-muted-foreground.hover_bg-muted.transition-colors(aria-label='Bật/Tắt Thanh bên')
+              i.ph-bold.ph-list.text-lg
+            nav.hidden.sm_flex.items-center.gap-2.text-sm.font-medium
+              a.text-muted-foreground.hover_text-foreground.transition-colors(href='/admin') Admin
+              i.ph-bold.ph-caret-right.text-muted-foreground.text-xs
+              span.text-foreground= title || 'Bảng điều khiển'
+
+          .flex.items-center.gap-3
+            //- Command Palette Trigger
+            button.hidden.md_flex.items-center.gap-3.px-3.rounded-lg.bg-muted.text-muted-foreground.text-sm.border.border-border.transition-colors(type='button', data-cmd-palette, aria-haspopup='dialog', aria-label='Tìm kiếm quản trị (Cmd+K)', class='py-1.5 hover:border-primary/30', style='width: 240px')
+              i.ph-bold.ph-magnifying-glass
+              span.flex-1.text-left Tìm kiếm...
+              kbd.hidden.sm_inline-flex.items-center.gap-1.font-mono.font-medium.text-muted-foreground.bg-background.border.border-border.rounded(class='px-1.5 text-[10px]')
+                span ⌘
+                span K
+
+            button.w-8.h-8.flex.items-center.justify-center.rounded-lg.text-muted-foreground.hover_bg-muted.transition-colors(data-theme-toggle, aria-label='Toggle Theme')
+              i.ph-bold.ph-moon.dark_hidden
+              i.ph-bold.ph-sun.hidden.dark_block
+
+            a.relative.w-8.h-8.flex.items-center.justify-center.rounded-lg.text-muted-foreground.hover_bg-muted.transition-colors(href='/admin/notifications', aria-label='Notifications')
+              i.ph-bold.ph-bell
+              if notificationCount > 0
+                span.absolute.w-2.h-2.rounded-full.bg-destructive(class='top-1.5 right-1.5', aria-hidden='true')
+                span.sr-only= notificationCount + ' unread'
+
+        //- Scrollable Content
+        main#admin-content.flex-1.overflow-y-auto.p-6.md_p-8(tabindex='-1')
+          block admin-content
+
+    script(src='/js/theme.js')
+    script(src='/js/modal.js')
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('admin-sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+
+        function toggleSidebar() {
+          sidebar.classList.toggle('-translate-x-full');
+          overlay.classList.toggle('hidden');
+        }
+
+        if (toggle) toggle.addEventListener('click', toggleSidebar);
+        if (overlay) overlay.addEventListener('click', toggleSidebar);
+      });
+
+    include ../../layouts/partials/cmd-palette-script

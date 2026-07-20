@@ -1,0 +1,529 @@
+extends ../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.pt-8.pb-32
+
+    //- ── HEADER ──────────────────────────────────────────────────
+    //- §4.1: Personalized greeting + quick actions above fold
+    header.flex.flex-col.md_flex-row.md_items-center.justify-between.gap-6.mb-10.animate-in
+      div
+        .inline-flex.items-center.gap-2.rounded-full.border.text-primary.px-4.mb-4(class='border-primary/20 bg-primary/5 py-1.5', style='font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;')
+          span.relative.flex.h-2.w-2
+            span.animate-ping.absolute.inline-flex.h-full.w-full.rounded-full.bg-primary.opacity-75
+            span.relative.inline-flex.rounded-full.h-2.w-2.bg-primary
+          | Bảng điều khiển Học sinh
+        h1.font-extrabold.tracking-tighter(style='font-size:clamp(2rem,5vw,3rem);line-height:1.05;')
+          | Chào buổi #{new Date().getHours() < 12 ? 'sáng' : new Date().getHours() < 17 ? 'chiều' : 'tối'},&nbsp;
+          span.text-primary.truncate.inline-block.align-bottom.max-w-xs= currentUser.name.split(' ').pop()
+        p.text-muted-foreground.mt-2(style='font-size:0.9375rem;') Tiếp tục học tập từ nơi bạn đã dừng lại.
+
+      .flex.items-center.gap-3.flex-wrap
+        //- Quick stats inline
+        if streak && streak > 0
+          .streak-counter
+            i.ph-fill.ph-fire.text-base
+            | #{streak} ngày chuỗi
+        a.btn-primary.h-11.px-6.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2(href='/catalog')
+          i.ph-bold.ph-compass
+          | Khám phá Khóa học
+
+    //- ── XP / GAMIFICATION STRIP ──────────────────────────────────
+    //- §4.3 Gamification: XP bar above KPIs creates progression feeling
+    if xpData
+      .glass-panel.p-5.rounded-2xl.mb-8.animate-in(style='animation-delay:100ms;')
+        .flex.items-center.justify-between.mb-3.gap-4
+          .flex.items-center.gap-3.flex-wrap
+            //- Level badge
+            .inline-flex.items-center.px-3.rounded-full.font-bold.text-sm.border(class='gap-1.5 bg-primary/10 border-primary/20 text-primary py-1')
+              i.ph-fill.ph-crown
+              | Cấp #{xpData.level || 1}
+            //- Badges earned
+            if xpData.badges && xpData.badges.length > 0
+              each badge in xpData.badges.slice(0, 3)
+                .badge-chip(title=badge.name)
+                  i.ph-fill(class=badge.icon || 'ph-star')
+                  | #{badge.name}
+          .text-right.flex-shrink-0
+            p.font-mono.font-bold.text-foreground #{xpData.current || 0} XP
+            p.text-muted-foreground(style='font-size:0.7rem;') #{xpData.toNext || 100} để lên Cấp #{(xpData.level || 1) + 1}
+        .xp-bar
+          .xp-bar-fill(style='width: ' + Math.min(100, Math.round(((xpData.current % (xpData.toNext || 100)) / (xpData.toNext || 100)) * 100)) + '%')
+
+    //- ── KPI STRIP ───────────────────────────────────────────────
+    //- §4.1 Dashboard Strategy: 4 stats above fold
+    .glass-panel.overflow-hidden.mb-8.animate-in(class='rounded-[2rem]', style='animation-delay: 150ms;')
+      div.grid.grid-cols-2.md_grid-cols-4.divide-y.md_divide-y-0.md_divide-x(class='divide-border/60')
+        div.p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
+          .flex.items-center.justify-between.mb-4
+            span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Đã tham gia
+            div.w-8.h-8.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_text-primary.transition-colors(class='group-hover_bg-primary/10')
+              i.ph-bold.ph-book-open.text-sm
+          p.text-4xl.md_text-5xl.font-mono.font-bold.tracking-tighter= enrolledCount || 0
+          p.text-xs.text-muted-foreground.mt-2 Lớp học
+
+        div.p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
+          .flex.items-center.justify-between.mb-4
+            span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Đã hoàn thành
+            div.w-8.h-8.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_text-success.transition-colors(class='group-hover_bg-success/10')
+              i.ph-bold.ph-check-circle.text-sm
+          p.text-4xl.md_text-5xl.font-mono.font-bold.tracking-tighter= gradedCount || 0
+          p.text-xs.text-muted-foreground.mt-2 Bài nộp đã chấm
+
+        div.p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
+          .flex.items-center.justify-between.mb-4
+            span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Điểm TB
+            div.w-8.h-8.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_text-warning.transition-colors(class='group-hover_bg-warning/10')
+              i.ph-bold.ph-star.text-sm
+          p.text-4xl.md_text-5xl.font-mono.font-bold.tracking-tighter= avgScore ? avgScore + '%' : '—'
+          p.text-xs.text-muted-foreground.mt-2 Trên tất cả bài nộp
+
+        div.p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
+          .flex.items-center.justify-between.mb-4
+            span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Bài nộp
+            div.w-8.h-8.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_text-info.transition-colors(class='group-hover_bg-info/10')
+              i.ph-bold.ph-tray.text-sm
+          p.text-4xl.md_text-5xl.font-mono.font-bold.tracking-tighter= submissionCount || 0
+          p.text-xs.text-muted-foreground.mt-2 Tổng số đã nộp
+
+    //- ── MAIN CONTENT GRID ────────────────────────────────────────
+    .grid.grid-cols-1.lg_grid-cols-3.gap-8.animate-in(style='animation-delay: 300ms;')
+
+      //- ── LEFT: ACTIVE CLASSROOMS ─────────────────────────────
+      .lg_col-span-2.space-y-8
+
+        //- Continue Learning section
+        div
+          .flex.items-center.justify-between.mb-5
+            h2.text-xl.font-extrabold.tracking-tight Tiếp tục Học tập
+            a.inline-flex.items-center.gap-2.text-sm.font-bold.text-primary.transition-colors(class='hover_text-primary/80', href='/student/classrooms')
+              | Xem tất cả
+              i.ph-bold.ph-arrow-right.text-xs
+
+          if enrollments && enrollments.length > 0
+            .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+              each enrollment, i in enrollments.slice(0, 4)
+                a.group.flex.items-center.gap-5.p-5.transition-all(
+                  class=(i < enrollments.length - 1 ? 'border-b border-border/60' : '') + ' hover_bg-muted/30',
+                  href='/student/classrooms/' + enrollment.classroom.id
+                )
+                  //- Classroom icon with initial
+                  .w-14.h-14.rounded-xl.flex.items-center.justify-center.text-primary.flex-shrink-0.border.text-xl.font-extrabold(class='bg-primary/10 border-primary/20')
+                    = enrollment.classroom.name ? enrollment.classroom.name.charAt(0).toUpperCase() : '?'
+
+                  .flex-1.min-w-0
+                    .flex.items-center.justify-between.mb-1
+                      p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest= enrollment.classroom.code || 'Lớp'
+                      span.font-mono.font-bold.text-primary(style='font-size:0.75rem;')
+                        if enrollment.progress !== undefined
+                          | #{enrollment.progress}%
+                    h3.text-sm.font-bold.text-foreground.truncate.group-hover_text-primary.transition-colors= enrollment.classroom.name
+                    if enrollment.progress !== undefined
+                      .w-full.bg-muted.rounded-full.mt-2.overflow-hidden(class='h-1.5')
+                        .bg-primary.h-full.rounded-full.transition-all(style='width: ' + (enrollment.progress || 0) + '%')
+
+                  .w-9.h-9.rounded-full.bg-background.border.flex.items-center.justify-center.text-muted-foreground.group-hover_bg-primary.group-hover_text-white.group-hover_border-primary.transition-all.duration-300.flex-shrink-0(class='border-border/50')
+                    i.ph-bold.ph-play.text-sm(class='ml-0.5')
+
+          else
+            .glass-panel.p-10.text-center(class='rounded-[2rem] border-border/60')
+              .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-6
+                i.ph-fill.ph-chalkboard.text-3xl(class='text-muted-foreground/40')
+              h3.text-xl.font-extrabold.tracking-tight.mb-2 Tham gia lớp học đầu tiên của bạn
+              p.text-muted-foreground.text-sm.mb-6.max-w-xs.mx-auto Nhập mã lớp học từ giáo viên của bạn để bắt đầu.
+              a.btn-primary.h-11.px-6.rounded-full.shadow-diffused.inline-flex.items-center.gap-2(href='/student/classrooms/join')
+                i.ph-bold.ph-plus-circle
+                | Nhập mã Lớp học
+
+        //- ── QUICK ACTIONS ─────────────────────────────────────
+        div
+          h2.text-xl.font-extrabold.tracking-tight.mb-5 Hành động nhanh
+          .grid.grid-cols-2.gap-3.sm_grid-cols-4
+            each action in [['Bài tập của tôi', 'ph-file-text', '/student/assignments', 'primary'], ['Bài thi của tôi', 'ph-exam', '/student/exams', 'destructive'], ['Thảo luận', 'ph-chats', '/student/discussions', 'info'], ['Chứng chỉ', 'ph-certificate', '/student/certificates', 'warning']]
+              a.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action[2])
+                .w-9.h-9.rounded-xl.flex.items-center.justify-center.transition-transform.duration-300.group-hover_scale-110(class='bg-' + action[3] + '/10 text-' + action[3])
+                  i.ph-bold(class=action[1] + ' text-base')
+                span.text-sm.font-bold.text-foreground= action[0]
+                i.ph-bold.ph-arrow-right.text-xs.text-muted-foreground.group-hover_text-primary.transition-colors.mt-auto
+
+      //- ── RIGHT: SIDEBAR ──────────────────────────────────────
+      .space-y-6
+
+        //- ── DEADLINES (replaces mock Upcoming) ────────────
+        div
+          .flex.items-center.justify-between.mb-4
+            h2.text-xl.font-extrabold.tracking-tight Hạn chót
+            a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors(class='hover_text-primary/80', href='/student/assignments')
+              | Xem tất cả
+              i.ph-bold.ph-arrow-right.text-xs
+          .glass-panel.p-5(class='rounded-2xl border-border/60')
+            if upcoming && upcoming.length > 0
+              .space-y-4
+                each item in upcoming
+                  a.flex.gap-3.transition-colors(href=item.link, class='hover_bg-muted/30 -mx-2 p-2 rounded-lg')
+                    .w-9.h-9.rounded-xl.flex.items-center.justify-center.flex-shrink-0.border.text-sm(
+                      class=(item.type === 'exam' ? 'bg-destructive/10 border-destructive/20 text-destructive' : 'bg-warning/10 border-warning/20 text-warning')
+                    )
+                      i.ph-bold(class=(item.type === 'exam' ? 'ph-exam' : 'ph-file-text'))
+                    div(style='padding-top:0.0625rem;')
+                      h4.text-sm.font-bold.text-foreground.truncate= item.title
+                      p.text-xs.font-medium(class='mt-0.5 ' + (item.isUrgent ? 'text-destructive' : 'text-muted-foreground'))= item.dueLabel
+                      if item.classroom
+                        p.text-xs.text-muted-foreground(class='mt-0.5')= item.classroom
+            else
+              .text-center.py-8
+                .w-12.h-12.rounded-xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-4
+                  i.ph-fill.ph-calendar-blank.text-2xl(class='text-muted-foreground/40')
+                p.text-sm.font-bold.text-muted-foreground Đã hoàn thành tất cả!
+                p.text-xs.text-muted-foreground.mt-1 Không có hạn chót sắp tới.
+
+        //- ── RECENT ACTIVITY ──────────────────────────────────
+        if recentActivity && recentActivity.length > 0
+          div
+            h2.text-xl.font-extrabold.tracking-tight.mb-4 Hoạt động gần đây
+            .glass-panel.p-4(class='rounded-2xl border-border/60')
+              .space-y-1
+                each activity in recentActivity.slice(0, 5)
+                  .flex.items-start.gap-3.p-2.rounded-lg.transition-colors(class='hover_bg-muted/30')
+                    .w-7.h-7.rounded-full.flex.items-center.justify-center.flex-shrink-0.text-xs(
+                      class='mt-0.5 ' + (activity.type === 'grade' ? 'bg-success/10 text-success' : activity.type === 'announcement' ? 'bg-info/10 text-info' : 'bg-muted text-muted-foreground')
+                    )
+                      i.ph-bold(class=(activity.type === 'grade' ? 'ph-check' : activity.type === 'announcement' ? 'ph-megaphone' : 'ph-bell'))
+                    div.flex-1.min-w-0
+                      p.text-xs.font-medium.text-foreground.truncate= activity.message || activity.title
+                      p.text-xs.text-muted-foreground(class='mt-0.5')= activity.timeLabel || ''
+
+        //- ── LEARNING STREAK CARD ────────────────────────────
+        .glass-panel.p-5(class='rounded-2xl border-border/60 bg-primary/3')
+          .flex.items-center.gap-3.mb-4
+            .w-10.h-10.rounded-xl.flex.items-center.justify-center(class='bg-warning/10 text-warning')
+              i.ph-fill.ph-fire.text-xl
+            div
+              p.text-sm.font-extrabold.tracking-tight Giữ vững chuỗi ngày học!
+              p.text-xs.text-muted-foreground Tiếp tục học tập mỗi ngày
+          .grid.grid-cols-7.gap-1
+            - var today = new Date().getDay();
+            each day, i in ['C', 'H', 'B', 'T', 'N', 'S', 'B']
+              .flex.flex-col.items-center.gap-1
+                .w-full.rounded-md.flex.items-center.justify-center.font-bold(
+                  class=(i === today ? 'bg-primary text-primary-foreground' : (streakDays && streakDays[i] ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground')),
+                  style='height:2rem;font-size:0.65rem;'
+                )= day
+                if i === today
+                  .w-1.h-1.rounded-full.bg-primary
+          .mt-4.pt-4.border-t(class='border-border/60')
+            a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors(class='hover_text-primary/80', href='/student/analytics')
+              | Xem tiến độ của tôi
+              i.ph-bold.ph-arrow-right.text-xs
+
+        //- ── AI RECOMMENDATIONS ───────────────────────────────
+        div
+          h2.text-xl.font-extrabold.tracking-tight.mb-4 Đề xuất từ AI
+          .glass-panel.p-5.space-y-3(class='rounded-2xl border-border/60')
+            each rec in recommendations
+              .flex.gap-3.items-start
+                .w-8.h-8.rounded-lg.flex.items-center.justify-center.flex-shrink-0(class='bg-' + rec.tone + '/10 text-' + rec.tone)
+                  i.ph-bold.text-sm(class=rec.icon)
+                div
+                  p.text-sm.font-bold.text-foreground= rec.title
+                  p.text-xs.text-muted-foreground.leading-relaxed(class='mt-0.5')= rec.text
+
+        //- ── NOTIFICATIONS ───────────────────────────────────
+        div
+          .flex.items-center.justify-between.mb-4
+            h2.text-xl.font-extrabold.tracking-tight Thông báo
+            if unreadNotifications > 0
+              span.badge.badge-danger.badge-sm= unreadNotifications + ' mới'
+          .glass-panel.p-4(class='rounded-2xl border-border/60')
+            if notifications && notifications.length > 0
+              .space-y-1
+                each n in notifications
+                  a.flex.items-start.gap-3.p-2.rounded-lg.transition-colors(href=n.link || '/notifications', class='hover_bg-muted/30')
+                    .w-2.h-2.rounded-full.flex-shrink-0(class=(n.isRead ? 'bg-border' : 'bg-primary') + ' mt-1.5')
+                    div.flex-1.min-w-0
+                      p.text-xs.font-bold.text-foreground.truncate= n.title
+                      p.text-xs.text-muted-foreground.truncate(class='mt-0.5')= n.message
+            else
+              p.text-xs.text-muted-foreground.text-center.py-4 Chưa có thông báo nào
+
+  //- ── ANALYTICS ROW: PROGRESS + RADAR + HEATMAP ───────────────
+  .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-10.animate-in(style='animation-delay: 400ms;')
+    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
+      h2.text-base.font-extrabold.tracking-tight.mb-1 Phân tích Học tập
+      p.text-xs.text-muted-foreground.mb-4 Hoạt động học tập hàng tuần
+      div.relative.w-full(class='h-[180px]')
+        canvas#weeklyChart(aria-label='Hoạt động hàng tuần', role='img')
+      .mt-4.flex.items-center.justify-between.text-xs
+        span.text-muted-foreground Tuần này
+        span.font-mono.font-bold.text-primary= (weekly && weekly.total) || 0
+        span.text-muted-foreground sự kiện
+
+    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
+      h2.text-base.font-extrabold.tracking-tight.mb-1 Biểu đồ Kỹ năng
+      p.text-xs.text-muted-foreground.mb-4 Các khía cạnh học tập của bạn
+      div.relative.w-full(class='h-[200px]')
+        canvas#radarChart(aria-label='Biểu đồ kỹ năng', role='img')
+
+    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
+      h2.text-base.font-extrabold.tracking-tight.mb-1 Bản đồ Hoạt động
+      p.text-xs.text-muted-foreground.mb-4 17 tuần qua
+      #heatmap.heatmap-grid(aria-label='Bản đồ hoạt động', role='img')
+
+  //- ── REPORTS ROW: MONTHLY + CALENDAR + ATTENDANCE ────────────
+  .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-8.animate-in(style='animation-delay: 500ms;')
+    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
+      h2.text-base.font-extrabold.tracking-tight.mb-1 Báo cáo Hàng tháng
+      p.text-xs.text-muted-foreground.mb-4 Điểm TB theo tháng (6 tháng)
+      div.relative.w-full(class='h-[200px]')
+        canvas#monthlyChart(aria-label='Điểm trung bình hàng tháng', role='img')
+
+    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
+      .flex.items-center.justify-between.mb-4
+        h2.text-base.font-extrabold.tracking-tight Lịch
+        span.text-xs.font-bold.text-muted-foreground= calendarMonth
+      .calendar-grid
+        each d in ['C','H','B','T','N','S','B']
+          .cal-dow= d
+        - var lead = calendarStartWeekday;
+        - var total = lead + calendarDaysInMonth;
+        each _, i in new Array(total)
+          if i < lead
+            .cal-day.cal-empty
+          else
+            - var dayNum = i - lead + 1;
+            - var isToday = dayNum === todayDate;
+            - var events = (calendarEvents || []).filter(function(e){ return e.day === dayNum; });
+            .cal-day(class=(isToday ? 'cal-today' : '') + (events.length ? ' cal-has' : ''))
+              span.cal-num= dayNum
+              if events.length
+                .cal-dots
+                  each e in events.slice(0, 3)
+                    span.cal-dot(class='cal-dot-' + e.type, title=e.title)
+
+    .lg_col-span-1.glass-panel.p-6.flex.flex-col(class='rounded-2xl border-border/60')
+      h2.text-base.font-extrabold.tracking-tight.mb-1 Điểm danh
+      p.text-xs.text-muted-foreground.mb-4 Trên các lớp đã tham gia
+      .flex.items-end.gap-2.mb-4
+        p.text-4xl.font-mono.font-bold.tracking-tighter(class=(attendanceRate === null ? 'text-muted-foreground' : 'text-success'))
+          if attendanceRate === null
+            | —
+          else
+            | #{attendanceRate}%
+        p.text-xs.text-muted-foreground(class='mb-1.5')= attendanceRate === null ? 'chưa có buổi học' : 'tỷ lệ điểm danh'
+      .progress.mb-5
+        .progress-bar(style='width: ' + (attendanceRate || 0) + '%', class='bg-success')
+      .space-y-2.text-xs
+        .flex.items-center.justify-between
+          span.text-muted-foreground Số buổi đã học
+          span.font-mono.font-bold= attendanceRate === null ? 0 : (attendanceRate || 0)
+        a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors.mt-2(class='hover_text-primary/80', href='/student/classrooms')
+          | Điểm danh các buổi học
+          i.ph-bold.ph-arrow-right.text-xs
+
+  //- ── AI ASSISTANT FLOATING BUTTON ────────────────────────────────
+  //- §AI: Fixed position, spring-animated panel, persistent session
+  button#ai-fab.ai-fab(
+    type='button',
+    aria-label='Mở Trợ lý Học tập AI',
+    aria-expanded='false',
+    aria-controls='ai-panel'
+  )
+    i#ai-fab-icon.ph-bold.ph-sparkle.text-xl
+
+  #ai-panel.ai-panel(role='dialog', aria-label='Trợ lý Học tập AI', aria-modal='true')
+    .ai-panel-header
+      .flex.items-center.gap-2
+        .w-7.h-7.rounded-full.bg-primary.text-primary-foreground.flex.items-center.justify-center(style='font-size:0.75rem;')
+          i.ph-bold.ph-sparkle
+        div
+          p.text-sm.font-bold.tracking-tight Trợ lý AI
+          p.text-xs.text-muted-foreground Tôi có thể giúp gì cho bạn?
+      button#ai-close.w-7.h-7.rounded-lg.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_bg-muted hover_text-foreground', type='button', aria-label='Đóng trợ lý AI')
+        i.ph-bold.ph-x.text-sm
+
+    #ai-messages.ai-panel-messages(aria-live='polite')
+      .ai-msg.ai-msg-assistant Chào bạn #{currentUser.name.split(' ').pop()}! Tôi là trợ lý học tập AI của bạn. Hãy hỏi tôi bất cứ điều gì về khóa học, hoặc nhận trợ giúp về bài tập và ôn thi.
+      //- Quick action pills
+      .flex.flex-wrap.gap-2.mt-1
+        each prompt in ['Giải thích khái niệm', 'Kiểm tra tôi', 'Mẹo học tập', 'Tóm tắt bài học']
+          button.badge-chip.cursor-pointer.transition-all(
+            type='button',
+            class='hover_border-primary/30 hover_bg-primary/5 hover_text-primary',
+            onclick='aiPrompt(this.textContent.trim())'
+          )= prompt
+
+    .ai-panel-input
+      input#ai-input(type='text', placeholder='Hỏi tôi bất cứ điều gì...', autocomplete='off', aria-label='Message AI assistant')
+      button#ai-send.chat-send-btn(type='button', aria-label='Send message', disabled)
+        i.ph-bold.ph-paper-plane-tilt.text-sm
+
+block scripts
+  script.
+    // AI Assistant
+    const aiFab = document.getElementById('ai-fab');
+    const aiPanel = document.getElementById('ai-panel');
+    const aiClose = document.getElementById('ai-close');
+    const aiIcon = document.getElementById('ai-fab-icon');
+    const aiInput = document.getElementById('ai-input');
+    const aiSend = document.getElementById('ai-send');
+    const aiMessages = document.getElementById('ai-messages');
+
+    let aiOpen = false;
+    let aiLastTrigger = null;
+
+    function toggleAI() {
+      aiOpen = !aiOpen;
+      if (aiOpen) {
+        aiLastTrigger = document.activeElement;
+        aiFab.classList.add('open');
+        aiPanel.classList.add('open');
+        aiFab.setAttribute('aria-expanded', 'true');
+        aiIcon.className = 'ph-bold ph-x text-xl';
+        setTimeout(() => aiInput.focus(), 300);
+      } else {
+        aiFab.classList.remove('open');
+        aiPanel.classList.remove('open');
+        aiFab.setAttribute('aria-expanded', 'false');
+        aiIcon.className = 'ph-bold ph-sparkle text-xl';
+        if (aiLastTrigger && typeof aiLastTrigger.focus === 'function') {
+          try { aiLastTrigger.focus(); } catch (e) {}
+          aiLastTrigger = null;
+        }
+      }
+    }
+
+    aiFab.addEventListener('click', toggleAI);
+    aiClose.addEventListener('click', toggleAI);
+
+    aiInput.addEventListener('input', () => {
+      aiSend.disabled = aiInput.value.trim().length === 0;
+    });
+
+    aiInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && aiInput.value.trim()) {
+        e.preventDefault();
+        sendAIMessage(aiInput.value.trim());
+      }
+    });
+
+    aiSend.addEventListener('click', () => {
+      if (aiInput.value.trim()) sendAIMessage(aiInput.value.trim());
+    });
+
+    function aiPrompt(text) {
+      sendAIMessage(text);
+    }
+
+    function addAIMessage(content, role) {
+      const div = document.createElement('div');
+      div.className = 'ai-msg ai-msg-' + role;
+      div.textContent = content;
+      aiMessages.appendChild(div);
+      aiMessages.scrollTop = aiMessages.scrollHeight;
+      return div;
+    }
+
+    function addTypingIndicator() {
+      const div = document.createElement('div');
+      div.className = 'ai-typing-dot';
+      div.innerHTML = '<span></span><span></span><span></span>';
+      aiMessages.appendChild(div);
+      aiMessages.scrollTop = aiMessages.scrollHeight;
+      return div;
+    }
+
+    async function sendAIMessage(text) {
+      aiInput.value = '';
+      aiSend.disabled = true;
+      addAIMessage(text, 'user');
+      const typing = addTypingIndicator();
+
+      // Simulated responses (replace with actual API call)
+      const responses = {
+        'explain a concept': 'Sure! Tell me which concept you\'d like me to explain, and I\'ll break it down step by step.',
+        'quiz me': 'Great idea! Which subject or topic should I quiz you on?',
+        'study tips': 'Here are some evidence-backed study tips: 1) Use spaced repetition — review material at increasing intervals. 2) Practice active recall instead of passive reading. 3) Take breaks every 25 minutes (Pomodoro technique). 4) Teach the material to someone else.',
+        'summarize notes': 'Please paste your notes and I\'ll create a concise summary with key points highlighted.',
+      };
+
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+      typing.remove();
+
+      const lowerText = text.toLowerCase();
+      const response = responses[lowerText] || `I can help with that! For "${text}", let me suggest: start by reviewing your course materials related to this topic. Do you have specific questions about the content from your classrooms?`;
+      addAIMessage(response, 'assistant');
+    }
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && aiOpen) toggleAI();
+    });
+
+  script(src='https://cdn.jsdelivr.net/npm/chart.js')
+  script.
+    (function () {
+      if (typeof Chart === 'undefined') return;
+      var isDark = document.documentElement.classList.contains('dark');
+      var rm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var primary = isDark ? 'hsl(163,62%,55%)' : 'hsl(163,62%,41%)';
+      var weekLabels = !{JSON.stringify(weekly && weekly.labels || [])};
+      var weekData = !{JSON.stringify(weekly && weekly.data || [])};
+      var monthLabels = !{JSON.stringify(monthly && monthly.labels || [])};
+      var monthData = !{JSON.stringify(monthly && monthly.data || [])};
+      var radarLabels = !{JSON.stringify(radar && radar.labels || [])};
+      var radarData = !{JSON.stringify(radar && radar.data || [])};
+      var heatmap = !{JSON.stringify(heatmap || [])};
+      Chart.defaults.font.family = "'Geist','Satoshi',sans-serif";
+      Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
+
+      function baseScales(extra) {
+        return Object.assign({
+          y: { beginAtZero: true, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, border: { display: false }, ticks: { precision: 0, padding: 8 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { padding: 8 } }
+        }, extra || {});
+      }
+      function tooltip() {
+        return { backgroundColor: isDark ? 'rgba(9,9,11,0.92)' : 'rgba(255,255,255,0.95)', titleColor: isDark ? '#fff' : '#000', bodyColor: isDark ? '#a1a1aa' : '#52525b', borderColor: isDark ? '#27272a' : '#e4e4e7', borderWidth: 1, padding: 10, usePointStyle: true };
+      }
+
+      // Weekly bar
+      var wc = document.getElementById('weeklyChart');
+      if (wc && weekLabels.length) {
+        new Chart(wc.getContext('2d'), {
+          type: 'bar',
+          data: { labels: weekLabels, datasets: [{ data: weekData, backgroundColor: primary, borderRadius: 6, barPercentage: 0.6, maxBarThickness: 28 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: rm ? false : undefined, plugins: { legend: { display: false }, tooltip: tooltip() }, scales: baseScales({ y: { beginAtZero: true, precision: 0, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { precision: 0, maxTicksLimit: 4 } } }) }
+        });
+      }
+      // Monthly line
+      var mc = document.getElementById('monthlyChart');
+      if (mc && monthLabels.length) {
+        new Chart(mc.getContext('2d'), {
+          type: 'line',
+          data: { labels: monthLabels, datasets: [{ data: monthData, borderColor: primary, backgroundColor: isDark ? 'hsla(163,62%,55%,0.15)' : 'hsla(163,62%,41%,0.1)', borderWidth: 3, tension: 0.4, fill: true, pointRadius: 0, pointHoverRadius: 6, pointHoverBackgroundColor: primary }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: rm ? false : undefined, plugins: { legend: { display: false }, tooltip: tooltip() }, scales: baseScales({ y: { max: 100, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { maxTicksLimit: 4, callback: function(v){ return v + '%'; } } } }) }
+        });
+      }
+      // Radar
+      var rc = document.getElementById('radarChart');
+      if (rc && radarLabels.length) {
+        new Chart(rc.getContext('2d'), {
+          type: 'radar',
+          data: { labels: radarLabels, datasets: [{ data: radarData, borderColor: primary, backgroundColor: isDark ? 'hsla(163,62%,55%,0.2)' : 'hsla(163,62%,41%,0.15)', borderWidth: 2, pointBackgroundColor: primary, pointRadius: 3 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: rm ? false : undefined, plugins: { legend: { display: false }, tooltip: tooltip() }, scales: { r: { min: 0, max: 100, grid: { color: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }, angleLines: { color: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)' }, pointLabels: { color: isDark ? '#a1a1aa' : '#52525b', font: { size: 10 } }, ticks: { display: false, stepSize: 25 } } } }
+        });
+      }
+      // Heatmap (GitHub-style)
+      var hm = document.getElementById('heatmap');
+      if (hm && heatmap.length) {
+        var max = 1;
+        heatmap.forEach(function (c) { if (c.count > max) max = c.count; });
+        var frag = document.createDocumentFragment();
+        heatmap.forEach(function (c) {
+          var cell = document.createElement('div');
+          cell.className = 'heat-cell heat-l' + (c.count === 0 ? 0 : Math.min(4, Math.ceil((c.count / max) * 4)));
+          cell.title = new Date(c.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ': ' + c.count + ' event' + (c.count === 1 ? '' : 's');
+          frag.appendChild(cell);
+        });
+        hm.appendChild(frag);
+      }
+    })();

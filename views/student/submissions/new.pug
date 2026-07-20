@@ -1,0 +1,40 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/student/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + membership.classroom.id)= membership.classroom.name
+      span.breadcrumb-sep /
+      a(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id) Bài tập
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold= submission ? 'Chỉnh sửa bài nộp' : 'Nộp bài'
+
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-upload-simple', h1: submission ? 'Chỉnh sửa bài nộp' : 'Nộp bài tập', h1Accent: assignment.title })
+
+    form.card.p-6.animate-in.slide-in-up(method='POST', action='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission', enctype='multipart/form-data')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      if errorMessage
+        .alert-danger.mb-4
+          i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0
+          span= errorMessage
+      .space-y-5
+        .field
+          label.field-label(for='textAnswer') Câu trả lời viết
+          textarea#textAnswer(name='textAnswer', rows='8', placeholder='Nhập câu trả lời của bạn ở đây…')= formData.textAnswer || ''
+          p.field-hint Không bắt buộc — bạn có thể đính kèm tệp thay thế hoặc cả hai.
+        .field
+          label.field-label(for='attachment') Tệp đính kèm
+          input#attachment(type='file', name='attachment', accept='.pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.zip')
+          if submission && submission.attachment
+            p.field-hint Tệp hiện tại: #{submission.attachment.originalName || 'Đã tải lên tệp đính kèm'}. Tải lên tệp mới sẽ ghi đè tệp cũ.
+          else
+            p.field-hint PDF, DOC/DOCX, hình ảnh, hoặc ZIP lên đến 25 MB.
+      .flex.gap-3.flex-wrap.mt-6
+        button.btn-primary(type='submit')
+          i.ph-bold.ph-paper-plane-tilt
+          | #{submission ? 'Cập nhật bài nộp' : 'Nộp bài ngay'}
+        a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id) Quay lại bài tập

@@ -1,0 +1,99 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Phân tích Học sinh
+    h1.text-3xl.font-bold.tracking-tight Tiến độ của tôi
+    p.text-muted-foreground.mt-2 Theo dõi hành trình học tập của bạn trên tất cả các lớp học
+
+    .grid-dashboard
+      .stat
+        p.text-sm.font-medium.text-muted-foreground Điểm trung bình
+        p.text-3xl.font-mono.font-bold.text-primary #{stats.averageScore}%
+      .stat
+        p.text-sm.font-medium.text-muted-foreground Bài thi đã làm
+        p.text-3xl.font-mono.font-bold.text-success #{stats.examsTaken}
+      .stat
+        p.text-sm.font-medium.text-muted-foreground Bài tập còn thiếu
+        p.text-3xl.font-mono.font-bold.text-destructive #{stats.missingAssignments}
+
+    .grid.grid-cols-1.gap-6(class='lg_grid-cols-[2fr_1fr]')
+      .card.p-6
+        h2.text-lg.font-bold.tracking-tight.mb-6 Tiến trình Điểm thi
+        if chartData.labels.length > 0
+          div.relative.w-full(class='h-[350px]')
+            canvas#progressChart
+        else
+          .text-sm.text-muted-foreground Chưa đủ dữ liệu bài thi để tạo biểu đồ. Hãy làm một số bài thi trước!
+
+      .space-y-6
+        .card.p-6
+          h2.text-lg.font-bold.tracking-tight.mb-4 Thống kê Bài tập
+          .space-y-3
+            .flex.items-center.justify-between
+              span.text-sm.text-muted-foreground Tổng được giao
+              strong.text-sm.font-mono #{stats.totalAssignments}
+            .flex.items-center.justify-between
+              span.text-sm.text-muted-foreground Đã nộp
+              strong.text-sm.font-mono.text-success #{stats.submittedAssignments}
+            .flex.items-center.justify-between
+              span.text-sm.text-muted-foreground Còn thiếu
+              strong.text-sm.font-mono.text-destructive #{stats.missingAssignments}
+
+            if stats.totalAssignments > 0
+              - var completionRate = Math.round((stats.submittedAssignments / stats.totalAssignments) * 100)
+              .pt-2
+                .flex.items-center.justify-between.mb-1
+                  span.text-xs.text-muted-foreground Tỷ lệ Hoàn thành
+                  span.text-xs.font-bold #{completionRate}%
+                .w-full.bg-muted.rounded-full.h-2
+                  div.bg-primary.h-2.rounded-full(style='width:' + completionRate + '%')
+
+    .flex
+      a.btn-outline(href='/student')
+        i.ph-bold.ph-arrow-left
+        | Quay lại Bảng điều khiển
+
+  if chartData && chartData.labels && chartData.labels.length > 0
+    script(src='https://cdn.jsdelivr.net/npm/chart.js')
+    script.
+      (function() {
+        var isDark = document.documentElement.classList.contains('dark');
+        var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var labels = !{JSON.stringify(chartData.labels)};
+        var data = !{JSON.stringify(chartData.data)};
+        var ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Điểm (%)',
+              data: data,
+              backgroundColor: isDark ? 'hsla(163,62%,46%,0.15)' : 'hsla(163,62%,41%,0.1)',
+              borderColor: isDark ? 'hsl(163,62%,46%)' : 'hsl(163,62%,41%)',
+              pointBackgroundColor: isDark ? 'hsl(163,62%,46%)' : 'hsl(163,62%,41%)',
+              borderWidth: 2,
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: {
+            animation: prefersReducedMotion ? false : undefined,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: {
+                beginAtZero: true, max: 100,
+                ticks: { color: isDark ? '#94a3b8' : '#475569' },
+                grid: { color: isDark ? 'rgba(148,163,184,0.1)' : 'rgba(15,23,42,0.1)' }
+              },
+              x: {
+                ticks: { color: isDark ? '#94a3b8' : '#475569' },
+                grid: { display: false }
+              }
+            }
+          }
+        });
+      })();

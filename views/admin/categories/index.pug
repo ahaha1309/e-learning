@@ -1,0 +1,56 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        nav.breadcrumb.mb-6
+          a(href='/admin') Admin
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Danh mục
+          
+        h1.text-4xl.font-extrabold.tracking-tighter Quản lý Danh mục
+        p.text-lg.text-muted-foreground.mt-3 Quản lý các danh mục hiển thị trên trang Catalog.
+        
+      .flex.items-center.gap-4
+        a.btn-primary.h-14.px-6.rounded-full(href='/admin/categories/new')
+          i.ph-bold.ph-plus.text-lg
+          | Thêm Danh mục
+
+    if feedback
+      .alert-primary.rounded-2xl= feedback
+
+    if categories.length
+      .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+        .table-wrap
+          table.w-full.text-left.border-collapse
+            thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
+              tr
+                th.px-8.py-5.font-bold Tên Danh mục
+                th.px-8.py-5.font-bold Đường dẫn (Slug)
+                th.px-8.py-5.font-bold Mô tả
+                th.px-8.py-5.font-bold.text-center Hành động
+            tbody(class='divide-y divide-border/60')
+              each category in categories
+                tr.transition-colors(class='hover_bg-muted/10')
+                  td.px-8.py-6
+                    .flex.items-center.gap-4
+                      div.w-10.h-10.rounded-full.flex.items-center.justify-center.text-lg.bg-muted
+                        i(class=category.icon || 'ph-bold ph-folder')
+                      span.font-bold.text-base= category.name
+                  td.px-8.py-6.font-mono.text-sm.text-muted-foreground= category.slug
+                  td.px-8.py-6.text-sm.text-muted-foreground= category.description || '--'
+                  td.px-8.py-6
+                    .flex.items-center.justify-end.gap-2
+                      a.w-10.h-10.rounded-full.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_text-primary hover_bg-primary/10', href='/admin/categories/' + category.id + '/edit', title='Sửa')
+                        i.ph-bold.ph-pencil-simple.text-sm
+                      form(method='POST', action='/admin/categories/' + category.id + '/delete', onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?');")
+                        input(type='hidden', name='_csrf', value=csrfToken)
+                        button.w-10.h-10.rounded-full.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_text-destructive hover_bg-destructive/10', type='submit', title='Xóa')
+                          i.ph-bold.ph-trash.text-sm
+    else
+      .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2.5rem] border-border/60')
+        .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
+          i.ph-fill.ph-folders.text-5xl(class='text-muted-foreground/30')
+        h2.text-3xl.font-extrabold.text-foreground Chưa có danh mục nào
+        p.text-lg.text-muted-foreground.mt-3 Thêm danh mục mới để bắt đầu.

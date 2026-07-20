@@ -1,0 +1,58 @@
+doctype html
+html(lang='en', class='light')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='color-scheme', content='light dark')
+    title Đăng nhập Quản trị | #{siteName || 'Quản trị'}
+    link(rel='stylesheet', href='/css/style.css')
+    script(src='https://unpkg.com/@phosphor-icons/web')
+
+  body.bg-background.text-foreground.font-sans.antialiased.min-h-dvh.flex.flex-col
+    .flex-1.flex
+      .hidden.lg_flex.lg_w-1-2.relative.bg-muted.items-center.justify-center
+        .absolute.inset-0(class='bg-gradient-to-br from-primary/10 via-transparent to-primary/5')
+        .relative.z-10.max-w-md.px-12.text-center
+          .w-20.h-20.mx-auto.rounded-2xl.bg-primary.flex.items-center.justify-center.text-primary-foreground.shadow-lg.mb-8(class='shadow-primary/30')
+            i.ph-bold.ph-shield-check.text-4xl
+          h1.text-3xl.font-bold.tracking-tight.text-foreground.mb-4 Bảng điều khiển Quản trị
+          p.text-muted-foreground.leading-relaxed Quản lý người dùng, khóa học, lớp học và cài đặt hệ thống từ trung tâm điều khiển tập trung.
+
+      .w-full.lg_w-1-2.flex.items-center.justify-center.p-6.md_p-12
+        .w-full.max-w-md.space-y-8
+          .space-y-3
+            .inline-flex.items-center.gap-2.rounded-full.text-primary.text-xs.font-semibold(class='bg-primary/10 px-3.5 py-1.5')
+              i.ph-bold.ph-shield-check
+              | Quyền Quản trị viên
+            h1.text-3xl.font-bold.tracking-tight Đăng nhập Quản trị
+            p.text-muted-foreground Nhập thông tin xác thực quản trị viên của bạn.
+
+          form.space-y-5(method='POST', action='/admin/login')
+            input(type='hidden', name='_csrf', value=csrfToken)
+
+            if errorMessage
+              .alert-danger.flex.items-center.gap-3.p-4
+                i.ph-fill.ph-warning-circle.text-lg.flex-shrink-0
+                p= errorMessage
+
+            .space-y-4
+              .field
+                label.field-label(for='email') Địa chỉ Email
+                .input-icon
+                  .icon
+                    i.ph-bold.ph-envelope-simple.text-base
+                  input#email(type='email', name='email', value=formData.email || '', required, autocomplete='email', placeholder='admin@example.com')
+
+              .field
+                label.field-label(for='password') Mật khẩu
+                .input-icon
+                  .icon
+                    i.ph-bold.ph-lock.text-base
+                  input#password(type='password', name='password', required, autocomplete='current-password', placeholder='Nhập mật khẩu của bạn')
+
+            button.btn-primary.w-full.h-12(type='submit')
+              i.ph-bold.ph-arrow-right
+              | Đăng nhập
+
+          p.text-center.text-sm.text-muted-foreground
+            a.font-medium.text-primary.hover_underline(href='/auth/login') Quay lại đăng nhập người dùng

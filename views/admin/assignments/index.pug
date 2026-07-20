@@ -1,0 +1,63 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Danh mục Bài tập
+        h1.text-3xl.font-extrabold.tracking-tight Bài tập
+        p.text-muted-foreground.mt-2.text-sm Xem tất cả bài tập trên nền tảng.
+
+    .bento-card.p-0.overflow-hidden.flex.flex-col
+      //- Toolbar
+      .p-4.border-b.border-border.bg-card.flex.flex-col.sm_flex-row.items-center.justify-between.gap-4
+        form.flex-1.flex.flex-col.sm_flex-row.gap-3.w-full(method='GET', action='/admin/assignments')
+          .relative.flex-1.max-w-md
+            i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground(class='top-1/2 -translate-y-1/2')
+            input.w-full.pl-10.h-10.rounded-lg.border.border-input.bg-background.text-sm.focus-visible_ring-1.focus-visible_ring-primary(type='search', name='q', value=query || '', placeholder='Tìm kiếm bài tập...')
+          
+          button.btn-primary.h-10.px-4.rounded-lg(type='submit')
+            | Tìm kiếm
+
+      //- Data Table
+      if assignments && assignments.length > 0
+        .overflow-x-auto.scroll-thin
+          .table-wrap.shadow-sm
+            table.w-full.text-left.text-sm
+              thead.border-b.border-border(class='bg-muted/50')
+                tr
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Bài tập
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Lớp học
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Hạn chót
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Điểm
+                  th.px-6.py-3.text-center.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Thao tác
+              tbody.divide-y.divide-border
+                each assignment in assignments
+                  tr.group.transition-colors(class='hover_bg-muted/30')
+                    td.px-6.py-4
+                      .flex.items-center.gap-4
+                        div.w-10.h-10.rounded-lg.text-secondary.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-secondary/10')
+                          i.ph-fill.ph-file-code.text-xl
+                        .min-w-0
+                          p.text-sm.font-bold.text-foreground.truncate= assignment.title
+                          p.text-xs.text-muted-foreground.truncate= assignment.description || 'Không có mô tả'
+                    td.px-6.py-4.hidden.md_table-cell
+                      if assignment.classroom
+                        .flex.items-center.gap-2
+                          i.ph-fill.ph-chalkboard.text-muted-foreground
+                          span.text-sm.font-medium= assignment.classroom.name
+                      else
+                        span.text-sm.text-muted-foreground N/A
+                    td.px-6.py-4.hidden.md_table-cell
+                      span.text-sm.text-muted-foreground= assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+                    td.px-6.py-4.hidden.md_table-cell
+                      span.text-sm.font-mono.font-bold= assignment.totalPoints || 0
+                    td.px-6.py-4.text-right
+                      a.p-2.inline-flex.rounded-lg.text-muted-foreground.hover_bg-muted.hover_text-foreground.transition-colors(href='/admin/assignments/' + assignment.id)
+                        i.ph-bold.ph-arrow-right.text-lg
+      else
+        .empty-state.border-0.rounded-none.bg-transparent.py-16
+          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+            i.ph-fill.ph-file-code.text-3xl(class='text-muted-foreground/50')
+          h2.text-lg.font-bold.text-foreground Không tìm thấy bài tập nào
+          p.text-sm.text-muted-foreground.mt-1 Chưa có bài tập nào được tạo.

@@ -1,0 +1,17 @@
+extends ../layouts/base
+
+block content
+  .error-page
+    .inline-flex.items-center.gap-2.rounded-full.border.text-muted-foreground.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='border-border bg-muted/60')
+      i.ph-bold.ph-compass
+      | Bị lạc trong danh mục
+    .error-code 404
+    h1.text-3xl.font-extrabold.tracking-tighter.text-foreground.mb-2 Không tìm thấy trang
+    p.text-base.text-muted-foreground.max-w-md.mx-auto.mb-8 Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
+    .flex.items-center.gap-3
+      a.btn-primary.h-12.px-6.rounded-xl(href='/')
+        i.ph-bold.ph-house
+        | Trang chủ
+      a.btn-outline.h-12.px-6.rounded-xl(href='/catalog')
+        i.ph-bold.ph-compass
+        | Duyệt danh mục

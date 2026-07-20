@@ -1,0 +1,61 @@
+{
+  "name": "e-learning-lms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-ready LMS scaffold built with Node.js, Express, MongoDB, Pug, and server-rendered views.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "concurrently \"npm run watch:css\" \"nodemon index.js\"",
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify",
+    "watch:css": "tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch",
+    "format": "prettier --write .",
+    "check": "node --check index.js",
+    "seed": "node scripts/seed.js",
+    "test": "jest --verbose"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "bootstrap": "^5.3.3",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.7.5",
+    "connect-mongo": "^5.1.0",
+    "cookie-parser": "^1.4.7",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.4.1",
+    "express-session": "^1.18.1",
+    "express-validator": "^7.2.0",
+    "helmet": "^8.0.0",
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.8.4",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cache": "^5.1.2",
+    "nodemailer": "^6.9.16",
+    "passport": "^0.7.0",
+    "passport-facebook": "^3.0.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "pug": "^3.0.3",
+    "sanitize-html": "^2.17.5",
+    "socket.io": "^4.8.1",
+    "tailwindcss": "^3.4.14",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^10.0.3",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.7",
+    "postcss": "^8.4.49",
+    "supertest": "^7.2.2"
+  }
+}

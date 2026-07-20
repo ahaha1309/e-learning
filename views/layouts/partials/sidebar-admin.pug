@@ -1,0 +1,140 @@
+//- ── ADMIN SIDEBAR ───────────────────────────────────────────────────────
+//- Receives: currentUser, path (current URL)
+
+.flex.flex-col.h-full
+
+  //- Brand header inside sidebar
+  .flex.items-center.px-4.py-5.border-b.border-border(class='gap-3')
+    .w-8.h-8.rounded-lg.flex.items-center.justify-center.bg-primary.text-primary-foreground.flex-shrink-0
+      i.ph-bold.ph-shield-check(aria-hidden='true')
+    div
+      p.text-sm.font-bold.tracking-tight Bảng điều khiển quản trị
+      p.text-muted-foreground.truncate(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em')= currentUser.name
+
+  nav.flex-1.px-2.py-4.space-y-1(aria-label='Điều hướng quản trị')
+
+    //- Overview
+    a.shell-sidebar-link(
+      href='/admin',
+      class=path === '/admin' ? 'shell-sidebar-link-active' : '',
+      aria-current=path === '/admin' ? 'page' : false
+    )
+      i.ph-bold.ph-squares-four.text-base(aria-hidden='true')
+      span Tổng quan
+
+    //- Users section
+    .section-label Người dùng &amp; Quyền truy cập
+
+    a.shell-sidebar-link(
+      href='/admin/users',
+      class=path && path.startsWith('/admin/users') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/users') ? 'page' : false
+    )
+      i.ph-bold.ph-users.text-base(aria-hidden='true')
+      span Tất cả người dùng
+
+    a.shell-sidebar-link(
+      href='/admin/teachers/pending',
+      class=path && path.startsWith('/admin/teachers') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/teachers') ? 'page' : false
+    )
+      i.ph-bold.ph-user-check.text-base(aria-hidden='true')
+      .flex.items-center.justify-between.flex-1
+        span Phê duyệt giáo viên
+        //- Pending count badge injected via controller locals
+        if pendingCount > 0
+          span.badge.badge-danger.badge-sm= pendingCount
+
+    a.shell-sidebar-link(
+      href='/admin/students',
+      class=path && path.startsWith('/admin/students') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/students') ? 'page' : false
+    )
+      i.ph-bold.ph-student.text-base(aria-hidden='true')
+      span Học sinh
+
+    a.shell-sidebar-link(
+      href='/admin/categories',
+      class=path && path.startsWith('/admin/categories') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/categories') ? 'page' : false
+    )
+      i.ph-bold.ph-folders.text-base(aria-hidden='true')
+      span Danh mục
+
+    a.shell-sidebar-link(
+      href='/admin/classrooms',
+      class=path && path.startsWith('/admin/classrooms') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/classrooms') ? 'page' : false
+    )
+      i.ph-bold.ph-chalkboard.text-base(aria-hidden='true')
+      span Lớp học
+
+    a.shell-sidebar-link(
+      href='/admin/exams',
+      class=path && path.startsWith('/admin/exams') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/exams') ? 'page' : false
+    )
+      i.ph-bold.ph-exam.text-base(aria-hidden='true')
+      span Bài thi
+
+    a.shell-sidebar-link(
+      href='/admin/assignments',
+      class=path && path.startsWith('/admin/assignments') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/assignments') ? 'page' : false
+    )
+      i.ph-bold.ph-file-code.text-base(aria-hidden='true')
+      span Bài tập
+
+    //- Analytics section
+    .section-label Phân tích &amp; Báo cáo
+
+    a.shell-sidebar-link(
+      href='/admin/discussions',
+      class=path && path.startsWith('/admin/discussions') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/discussions') ? 'page' : false
+    )
+      i.ph-bold.ph-chats.text-base(aria-hidden='true')
+      span Thảo luận
+
+    a.shell-sidebar-link(
+      href='/admin?view=analytics',
+      class=(path && path.startsWith('/admin/analytics')) ? 'shell-sidebar-link-active' : '',
+      aria-current=(path && path.startsWith('/admin/analytics')) ? 'page' : false
+    )
+      i.ph-bold.ph-chart-bar.text-base(aria-hidden='true')
+      span Phân tích
+
+    a.shell-sidebar-link(
+      href='/admin/audit',
+      class=path && path.startsWith('/admin/audit') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/audit') ? 'page' : false
+    )
+      i.ph-bold.ph-clipboard-text.text-base(aria-hidden='true')
+      span Nhật ký kiểm toán
+
+    //- System section
+    .section-label Hệ thống
+
+    a.shell-sidebar-link(
+      href='/admin/settings',
+      class=path === '/admin/settings' ? 'shell-sidebar-link-active' : '',
+      aria-current=path === '/admin/settings' ? 'page' : false
+    )
+      i.ph-bold.ph-gear.text-base(aria-hidden='true')
+      span Cài đặt
+
+  //- Footer: profile shortcut & logout
+  .border-t.border-border.px-2.py-3.flex.items-center.gap-1
+    a.shell-sidebar-link.flex-1(href='/profile')
+      if currentUser.avatarUrl
+        img.w-6.h-6.rounded-full.object-cover.flex-shrink-0(src=currentUser.avatarUrl, alt=currentUser.name)
+      else
+        .avatar.avatar-sm.flex-shrink-0(aria-hidden='true')
+          span= currentUser.name ? currentUser.name.charAt(0).toUpperCase() : '?'
+      .flex-1.min-w-0
+        p.text-xs.font-semibold.truncate= currentUser.name
+        p.text-muted-foreground.truncate(style='font-size:0.625rem;line-height:0.875rem;letter-spacing:0.02em') Hồ sơ
+    form(method='POST', action='/auth/logout')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      button.w-8.h-8.rounded-lg.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_bg-destructive/10 hover_text-destructive', type='submit', aria-label='Đăng xuất', title='Đăng xuất')
+        i.ph-bold.ph-sign-out

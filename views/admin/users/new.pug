@@ -1,0 +1,80 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-5xl.mx-auto.space-y-8.animate-in.fade-in.pb-32(style='animation-duration: 400ms;')
+    header.flex.flex-col.gap-3
+      nav.breadcrumb
+        a(href='/admin/users') Người dùng
+        span.breadcrumb-sep /
+        span.text-foreground.font-bold Tạo Người dùng
+        
+      .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.self-start(class='py-1.5 bg-primary/5 border-primary/20') Quản lý Người dùng
+      h1.text-4xl.font-extrabold.tracking-tight Tạo Người dùng Mới
+      p.text-muted-foreground.text-lg Thêm người dùng mới vào nền tảng và cấu hình quyền truy cập của họ.
+
+    form(method='POST', action='/admin/users', class='space-y-12 mt-8')
+      input(type="hidden", name="_csrf", value=csrfToken)
+      
+      if errorMessage
+        .alert-danger.rounded-2xl= errorMessage
+
+      //- Profile Section
+      .grid.grid-cols-1.md_grid-cols-12.gap-8
+        .md_col-span-4
+          h2.text-xl.font-bold.text-foreground.tracking-tight Thông tin Hồ sơ
+          p.text-sm.text-muted-foreground.mt-2.leading-relaxed Các chi tiết cá nhân cơ bản cho tài khoản người dùng. Dùng để hiển thị và thông báo.
+        
+        .md_col-span-8.glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .grid.grid-cols-1.sm_grid-cols-2.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='name') Họ và Tên <span class="text-destructive">*</span>
+              input#name.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='name', value=formData.name || '', required, placeholder='VD: Nguyễn Văn A')
+            
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='email') Địa chỉ Email <span class="text-destructive">*</span>
+              input#email.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='email', name='email', value=formData.email || '', required, placeholder='nguyenvana@example.com')
+          
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='phone') Số điện thoại
+            input#phone.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='tel', name='phone', value=formData.phone || '', placeholder='+84 (0) 123 456 789')
+            p.text-xs.text-muted-foreground Tùy chọn. Dùng để khôi phục tài khoản và 2FA.
+
+      hr.border-border(class='border-t-2')
+
+      //- Security & Access Section
+      .grid.grid-cols-1.md_grid-cols-12.gap-8
+        .md_col-span-4
+          h2.text-xl.font-bold.text-foreground.tracking-tight Bảo mật & Truy cập
+          p.text-sm.text-muted-foreground.mt-2.leading-relaxed Xác định cách người dùng đăng nhập và các đặc quyền nền tảng của họ.
+        
+        .md_col-span-8.glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='password') Mật khẩu Tạm thời <span class="text-destructive">*</span>
+            .relative
+              input#password.w-full.h-14.px-5.pr-12.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='password', name='password', required, minlength='8', placeholder='Tối thiểu 8 ký tự')
+              button.absolute.right-4.text-muted-foreground.hover_text-foreground.transition-colors(class='top-1/2 -translate-y-1/2', type='button', onclick='document.getElementById("password").type = document.getElementById("password").type === "password" ? "text" : "password"')
+                i.ph-bold.ph-eye.text-xl
+            p.text-xs.text-muted-foreground Người dùng sẽ được yêu cầu thay đổi mật khẩu này trong lần đăng nhập đầu tiên.
+          
+          .grid.grid-cols-1.sm_grid-cols-2.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='role') Vai trò Hệ thống
+              select#role.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='role')
+                option(value='student', selected=formData.role === 'student') Học sinh
+                option(value='teacher', selected=formData.role === 'teacher') Giảng viên
+                option(value='admin', selected=formData.role === 'admin') Quản trị viên
+            
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='status') Trạng thái Tài khoản
+              select#status.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='status')
+                option(value='active', selected=formData.status === 'active') Hoạt động
+                option(value='pending', selected=formData.status === 'pending') Chờ Phê duyệt
+                option(value='rejected', selected=formData.status === 'rejected') Bị từ chối
+
+      //- Sticky Bottom Action Bar
+      div.fixed.bottom-0.left-0.right-0.backdrop-blur-xl.border-t.border-border.p-4.z-40(class='bg-background/80 md_left-[280px]')
+        .max-w-5xl.mx-auto.flex.items-center.justify-end.gap-4
+          a.btn-outline.h-12.px-6.rounded-xl.font-bold(href='/admin/users') Hủy
+          button.btn-primary.h-12.px-8.rounded-xl.font-bold.shadow-diffused(type='submit')
+            | Tạo Người dùng
+            i.ph-bold.ph-arrow-right

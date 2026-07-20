@@ -1,0 +1,81 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Danh mục Lớp học
+        h1.text-3xl.font-extrabold.tracking-tight Lớp học
+        p.text-muted-foreground.mt-2.text-sm Xem và quản lý tất cả các lớp học trên nền tảng.
+
+    .bento-card.p-0.overflow-hidden.flex.flex-col
+      //- Toolbar
+      .p-4.border-b.border-border.bg-card.flex.flex-col.sm_flex-row.items-center.justify-between.gap-4
+        form.flex-1.flex.flex-col.sm_flex-row.gap-3.w-full(method='GET', action='/admin/classrooms')
+          .relative.flex-1.max-w-md
+            i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground(class='top-1/2 -translate-y-1/2')
+            input.w-full.pl-10.h-10.rounded-lg.border.border-input.bg-background.text-sm.focus-visible_ring-1.focus-visible_ring-primary(type='search', name='q', value=query || '', placeholder='Tìm kiếm lớp học...')
+          
+          button.btn-primary.h-10.px-4.rounded-lg(type='submit')
+            | Tìm kiếm
+
+      //- Data Table
+      if classrooms && classrooms.length > 0
+        .overflow-x-auto.scroll-thin
+          .table-wrap.shadow-sm
+            table.w-full.text-left.text-sm
+              thead.border-b.border-border(class='bg-muted/50')
+                tr
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Lớp học
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Giảng viên
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Mã
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Trạng thái
+                  th.px-6.py-3.text-center.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Thao tác
+              tbody.divide-y.divide-border
+                each classroom in classrooms
+                  tr.group.transition-colors(class='hover_bg-muted/30')
+                    td.px-6.py-4
+                      .flex.items-center.gap-4
+                        div.w-10.h-10.rounded-lg.text-primary.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-primary/10')
+                          i.ph-fill.ph-chalkboard.text-xl
+                        .min-w-0
+                          p.text-sm.font-bold.text-foreground.truncate= classroom.name
+                          p.text-xs.text-muted-foreground.truncate= classroom.description || 'Không có mô tả'
+                    td.px-6.py-4.hidden.md_table-cell
+                      if classroom.teacher
+                        .flex.items-center.gap-2
+                          .w-6.h-6.rounded-full.bg-muted.flex.items-center.justify-center.text-xs.font-bold
+                            = classroom.teacher.name ? classroom.teacher.name.charAt(0).toUpperCase() : '?'
+                          span.text-sm.font-medium= classroom.teacher.name
+                      else
+                        span.text-sm.text-muted-foreground N/A
+                    td.px-6.py-4.hidden.md_table-cell
+                      code.text-xs.font-mono.font-bold.border.border-border.px-2.py-1.rounded-md(class='bg-muted/50')= classroom.code
+                    td.px-6.py-4.hidden.md_table-cell
+                      if classroom.isArchived
+                        span.badge-muted.badge-sm.shadow-sm Đã lưu trữ
+                      else
+                        span.badge-success.badge-sm.shadow-sm Hoạt động
+                    td.px-6.py-4.text-right
+                      a.p-2.inline-flex.rounded-lg.text-muted-foreground.hover_bg-muted.hover_text-foreground.transition-colors(href='/admin/classrooms/' + classroom.id)
+                        i.ph-bold.ph-arrow-right.text-lg
+
+        //- Pagination
+        if totalPages > 1
+          div.px-6.py-4.border-t.border-border.flex.items-center.justify-between(class='bg-muted/20')
+            p.text-sm.text-muted-foreground Đang hiển thị trang <span class="font-bold text-foreground">#{currentPage}</span> trong <span class="font-bold text-foreground">#{totalPages}</span>
+            .flex.items-center.gap-1
+              if currentPage > 1
+                a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/classrooms?page=' + (currentPage - 1) + '&q=' + (query || ''))
+                  i.ph-bold.ph-caret-left
+              - for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++)
+                a.h-8.w-8.p-0.rounded-lg.flex.items-center.justify-center.text-sm.font-medium.transition-colors(class=currentPage === i ? 'bg-primary text-primary-foreground shadow-sm' : 'hover_bg-muted text-muted-foreground', href='/admin/classrooms?page=' + i + '&q=' + (query || ''))= i
+              if currentPage < totalPages
+                a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/classrooms?page=' + (currentPage + 1) + '&q=' + (query || ''))
+                  i.ph-bold.ph-caret-right
+      else
+        .empty-state.border-0.rounded-none.bg-transparent.py-16
+          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+            i.ph-fill.ph-chalkboard.text-3xl(class='text-muted-foreground/50')
+          h2.text-lg.font-bold.text-foreground Không tìm thấy lớp học nào
+          p.text-sm.text-muted-foreground.mt-1 Không có lớp học nào khớp với tìm kiếm của bạn.

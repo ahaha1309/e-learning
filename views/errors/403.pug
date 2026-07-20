@@ -1,0 +1,17 @@
+extends ../layouts/base
+
+block content
+  .error-page
+    .inline-flex.items-center.gap-2.rounded-full.border.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='border-destructive/20 bg-destructive/5 text-destructive')
+      i.ph-bold.ph-lock-key
+      | Bị hạn chế
+    .error-code 403
+    h1.text-3xl.font-extrabold.tracking-tighter.text-foreground.mb-2 Truy cập bị từ chối
+    p.text-base.text-muted-foreground.max-w-md.mx-auto.mb-8 Bạn không có quyền xem trang này. Vui lòng liên hệ với quản trị viên nếu bạn cho rằng đây là lỗi.
+    .flex.items-center.gap-3
+      a.btn-primary.h-12.px-6.rounded-xl(href='/')
+        i.ph-bold.ph-house
+        | Trang chủ
+      a.btn-outline.h-12.px-6.rounded-xl(href='javascript:history.back()')
+        i.ph-bold.ph-arrow-left
+        | Quay lại

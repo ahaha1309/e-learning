@@ -1,0 +1,12 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6
+    header
+      p.eyebrow Từ chối Truy cập
+      h1.text-3xl.font-bold.tracking-tight Bạn không có quyền
+      p.text-muted-foreground.mt-2 Tài khoản của bạn không có quyền quản trị viên. Liên hệ với quản trị viên cấp cao.
+    .flex.gap-3
+      a.btn-primary(href='/admin/login')
+        i.ph-bold.ph-arrow-left
+        | Quay lại đăng nhập quản trị

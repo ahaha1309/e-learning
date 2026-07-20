@@ -1,0 +1,14 @@
+//- Shared modal markup, driven by /js/modal.js.
+//- CSS already exists (.modal-backdrop.open, .modal, .modal-header/body/footer).
+div#global-modal.modal-backdrop(aria-modal='true', role='dialog', aria-labelledby='global-modal-title', tabindex='-1')
+  .modal
+    .modal-header
+      h3#global-modal-title.text-lg.font-bold.tracking-tight
+      button#global-modal-close.modal-close(type='button', aria-label='Đóng hộp thoại')
+        i.ph-bold.ph-x.text-lg
+
+    .modal-body#global-modal-body.text-sm.text-muted-foreground.leading-relaxed
+
+    .modal-footer
+      button#global-modal-cancel.btn.btn-outline(type='button') Hủy
+      button#global-modal-confirm.btn.btn-danger(type='button') Xác nhận

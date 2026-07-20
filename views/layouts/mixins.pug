@@ -1,0 +1,115 @@
+//- ════════════════════════════════════════════════════════════════════════
+//- DESIGN SYSTEM PRIMITIVES (Pug mixins)
+//- Single source of truth for the cinematic page header, empty state, and
+//- loading skeleton. Keeps every page on the same quality floor.
+//-
+//- Usage:
+//-   include ../layouts/mixins
+//-   +pgHeader({ eyebrow: 'Student', icon: 'ph-exam', h1: 'Exams', subtitle: '…' })
+//-     .glass-panel… (optional action block, yields on the right)
+//-   +emptyState({ icon: 'ph-fill ph-exam', title: 'No exams yet', desc: '…', ctaText: 'Browse', ctaHref: '/catalog' })
+//-   +skeletonList({ count: 6 })
+//-   +sectionHead({ title: 'Recent' })  (optional right yield)
+//- ════════════════════════════════════════════════════════════════════════
+
+//- ── Cinematic page header ─────────────────────────────────────────────────
+//- opts.eyebrow   string  small uppercase pill label (omit to hide pill)
+//- opts.icon      string  phosphor icon class inside the pill (e.g. 'ph-bold ph-exam')
+//- opts.ping      bool    adds a live status dot to the pill
+//- opts.h1        string  page title (required)
+//- opts.h1Accent  string  trailing primary-tinted fragment of the title
+//- opts.subtitle  string  muted descriptor line
+//- opts.scale     'cinema'|'compact'  h1 size. 'cinema' (default) for product/
+//- workflow/marketing pages; 'compact' for cockpit/admin/table-dense pages
+//- where an oversized marketing h1 hurts data density and visual balance.
+//- yields block    optional right-aligned actions (badge, stat, buttons)
+mixin pgHeader(opts)
+  - var compact = opts.scale === 'compact'
+  header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-6.animate-in.slide-in-up
+    if opts.breadcrumb
+      nav.breadcrumb.mb-6!= opts.breadcrumb
+    div
+      if opts.eyebrow
+        if compact
+          p.eyebrow= opts.eyebrow
+        else
+          .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-4(class='bg-primary/5 border-primary/20 py-1.5 shadow-sm')
+            if opts.icon
+              i.ph(class=opts.icon, aria-hidden='true')
+            if opts.ping
+              span.relative.flex.h-2.w-2.ml-1(aria-hidden='true')
+                span.animate-ping.absolute.inline-flex.h-full.w-full.rounded-full.bg-primary.opacity-75
+                span.relative.inline-flex.rounded-full.h-2.w-2.bg-primary
+            = opts.eyebrow
+      if compact
+        h1.text-3xl.font-extrabold.tracking-tight
+          = opts.h1 || ''
+          if opts.h1Accent
+            | &nbsp;
+            span.text-primary.truncate.inline-block.align-bottom.max-w-xs= opts.h1Accent
+      else
+        h1.font-extrabold.tracking-tighter(style='font-size:clamp(2rem,5vw,3rem);line-height:1.05;')
+          = opts.h1 || ''
+          if opts.h1Accent
+            | &nbsp;
+            span.text-primary.truncate.inline-block.align-bottom.max-w-xs= opts.h1Accent
+      if opts.subtitle
+        p(class=(compact ? 'text-muted-foreground.mt-2.text-sm' : 'text-muted-foreground.mt-2'), style=(compact ? undefined : 'font-size:0.9375rem;'))= opts.subtitle
+    if block
+      .flex.items-center.gap-3.flex-wrap.animate-in.slide-in-up
+        block
+
+//- ── Empty state ───────────────────────────────────────────────────────────
+//- opts.icon  string  full phosphor classes incl. fill (e.g. 'ph-fill ph-exam')
+//- opts.title string
+//- opts.desc  string
+//- opts.ctaText / opts.ctaHref  optional primary action
+mixin emptyState(opts)
+  .empty-state.animate-in.fade-in
+    .empty-state-icon
+      i.ph(class=opts.icon || 'ph-fill ph-magnifying-glass', aria-hidden='true')
+    h3.empty-state-title= opts.title || 'Chưa có gì ở đây'
+    if opts.desc
+      p.empty-state-desc= opts.desc
+    if opts.ctaText && opts.ctaHref
+      a.btn-primary.btn-sm.rounded-full.inline-flex.items-center.gap-2.mt-2(href=opts.ctaHref)
+        i.ph-bold.ph-arrow-right(aria-hidden='true')
+        = opts.ctaText
+    block
+
+//- ── Skeleton card list (loading state for grid/list pages) ─────────────────
+//- opts.count  int   number of skeleton rows/tiles (default 6)
+//- opts.variant 'row' | 'grid' (default 'grid')
+mixin skeletonList(opts)
+  - var count = (opts && opts.count) || 6
+  - var variant = (opts && opts.variant) || 'grid'
+  div(aria-busy='true', aria-label='Loading', role='status')
+    if variant === 'row'
+      .space-y-3
+        each _ in Array.from({ length: count })
+          .card.p-5.flex.items-center.gap-4
+            .skeleton.rounded-xl(class='!h-12 !w-12 !flex-shrink-0')
+            .flex-1.space-y-2
+              .skeleton.skeleton-text(class='!h-4 !w-2/3')
+              .skeleton.skeleton-text-short(class='!h-3')
+    else
+      .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-6
+        each _ in Array.from({ length: count })
+          article.flex.flex-col
+            .skeleton.skeleton-thumbnail.mb-4
+            .skeleton.skeleton-text(class='!h-5 !w-3/4')
+            .skeleton.skeleton-text.mt-2
+            .skeleton.skeleton-text-short.mt-2
+
+//- ── Section heading (within a page: above a list/grid) ───────────────────
+//- opts.title string
+//- opts.sub  string  optional muted sub
+//- yields block   optional right-aligned link/action (e.g. "View all")
+mixin sectionHead(opts)
+  .flex.items-end.justify-between.gap-4.mb-5
+    div
+      h2.font-extrabold.tracking-tight(style='font-size:1.25rem;line-height:1.25;')= opts.title
+      if opts.sub
+        p.text-muted-foreground.mt-1(style='font-size:0.8125rem;')= opts.sub
+    if block
+      block

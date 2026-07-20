@@ -1,0 +1,56 @@
+extends ../layouts/base
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/') Trang chủ
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold Thông báo
+
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-6.animate-in.slide-in-up
+      div
+        .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-4(class='border-primary/20 bg-primary/5 py-1.5 shadow-sm')
+          i.ph-bold.ph-bell-simple
+          | Hộp thư đến
+        h1.font-extrabold.tracking-tighter(style='font-size:clamp(2rem,5vw,3rem);line-height:1.05;') Thông báo
+        p.text-muted-foreground.mt-2(style='font-size:0.9375rem;') Luôn cập nhật mọi thứ diễn ra trong các lớp học của bạn.
+
+      if notifications.length > 0
+        form.w-full.md_w-auto(method='POST' action='/notifications/read-all')
+          input(type="hidden", name="_csrf", value=csrfToken)
+          button.btn-secondary.h-11.px-5.rounded-xl.w-full.md_w-auto(type='submit')
+            i.ph-bold.ph-checks
+            | Đánh dấu tất cả là đã đọc
+
+    if notifications.length > 0
+      .card.overflow-hidden.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each notification in notifications
+          .notification-item(class=notification.isRead ? '' : 'notification-unread')
+            .flex.items-start.gap-3.flex-1.min-w-0
+              if !notification.isRead
+                .w-2.h-2.rounded-full.bg-primary.mt-2.flex-shrink-0
+              else
+                .w-2.h-2.rounded-full.bg-border.mt-2.flex-shrink-0
+              .flex-1.min-w-0
+                h3.text-sm.font-semibold(class=notification.isRead ? '' : 'text-primary')= notification.title
+                p.text-sm.text-muted-foreground.mt-1= notification.message
+                p.text-xs.text-muted-foreground.mt-2= notification.createdAt.toLocaleString()
+            .flex.items-center.gap-2.flex-shrink-0
+              if !notification.isRead
+                form(method='POST' action=`/notifications/${notification.id}/read`)
+                  input(type="hidden", name="_csrf", value=csrfToken)
+                  button.btn-ghost.btn-sm(type='submit', aria-label='Đánh dấu là đã đọc')
+                    i.ph-bold.ph-check
+              if notification.link && notification.link !== '#'
+                a.btn-primary.btn-sm(href=notification.link)
+                  | Xem
+                  i.ph-bold.ph-arrow-right
+    else
+      .empty-state.py-20
+        .empty-state-icon
+          i.ph-bold.ph-bell-simple.text-5xl
+        h2.empty-state-title Bạn đã xem hết
+        p.empty-state-desc Chưa có thông báo nào. Chúng tôi sẽ cho bạn biết khi có điều gì đó xảy ra trong lớp học của bạn.
+        a.btn-primary.btn-sm.rounded-full.inline-flex.items-center.gap-2.mt-2(href='/')
+          i.ph-bold.ph-house
+          | Quay lại bảng điều khiển

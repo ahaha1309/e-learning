@@ -1,0 +1,12 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6
+    header
+      p.eyebrow Lỗi
+      h1.text-3xl.font-bold.tracking-tight Đã xảy ra lỗi
+      p.text-muted-foreground.mt-2 Đã xảy ra lỗi không mong muốn. Vui lòng thử lại hoặc liên hệ bộ phận hỗ trợ.
+    .flex.gap-3
+      a.btn-primary(href='/admin')
+        i.ph-bold.ph-house
+        | Quay lại bảng điều khiển

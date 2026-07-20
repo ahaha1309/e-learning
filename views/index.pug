@@ -1,0 +1,274 @@
+extends layouts/base
+
+block content
+  //- §2.1 Guest Journey: landing converts within 8 seconds above the fold
+  //- §7 Motion: all animations use CSS only, spring timing, reduced-motion safe
+
+  //- ── AMBIENT BACKGROUND ───────────────────────────────────────────────
+  .absolute.inset-0.pointer-events-none.overflow-hidden(aria-hidden='true')
+    div.absolute.opacity-25.bg-primary.rounded-full(class='top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px]', style='filter:blur(160px);transform:translate3d(-50%,-30%,0);')
+    div.absolute.opacity-15.bg-info.rounded-full.animate-float(class='top-1/3 left-0 w-[600px] h-[600px]', style='filter:blur(120px);')
+    div.absolute.opacity-10.bg-success.rounded-full.animate-float(class='bottom-0 right-0 w-[500px] h-[500px]', style='filter:blur(140px);animation-delay:3s;')
+
+  //- ── HERO — SPLIT SCREEN ─────────────────────────────────────────────
+  //- §2.1: Content left 55%, CSS bento visual right 45%. No placehold.co.
+  section.relative.overflow-hidden.pt-28.pb-20.md_pt-40.md_pb-28
+    .max-w-7xl.mx-auto.px-4.md_px-6
+      .grid.grid-cols-1.lg_grid-cols-11.gap-12.lg_gap-16.items-center
+
+        //- LEFT: Copy block
+        .lg_col-span-6.space-y-8.relative.z-10
+
+          div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.tracking-widest.uppercase.px-4.py-2.shadow-sm.animate-in.slide-in-up(class='border-primary/20 bg-primary/5', style='animation-duration:800ms;')
+            span.relative.flex.h-2.w-2(aria-hidden='true')
+              span.animate-ping.absolute.inline-flex.h-full.w-full.rounded-full.bg-primary.opacity-75
+              span.relative.inline-flex.rounded-full.h-2.w-2.bg-primary
+            | Trực tiếp · Nền tảng 3.0
+
+          h1.text-5xl.font-extrabold.tracking-tighter.text-balance.animate-in.slide-in-up(class='leading-[1.04] md:text-6xl lg:text-[5.25rem]', style='animation-delay:150ms;animation-duration:800ms;')
+            | Nền tảng học tập 
+            span.text-transparent.bg-clip-text.bg-gradient-to-br.from-primary(class='to-primary/60') mang lại kết quả.
+
+          p.text-lg.md_text-xl.text-muted-foreground.leading-relaxed.max-w-lg.animate-in.slide-in-up(style='animation-delay:300ms;animation-duration:800ms;') Không gian làm việc đa năng dành cho học sinh, giáo viên và quản trị viên. Lớp học, bài thi, bài tập và phân tích — tất cả trong một.
+
+          .flex.flex-col.sm_flex-row.gap-3.pt-2.animate-in.slide-in-up(style='animation-delay:450ms;animation-duration:800ms;')
+            a.btn-primary.h-13.px-8.text-base.rounded-full.shadow-elevated.transition-transform.active_scale-95.inline-flex.items-center.gap-2(href='/auth/register')
+              | Bắt đầu miễn phí
+              i.ph-bold.ph-arrow-right.text-lg
+            a.btn-outline.h-13.px-8.text-base.rounded-full.transition-transform.active_scale-95.bg-background.inline-flex.items-center.gap-2(href='/catalog')
+              i.ph-bold.ph-compass
+              | Khám phá khóa học
+
+          //- Live platform stats (§4 Dashboard Strategy: real data)
+          div.grid.grid-cols-3.gap-6.pt-10.border-t.animate-in.slide-in-up(class='border-border/50 max-w-xs', style='animation-delay:600ms;animation-duration:800ms;')
+            div
+              p.font-mono.text-2xl.font-bold.tracking-tighter= teacherCount || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1.uppercase.tracking-widest Giáo viên
+            div
+              p.font-mono.text-2xl.font-bold.tracking-tighter= studentCount || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1.uppercase.tracking-widest Học sinh
+            div
+              p.font-mono.text-2xl.font-bold.tracking-tighter= classroomCount || 0
+              p.text-xs.font-medium.text-muted-foreground.mt-1.uppercase.tracking-widest Lớp học
+
+        //- RIGHT: CSS-drawn platform preview (no external images)
+        //- §19 Performance: pure CSS visual, zero network requests
+        .lg_col-span-5.relative.animate-in.fade-in(style='animation-delay:500ms;animation-duration:1200ms;', aria-hidden='true')
+          .relative.w-full
+            //- Main dashboard card
+            .glass-panel.p-5.shadow-panel.border(class='rounded-[2rem] border-border/60')
+              //- Mini topbar
+              .flex.items-center.justify-between.mb-5.pb-4.border-b(class='border-border/60')
+                .flex.items-center.gap-2
+                  .w-5.h-5.rounded-md.bg-primary.flex.items-center.justify-center
+                    i.ph-bold.ph-graduation-cap.text-white(style='font-size:0.6rem')
+                  span.text-xs.font-bold.tracking-tight EduSpace
+                .flex.gap-1
+                  .w-2.h-2.rounded-full.bg-success
+                  .w-2.h-2.rounded-full.bg-warning
+                  .w-2.h-2.rounded-full(class='bg-muted-foreground/30')
+
+              //- KPI mini-strip
+              .grid.grid-cols-3.gap-3.mb-5
+                each kpi in [['14', 'Lớp học', 'ph-chalkboard', 'primary'], ['91%', 'Điểm TB', 'ph-star', 'warning'], ['3', 'Chấm điểm', 'ph-tray', 'info']]
+                  .rounded-xl.p-3.border(class='bg-muted/40 border-border/50')
+                    .flex.items-center.justify-between.mb-2
+                      span(class='text-[0.55rem] font-bold text-muted-foreground uppercase tracking-widest')= kpi[1]
+                      .w-5.h-5.rounded-md.flex.items-center.justify-center(class='bg-' + kpi[3] + '/10')
+                        i.ph-bold(class=kpi[2] + ' text-' + kpi[3], style='font-size:0.55rem')
+                    p.font-mono.text-lg.font-bold.tracking-tighter= kpi[0]
+
+              //- Mini classroom list
+              .space-y-2.mb-5
+                each item in [['Advanced React', '87%', 'primary'], ['Node.js APIs', '45%', 'info'], ['UI Design', '62%', 'success']]
+                  .flex.items-center.gap-3.p-2.rounded-xl.border(class='bg-background/50 border-border/40')
+                    .w-7.h-7.rounded-lg.flex.items-center.justify-center.text-xs.font-extrabold.text-primary(class='bg-primary/10')= item[0].charAt(0)
+                    .flex-1.min-w-0
+                      p(style='font-size:0.7rem;font-weight:600;') #{item[0]}
+                      .w-full.rounded-full.mt-1.overflow-hidden(class='h-1 bg-muted')
+                        div.h-full.rounded-full(class='bg-' + item[2], style='width:' + item[1])
+                    span(class='text-[0.6rem] font-mono font-bold text-' + item[2])= item[1]
+
+              //- Mini exam timer badge
+              .flex.items-center.gap-2.p-3.rounded-xl.border(class='bg-destructive/5 border-destructive/20')
+                .w-2.h-2.rounded-full.bg-destructive.animate-pulse
+                span(style='font-size:0.7rem;font-weight:600;color:hsl(var(--destructive))') Thi cuối kỳ — 
+                span.font-mono.font-bold(style='font-size:0.7rem;color:hsl(var(--destructive))') 23:14 còn lại
+
+            //- Floating notification card
+            .absolute.-top-4.-right-8.glass-panel.p-4.rounded-2xl.shadow-elevated.w-56.animate-float(style='animation-delay:0.5s;', class='border-border/60')
+              .flex.items-center.gap-3
+                .w-9.h-9.rounded-full.bg-success.flex.items-center.justify-center.text-white.flex-shrink-0
+                  i.ph-bold.ph-check.text-sm
+                div
+                  p(style='font-size:0.7rem;font-weight:700;') Đã chấm bài
+                  p(style='font-size:0.65rem;color:hsl(var(--muted-foreground))') Thiết kế hệ thống — A+
+
+            //- Floating activity card
+            .absolute.-bottom-4.-left-8.glass-panel.p-4.rounded-2xl.shadow-elevated.w-52.animate-float(style='animation-delay:2s;', class='border-border/60')
+              .flex.items-center.gap-2.mb-2
+                .w-2.h-2.rounded-full.bg-primary.animate-pulse
+                span(style='font-size:0.65rem;font-weight:700;color:hsl(var(--primary))') 3 học sinh đang online
+              .flex.-space-x-1
+                each a in ['A', 'B', 'C']
+                  .w-7.h-7.rounded-full.border-2.border-card.bg-primary.flex.items-center.justify-center.text-white.font-bold(style='font-size:0.6rem')= a
+
+  //- ── STATS MARQUEE ────────────────────────────────────────────────────
+  //- §7 Motion: kinetic scrolling stats band; no emojis — use icons
+  section.py-6.border-y.overflow-hidden(class='border-border/60 bg-card/60 backdrop-blur-sm')
+    .relative
+      //- Fade edges
+      .absolute.left-0.top-0.bottom-0.w-20.z-10.pointer-events-none(style='background:linear-gradient(to right,hsl(var(--card)/0.9),transparent)', aria-hidden='true')
+      .absolute.right-0.top-0.bottom-0.w-20.z-10.pointer-events-none(style='background:linear-gradient(to left,hsl(var(--card)/0.9),transparent)', aria-hidden='true')
+
+      .flex.items-center.gap-0(style='animation:marquee 32s linear infinite;white-space:nowrap;', aria-hidden='true')
+        -
+          var marqueeItems = [
+            {icon:'ph-chalkboard', label:'Lớp học thông minh'},
+            {icon:'ph-chart-line-up', label:'Phân tích thời gian thực'},
+            {icon:'ph-shield-check', label:'Thi chống gian lận'},
+            {icon:'ph-chat-circle', label:'Trò chuyện trực tiếp'},
+            {icon:'ph-file-text', label:'Chấm bài tập'},
+            {icon:'ph-certificate', label:'Chứng chỉ'},
+            {icon:'ph-question', label:'Ngân hàng câu hỏi'},
+            {icon:'ph-calendar-check', label:'Theo dõi điểm danh'},
+            {icon:'ph-chalkboard', label:'Lớp học thông minh'},
+            {icon:'ph-chart-line-up', label:'Phân tích thời gian thực'},
+            {icon:'ph-shield-check', label:'Thi chống gian lận'},
+            {icon:'ph-chat-circle', label:'Trò chuyện trực tiếp'},
+            {icon:'ph-file-text', label:'Chấm bài tập'},
+            {icon:'ph-certificate', label:'Chứng chỉ'},
+            {icon:'ph-question', label:'Ngân hàng câu hỏi'},
+            {icon:'ph-calendar-check', label:'Theo dõi điểm danh'}
+          ]
+        each item in marqueeItems
+          span.inline-flex.items-center.gap-2.px-8.py-2.font-semibold.text-muted-foreground(style='font-size:0.8125rem;')
+            i.ph-fill(class=item.icon + ' text-primary/60')
+            = item.label
+            span.w-px.h-3.bg-border.mx-2(aria-hidden='true')
+
+  //- ── BENTO FEATURES ───────────────────────────────────────────────────
+  //- §4 Dashboard Strategy: asymmetric 2fr/1fr grid — not generic 3-equal
+  section.py-28(class='bg-muted/20')
+    .max-w-7xl.mx-auto.px-4.md_px-6
+      .max-w-2xl.mx-auto.text-center.mb-16
+        div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.py-2.mb-6(class='border-primary/20 bg-primary/5') Mọi thứ bạn cần
+        h2.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.mb-5 Được thiết kế cho lớp học thực tế.
+        p.text-lg.text-muted-foreground.leading-relaxed Một nền tảng. Mọi vai trò. Không trở ngại.
+
+      //- Row 1: Wide + Narrow (2:1 ratio)
+      .grid.grid-cols-1.md_grid-cols-3.gap-5.mb-5
+        .spotlight-card.md_col-span-2.p-10.group.transition-all.duration-500
+          .flex.items-start.gap-8
+            .flex-1
+              .w-12.h-12.rounded-2xl.bg-primary.text-primary-foreground.flex.items-center.justify-center.mb-6.shadow-sm.transition-transform.duration-300.group-hover_scale-110
+                i.ph-fill.ph-monitor-play.text-2xl
+              h3.text-2xl.font-bold.tracking-tight.mb-3 Phòng học
+              p.text-muted-foreground.leading-relaxed Giao diện chia đôi giúp tập trung vào bài giảng. Video, PDF, và tài liệu — cùng với khung chat lớp học theo thời gian thực.
+            .flex-shrink-0.hidden.md_block
+              //- CSS mini illustration
+              .w-40.h-28.rounded-xl.bg-muted.overflow-hidden.border(class='border-border/50')
+                .flex.h-full
+                  .flex-1.bg-background.p-2.border-r(class='border-border/50')
+                    .w-full.h-2.bg-primary.rounded.mb-1(class='opacity-30')
+                    .w-3.of-4.h-full.bg-muted.rounded
+                  .w-12.bg-muted.p-1.space-y-1
+                    .w-full.h-2.rounded.bg-primary(class='opacity-20')
+                    .w-full.h-2.rounded.bg-muted-foreground(class='opacity-20')
+                    .w-full.h-2.rounded.bg-muted-foreground(class='opacity-20')
+
+        .spotlight-card.p-10.group.transition-all.duration-500
+          .w-12.h-12.rounded-2xl.flex.items-center.justify-center.mb-6.shadow-sm.transition-transform.duration-300.group-hover_scale-110(class='bg-warning/10 text-warning')
+            i.ph-fill.ph-exam.text-2xl
+          h3.text-xl.font-bold.tracking-tight.mb-3 Chế độ Thi cử
+          p.text-sm.text-muted-foreground.leading-relaxed Chống gian lận. Đồng hồ đếm ngược. Lưới điều hướng câu hỏi. Tự động nộp bài.
+
+      //- Row 2: Narrow + Wide (1:2 ratio, asymmetric)
+      .grid.grid-cols-1.md_grid-cols-3.gap-5.mb-5
+        .spotlight-card.p-10.group.transition-all.duration-500
+          .w-12.h-12.rounded-2xl.flex.items-center.justify-center.mb-6.shadow-sm.transition-transform.duration-300.group-hover_scale-110(class='bg-info/10 text-info')
+            i.ph-fill.ph-chart-line-up.text-2xl
+          h3.text-xl.font-bold.tracking-tight.mb-3 Phân tích học tập
+          p.text-sm.text-muted-foreground.leading-relaxed Biểu đồ tiến độ, phổ điểm, tỷ lệ chuyên cần — dành cho cả học sinh và giáo viên.
+
+        .spotlight-card.md_col-span-2.p-10.group.transition-all.duration-500
+          .flex.items-start.gap-8
+            .flex-1
+              .w-12.h-12.rounded-2xl.flex.items-center.justify-center.mb-6.shadow-sm.transition-transform.duration-300.group-hover_scale-110(class='bg-success/10 text-success')
+                i.ph-fill.ph-calendar-check.text-2xl
+              h3.text-2xl.font-bold.tracking-tight.mb-3 Điểm danh trực tiếp
+              p.text-muted-foreground.leading-relaxed Tạo mã lớp học. Học sinh quét mã hoặc nhập mã để điểm danh. Đồng hồ đếm số người cập nhật theo thời gian thực. Xuất file CSV bất cứ lúc nào.
+            .flex-shrink-0.hidden.md_block
+              //- CSS live code display illustration
+              .w-40.h-28.rounded-xl.bg-muted.overflow-hidden.border.flex.items-center.justify-center(class='border-border/50')
+                .text-center
+                  p(style='font-size:0.55rem;font-weight:700;letter-spacing:0.1em;color:hsl(var(--muted-foreground));text-transform:uppercase;') Mã Lớp
+                  p.font-mono.font-black.text-primary(style='font-size:1.75rem;letter-spacing:0.15em;line-height:1.2;') AB37X
+
+      //- Row 3: Three equal (context allows it for simple features)
+      .grid.grid-cols-1.md_grid-cols-3.gap-5
+        -
+          var features = [
+            {icon:'ph-bank', color:'primary', title:'Ngân hàng câu hỏi', desc:'Xây dựng thư viện câu hỏi dùng chung. Lọc theo môn học, chương và mức độ khó.'},
+            {icon:'ph-certificate', color:'warning', title:'Chứng chỉ', desc:'Học sinh nhận chứng chỉ PDF sau khi hoàn thành yêu cầu của lớp học.'},
+            {icon:'ph-bell', color:'info', title:'Thông báo thông minh', desc:'Cảnh báo theo vai trò về điểm số, bài giảng mới, lịch thi và các phê duyệt đang chờ.'}
+          ];
+        each feature in features
+          .spotlight-card.p-8.group.transition-all.duration-500
+            .w-10.h-10.rounded-xl.flex.items-center.justify-center.mb-5.transition-transform.duration-300.group-hover_scale-110(class='bg-' + feature.color + '/10 text-' + feature.color)
+              i.ph-fill(class=feature.icon + ' text-xl')
+            h3.text-lg.font-bold.tracking-tight.mb-2= feature.title
+            p.text-sm.text-muted-foreground.leading-relaxed= feature.desc
+
+  //- ── TESTIMONIALS ─────────────────────────────────────────────────────
+  //- §2.1 Guest Journey: social proof below features section
+  section.py-28.border-y(class='border-border/60')
+    .max-w-7xl.mx-auto.px-4.md_px-6
+      .max-w-xl.mx-auto.text-center.mb-16
+        div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.py-2.mb-6(class='border-primary/20 bg-primary/5') Đánh giá web
+        h2.text-3xl.md_text-4xl.font-extrabold.tracking-tighter Được giáo viên và học sinh tin dùng.
+
+      .grid.grid-cols-1.md_grid-cols-3.gap-6
+        -
+          var quotes = [
+            {text:'Chế độ thi cử thực sự tuyệt vời. Học sinh không thể gian lận và tôi có ngay kết quả chính xác.', name:'Ths. Trần Thị Hồng Hạnh', role:'Giảng viên Khoa học Máy tính'},
+            {text:'Tôi tham gia lớp học đầu tiên chỉ trong 30 giây. Việc nhập mã để vào lớp cực kỳ đơn giản.', name:'Nguyễn Mạnh Cường', role:'Sinh viên Đại học'},
+            {text:'Toàn bộ số liệu của nền tảng trên một bảng điều khiển. Các phê duyệt, bài nộp, xu hướng ghi danh — mọi thứ.', name:'Quản trị viên', role:'Phòng IT Trường Đại học'}
+          ];
+        each quote in quotes
+          .glass-panel.p-8.rounded-3xl.flex.flex-col(class='border-border/60')
+            .flex.gap-1.mb-5(aria-label='5 stars')
+              each s in [1,2,3,4,5]
+                i.ph-fill.ph-star.text-warning.text-sm(aria-hidden='true')
+            p.text-sm.leading-relaxed.text-foreground.flex-1.mb-6 "#{quote.text}"
+            .flex.items-center.gap-3.pt-5.border-t(class='border-border/60')
+              .w-9.h-9.rounded-full.bg-primary.text-primary-foreground.flex.items-center.justify-center.text-sm.font-bold.flex-shrink-0= quote.name.charAt(0)
+              div
+                p.text-sm.font-bold= quote.name
+                p.text-xs.text-muted-foreground= quote.role
+
+  //- ── CTA SECTION ──────────────────────────────────────────────────────
+  //- §2.1 Guest Journey: strong conversion CTA at bottom
+  section.py-28.relative.overflow-hidden
+    div.absolute.inset-0(class='bg-primary/4', aria-hidden='true')
+    .max-w-7xl.mx-auto.px-4.md_px-6.relative.z-10
+      div.glass-panel.p-14.md_p-20.text-center(class='border-primary/15 rounded-[2.5rem]')
+        h2.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.mb-5 Sẵn sàng bắt đầu học tập?
+        p.text-lg.text-muted-foreground.max-w-xl.mx-auto.mb-10 Tham gia không gian học tập chuyên nghiệp được xây dựng cho các lớp học, bài kiểm tra và kết quả thực tế.
+        .flex.flex-col.sm_flex-row.gap-4.justify-center
+          a.btn-primary.h-14.px-10.text-base.rounded-full.active_scale-95.transition-transform.inline-flex.items-center.gap-2.shadow-elevated(href='/auth/register')
+            | Tạo tài khoản ngay
+            i.ph-bold.ph-arrow-right
+          a.btn-outline.h-14.px-10.text-base.rounded-full.active_scale-95.bg-background.transition-transform.inline-flex.items-center.gap-2(href='/catalog')
+            i.ph-bold.ph-compass
+            | Khám phá khóa học
+
+block head
+  style.
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [style*="marquee"] { animation: none; }
+    }

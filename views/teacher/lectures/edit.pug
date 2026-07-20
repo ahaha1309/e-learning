@@ -1,0 +1,100 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        nav.breadcrumb.animate-in.fade-in.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/lectures') Bài giảng
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Chỉnh sửa
+          
+        .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='py-1.5 bg-primary/5 border-primary/20') Studio Sáng tạo
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Chỉnh sửa Bài giảng
+        p.text-lg.text-muted-foreground.mt-3 Cập nhật tài liệu học tập của bạn.
+        
+      .flex.items-center.gap-4
+        a.btn-outline.h-14.px-6.rounded-full(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id + '/lectures/' + lecture.id)
+          i.ph-bold.ph-x.text-lg
+          | Hủy
+
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', enctype='multipart/form-data', action='/teacher/classrooms/' + classroom.id + '/lectures/' + lecture.id)
+      input(type='hidden', name='_csrf', value=csrfToken)
+      
+      //- Main Content Col
+      .lg_col-span-8.space-y-8
+        if errorMessage
+          .alert-danger.rounded-2xl= errorMessage
+
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='title') Tiêu đề Bài giảng
+            input#title.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='title', value=formData.title || '', placeholder='ví dụ: Giới thiệu về React Hooks', required)
+
+          .grid.grid-cols-1.md_grid-cols-2.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='chapterTitle') Mô-đun / Chương
+              input#chapterTitle.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='chapterTitle', value=formData.chapterTitle || '', placeholder='ví dụ: Mô-đun 1', required)
+            
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='orderIndex') Thứ tự
+              input#orderIndex.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', min='0', name='orderIndex', value=formData.orderIndex !== undefined ? formData.orderIndex : 0)
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='summary') Tóm tắt Ngắn
+            textarea#summary.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='summary', rows='3', placeholder='Mô tả ngắn gọn về những gì bài giảng này bao gồm...')= formData.summary || ''
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='content') Nội dung Chi tiết
+            textarea#content.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='content', rows='8', placeholder='Viết nội dung bài giảng chính ở đây. Hỗ trợ HTML.')= formData.content || ''
+
+      //- Sidebar Config Col
+      .lg_col-span-4.space-y-8
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
+              i.ph-bold.ph-paperclip.text-xl
+            h3.text-lg.font-bold Tệp đính kèm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='resourceType') Loại Phương tiện
+            select#resourceType.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='resourceType')
+              option(value='text', selected=(formData.resourceType || 'text') === 'text') Không có (Chỉ Văn bản)
+              option(value='video', selected=formData.resourceType === 'video') Video (MP4)
+              option(value='pdf', selected=formData.resourceType === 'pdf') Tài liệu PDF
+              option(value='document', selected=formData.resourceType === 'document') Tài liệu Khác
+              option(value='link', selected=formData.resourceType === 'link') Liên kết Ngoài
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='assetFile') Tải lên Tệp Tài sản (Thay thế)
+            .relative.w-full
+              input#assetFile.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.file-upload(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='file', name='assetFile', accept='.pdf,.doc,.docx,.ppt,.pptx,.mp4,.webm,.jpg,.jpeg,.png,.webp,.zip')
+            if formData.resourceUrl
+              p.text-xs.text-muted-foreground Đang có: #{formData.resourceUrl}
+            p.text-xs.text-muted-foreground Tải lên một tệp mới sẽ ghi đè tệp hiện tại. Tối đa 200MB.
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='resourceUrl') Hoặc URL Tài sản Ngoài
+            input#resourceUrl.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='url', name='resourceUrl', value=formData.resourceUrl || '', placeholder='https://...')
+
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-success/10 text-success')
+              i.ph-bold.ph-rocket-launch.text-xl
+            h3.text-lg.font-bold Xuất bản
+            
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='isPublished') Trạng thái
+            select#isPublished.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='isPublished')
+              option(value='true', selected=(formData.isPublished === true || formData.isPublished === 'true')) Đã xuất bản (Công khai)
+              option(value='false', selected=(formData.isPublished === false || formData.isPublished === 'false')) Bản nháp (Ẩn)
+
+          button.btn-primary.w-full.h-14.rounded-xl.text-base.font-bold.shadow-diffused.active_scale-95.transition-transform(type='submit')
+            i.ph-bold.ph-floppy-disk.text-lg
+            | Cập nhật Bài giảng

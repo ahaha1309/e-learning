@@ -1,0 +1,110 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Danh mục Học sinh
+        h1.text-3xl.font-extrabold.tracking-tight Học sinh
+        p.text-muted-foreground.mt-2.text-sm Xem và quản lý tất cả tài khoản học sinh.
+
+    .bento-card.p-0.overflow-hidden.flex.flex-col
+      //- Toolbar
+      .p-4.border-b.border-border.bg-card.flex.flex-col.sm_flex-row.items-center.justify-between.gap-4
+        form.flex-1.flex.flex-col.sm_flex-row.gap-3.w-full(method='GET', action='/admin/students')
+          .relative.flex-1.max-w-md
+            i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground(class='top-1/2 -translate-y-1/2')
+            input.w-full.pl-10.h-10.rounded-lg.border.border-input.bg-background.text-sm.focus-visible_ring-1.focus-visible_ring-primary(type='search', name='q', value=query || '', placeholder='Tìm kiếm theo tên hoặc email...')
+          
+          button.btn-primary.h-10.px-4.rounded-lg(type='submit')
+            | Tìm kiếm
+
+      //- Data Table
+      if students && students.length > 0
+        .table-wrap.shadow-sm
+            table.w-full.text-left.text-sm
+              thead.border-b.border-border(class='bg-muted/50')
+                tr
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.w-10
+                    input(type='checkbox', class='rounded border-input')
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Học sinh
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.md_table-cell Trạng thái
+                  th.px-6.py-3.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground.hidden.lg_table-cell Ngày tham gia
+                  th.px-6.py-3.text-center.font-semibold.text-xs.uppercase.tracking-wider.text-muted-foreground Thao tác
+              tbody.divide-y.divide-border
+                each student in students
+                  tr.group.transition-colors(class='hover_bg-muted/30')
+                    td.px-6.py-4
+                      input(type='checkbox', class='rounded border-input', value=student.id)
+                    td.px-6.py-4
+                      .flex.items-center.gap-3
+                        div.w-10.h-10.rounded-full.text-primary.flex.items-center.justify-center.font-bold.flex-shrink-0(class='bg-primary/10')
+                          if student.avatarUrl
+                            img.w-full.h-full.rounded-full.object-cover(src=student.avatarUrl, alt=student.name)
+                          else
+                            = student.name ? student.name.charAt(0).toUpperCase() : '?'
+                        .flex-1.min-w-0
+                          p.text-sm.font-bold.text-foreground.truncate= student.name
+                          p.text-xs.text-muted-foreground.truncate= student.email
+                    td.px-6.py-4.hidden.md_table-cell
+                      if student.status === 'active'
+                        .flex.items-center.gap-2
+                          .w-2.h-2.rounded-full.bg-success
+                          span.text-sm.text-foreground.capitalize= student.status
+                      else
+                        .flex.items-center.gap-2
+                          .w-2.h-2.rounded-full.bg-muted-foreground
+                          span.text-sm.text-foreground.capitalize= student.status
+                    td.px-6.py-4.hidden.lg_table-cell
+                      span.text-sm.text-muted-foreground= student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A'
+                    td.px-6.py-4.text-right
+                      .flex.items-center.justify-end.gap-1
+                        a.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                          href='/admin/users/' + student.id,
+                          class='hover_bg-info/10 hover_text-info',
+                          aria-label='Xem ' + student.name,
+                          title='Xem'
+                        )
+                          i.ph-bold.ph-eye.text-base
+                        a.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                          href='/admin/users/' + student.id + '/edit',
+                          class='hover_bg-primary/10 hover_text-primary',
+                          aria-label='Sửa ' + student.name,
+                          title='Sửa'
+                        )
+                          i.ph-bold.ph-pencil-simple.text-base
+                        form(method='POST', action='/admin/users/' + student.id + '/delete', style='display:inline')
+                          input(type='hidden', name='_csrf', value=csrfToken)
+                          button.p-2.inline-flex.rounded-lg.text-muted-foreground.transition-colors(
+                            type='submit',
+                            class='hover_bg-destructive/10 hover_text-destructive',
+                            aria-label='Xóa ' + student.name,
+                            title='Xóa',
+                            data-confirm='',
+                            data-confirm-title='Xóa học sinh',
+                            data-confirm-body='Xóa vĩnh viễn ' + student.name + '? Không thể hoàn tác hành động này.'
+                          )
+                            i.ph-bold.ph-trash.text-base
+
+        //- Pagination Footer
+        if totalPages > 1
+          div.px-6.py-4.border-t.border-border.flex.items-center.justify-between(class='bg-muted/20')
+            p.text-sm.text-muted-foreground Đang hiển thị trang <span class="font-bold text-foreground">#{currentPage}</span> trong <span class="font-bold text-foreground">#{totalPages}</span>
+            .flex.items-center.gap-1
+              if currentPage > 1
+                a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/students?page=' + (currentPage - 1) + '&q=' + (query || ''))
+                  i.ph-bold.ph-caret-left
+              - for (var i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++)
+                a.h-8.w-8.p-0.rounded-lg.flex.items-center.justify-center.text-sm.font-medium.transition-colors(class=currentPage === i ? 'bg-primary text-primary-foreground shadow-sm' : 'hover_bg-muted text-muted-foreground', href='/admin/students?page=' + i + '&q=' + (query || ''))= i
+              if currentPage < totalPages
+                a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/students?page=' + (currentPage + 1) + '&q=' + (query || ''))
+                  i.ph-bold.ph-caret-right
+      else
+        .empty-state.border-0.rounded-none.bg-transparent.py-16
+          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
+            i.ph-fill.ph-student.text-3xl(class='text-muted-foreground/50')
+          h2.text-lg.font-bold.text-foreground Không tìm thấy học sinh nào
+          p.text-sm.text-muted-foreground.mt-1 Không có tài khoản học sinh nào khớp với tìm kiếm của bạn.
+          a.btn-primary.h-10.px-5.rounded-lg.inline-flex.items-center.gap-2.mt-2(href='/admin/users/new')
+            i.ph-bold.ph-user-plus
+            | Thêm học sinh

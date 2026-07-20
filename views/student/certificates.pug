@@ -1,0 +1,28 @@
+extends ../layouts/base
+
+include ../layouts/mixins
+
+block content
+  .page.space-y-8
+    +pgHeader({ eyebrow: 'Thành tích Học sinh', icon: 'ph-bold ph-certificate', h1: 'Chứng chỉ', subtitle: 'Các khóa học đã hoàn thành và thành tích đã xác minh sẽ xuất hiện ở đây khi việc cấp chứng chỉ được kết nối với các quy tắc hoàn thành khóa học.' })
+      aside.glass-panel.rounded-2xl.p-5.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-warning(class='bg-warning/10')
+          i.ph-bold.ph-seal-check.text-lg
+        div
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Hiện có
+          p.font-mono.text-3xl.font-bold.tracking-tighter= certificates.length
+
+    if certificates.length
+      .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-6.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each certificate in certificates
+          article.card.p-6.card-hover
+            .w-12.h-12.rounded-xl.text-primary.flex.items-center.justify-center.mb-4(class='bg-primary/10')
+              i.ph-bold.ph-certificate.text-2xl
+            h2.text-xl.font-bold= certificate.title
+            p.text-sm.text-muted-foreground.mt-2= certificate.issuedAt
+            .mt-4.pt-4.border-t.border-border
+              a.btn-outline.btn-sm.w-full.justify-center(href='/student/dashboard')
+                i.ph-bold.ph-download-simple
+                | Tải xuống
+    else
+      +emptyState({ icon: 'ph-fill ph-certificate', title: 'Chưa có chứng chỉ nào', desc: 'Hoàn thành các lớp học đủ điều kiện và chứng chỉ đã xác minh của bạn sẽ được liệt kê ở đây.', ctaText: 'Xem lớp học của tôi', ctaHref: '/student/classrooms' })

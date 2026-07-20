@@ -1,0 +1,48 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions') Quay lại các bài nộp
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
+
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Chấm điểm bằng Rubric
+        h1.text-3xl.font-bold.tracking-tight= submission.student.name + ' — ' + assignment.title
+        p.text-muted-foreground.mt-2= submission.student.email
+      aside.card.p-5
+        p.text-sm.text-muted-foreground Tiêu chí
+        strong.text-xl.font-bold= rubric.name
+        p.text-sm.text-muted-foreground.mt-2 Tối đa #{rubric.maxPoints} điểm cho #{rubric.criteria.length} tiêu chí
+
+    if errorMessage
+      .alert-danger= errorMessage
+
+    if submission.textAnswer
+      .card.p-6
+        p.text-lg.font-bold.mb-2 Câu trả lời của học sinh
+        p.text-muted.whitespace-pre-wrap= submission.textAnswer
+
+    if submission.attachment && submission.attachment.url
+      .card.p-5
+        p.text-sm.font-medium.mb-2 Tệp đính kèm
+        a.pill(href=submission.attachment.url, target='_blank', rel='noreferrer') Mở tệp
+
+    form.card.p-6.space-y-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id + '/grade-rubric')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      each criterion in rubric.criteria
+        .border.rounded-lg.p-4.space-y-3(class='border-border/60')
+          .flex.items-baseline.justify-between
+            div
+              p.text-base.font-bold= criterion.label
+              if criterion.description
+                p.text-sm.text-muted-foreground.mt-1= criterion.description
+            span.badge-muted.text-sm= '/ ' + criterion.maxPoints + ' điểm'
+          .flex.flex-wrap.gap-2
+            each sc in criterion.scale
+              button.pill.text-sm(type='button', data-crit=String(criterion._id), data-points=sc.points, onclick='this.form.elements["crit_' + criterion._id + '"].value=' + sc.points + '; this.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("pill-primary")); this.classList.add("pill-primary");')= sc.points + ' — ' + sc.label
+          input.w-full(type='number', min='0', max=criterion.maxPoints, step='0.5', name='crit_' + criterion._id, value=(awarded[String(criterion._id)] !== undefined ? awarded[String(criterion._id)] : ''), aria-label='Points for ' + criterion.label)
+      .flex.gap-3.flex-wrap
+        button.btn-primary(type='submit') Lưu điểm rubric
