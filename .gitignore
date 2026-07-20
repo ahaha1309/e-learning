@@ -4,6 +4,14 @@
 node_modules/
 
 # =========================
+# AI / Tool configuration (local only)
+# =========================
+.claude/
+.agents/
+api/
+scripts/
+
+# =========================
 # Environment
 # =========================
 .env
