@@ -61,6 +61,9 @@ html(lang='en', class='light')
           div
             h2.px-3.mb-2.font-bold.text-muted-foreground.uppercase.tracking-widest.mt-4.first_mt-0(class='text-[0.65rem]') Nội dung
             .space-y-1
+              a.admin-nav-link(href='/admin/categories' class=activeNav === 'categories' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-folders.text-lg
+                span Danh mục
               a.admin-nav-link(href='/admin/exams' class=activeNav === 'exams' ? 'admin-nav-link-active' : '')
                 i.ph-bold.ph-exam.text-lg
                 span Bài thi
@@ -77,6 +80,9 @@ html(lang='en', class='light')
               a.admin-nav-link(href='/admin/settings' class=activeNav === 'settings' ? 'admin-nav-link-active' : '')
                 i.ph-bold.ph-gear-six.text-lg
                 span Cài đặt
+              a.admin-nav-link(href='/admin/audit' class=activeNav === 'audit' ? 'admin-nav-link-active' : '')
+                i.ph-bold.ph-clipboard-text.text-lg
+                span Nhật ký kiểm toán
 
         //- User Profile Footer
         .p-4.border-t.border-border

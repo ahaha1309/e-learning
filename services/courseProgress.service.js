@@ -19,9 +19,9 @@ const CONTENT_TYPES = Object.freeze({
   EXAM: 'EXAM',
 });
 
-// DEFAULT module key for content kinds that have no chapter/section field.
-// (Lessons group by their own chapterTitle; assessments share this single module.)
-const ASSESSMENTS_MODULE_KEY = 'Assessments';
+// DEFAULT module keys for content kinds that have no chapter/section field.
+const ASSIGNMENTS_MODULE_KEY = 'Bài tập';
+const EXAMS_MODULE_KEY = 'Bài thi';
 
 function itemKey(itemType, itemId) {
   return `${itemType}:${String(itemId)}`;
@@ -40,11 +40,11 @@ function percent(completed, total) {
  * to assessments later would only change this function, not the view or the
  * unlock algorithm.
  */
-function moduleKeyFor(rawItem) {
+function moduleKeyFor(rawItem, itemType) {
   if (rawItem.chapterTitle) {
     return rawItem.chapterTitle;
   }
-  return ASSESSMENTS_MODULE_KEY;
+  return itemType === CONTENT_TYPES.EXAM ? EXAMS_MODULE_KEY : ASSIGNMENTS_MODULE_KEY;
 }
 
 function hrefFor(itemType, classroomId, itemId) {
@@ -69,7 +69,7 @@ function toContentItem(rawItem, itemType, classroomId) {
     id: itemKey(itemType, rawItem._id),
     itemId: String(rawItem._id),
     itemType,
-    moduleKey: moduleKeyFor(rawItem),
+    moduleKey: moduleKeyFor(rawItem, itemType),
     title: rawItem.title,
     order: typeof rawItem.orderIndex === 'number' ? rawItem.orderIndex : 0,
     createdAt: rawItem.createdAt ? new Date(rawItem.createdAt).getTime() : 0,

@@ -26,7 +26,13 @@ async function renderAttendanceIndex(req, res, next) {
 async function createSession(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    if (!classroom) return res.status(404).send('Not found');
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+
+    // Prevent duplicate open sessions by redirecting to existing open one
+    const existingOpenSession = await AttendanceSession.findOne({ classroom: classroom.id, status: 'open' });
+    if (existingOpenSession) {
+      return res.redirect(`/teacher/classrooms/${classroom.id}/attendance/${existingOpenSession.id}/live`);
+    }
 
     const session = new AttendanceSession({
       classroom: classroom.id,
@@ -36,12 +42,12 @@ async function createSession(req, res, next) {
     session.generateNewCode();
     await session.save();
 
-    // Automatically create 'absent' records for all enrolled students
-    // We can do this now, and when they check in, it updates to 'present'.
-    const users = await User.find({ _id: { $in: classroom.students } });
-    const records = users.map(user => ({
+    // Automatically create 'absent' records for all approved enrolled students
+    const ClassroomMember = require('../../models/ClassroomMember');
+    const members = await ClassroomMember.find({ classroom: classroom.id, status: 'approved' });
+    const records = members.map(m => ({
       session: session.id,
-      student: user._id,
+      student: m.student,
       status: 'absent'
     }));
     if (records.length > 0) {
@@ -57,7 +63,9 @@ async function createSession(req, res, next) {
 async function renderLiveSession(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom?.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+
+    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom.id });
     if (!session) return res.status(404).send('Session not found');
 
     if (session.status === 'closed') {
@@ -96,7 +104,9 @@ async function apiGenerateCode(req, res, next) {
 async function closeSession(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom?.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+
+    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom.id });
     if (!session) return res.status(404).send('Session not found');
 
     session.status = 'closed';
@@ -111,7 +121,9 @@ async function closeSession(req, res, next) {
 async function renderRecords(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom?.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+
+    const session = await AttendanceSession.findOne({ _id: req.params.sessionId, classroom: classroom.id });
     if (!session) return res.status(404).send('Session not found');
 
     const records = await AttendanceRecord.find({ session: session.id })

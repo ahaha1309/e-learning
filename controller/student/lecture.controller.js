@@ -16,6 +16,34 @@ function groupLecturesByChapter(lectures) {
   }, {});
 }
 
+// ── Cross-classroom aggregator: all published lectures across the student's
+// approved enrollments, grouped by classroom. Audit A2.
+async function renderAllStudentLectures(req, res, next) {
+  try {
+    const memberships = await ClassroomMember.find({ student: req.user.id, status: 'approved' })
+      .populate('classroom', 'name code').lean();
+    const valid = memberships.filter(m => m.classroom);
+    const classroomIds = valid.map(m => m.classroom._id);
+
+    let groups = [];
+    if (classroomIds.length) {
+      const lectures = await Lecture.find({ classroom: { $in: classroomIds }, isPublished: true })
+        .populate('classroom', 'name code').sort({ 'classroom.name': 1, chapterTitle: 1, orderIndex: 1, createdAt: 1 }).lean();
+      const byClass = {};
+      lectures.forEach(l => {
+        const key = String(l.classroom._id);
+        if (!byClass[key]) byClass[key] = { classroom: l.classroom, items: [] };
+        byClass[key].items.push(l);
+      });
+      groups = Object.values(byClass);
+    }
+
+    return res.render('student/lectures/all', { title: 'Tất cả bài giảng', groups });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function renderStudentLectures(req, res, next) {
   try {
     const membership = await ClassroomMember.findOne({ classroom: req.params.classroomId, student: req.user.id, status: 'approved' }).populate('classroom');
@@ -90,6 +118,7 @@ async function renderStudentLectureDetail(req, res, next) {
       membership,
       lecture,
       messages,
+      preview: buildPreviewModel(lecture),
     });
   } catch (error) {
     return next(error);
@@ -173,6 +202,7 @@ async function markLectureComplete(req, res, next) {
 }
 
 module.exports = {
+  renderAllStudentLectures,
   renderStudentLectures,
   renderStudentLectureDetail,
   renderStudentLecturePreview,

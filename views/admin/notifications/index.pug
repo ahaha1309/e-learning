@@ -1,15 +1,10 @@
 extends ../layouts/admin
 
+include ../../layouts/mixins
+
 block admin-content
   .max-w-5xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
-    header.flex.items-center.justify-between.gap-4
-      div
-        p.eyebrow Thông báo & Hoạt động
-        h1.text-3xl.font-extrabold.tracking-tight Thông báo
-        p.text-muted-foreground.mt-2.text-sm Quản lý các thông báo và cập nhật trên toàn hệ thống.
-      //- button.btn-outline.h-10.px-4.rounded-lg
-      //-   i.ph-bold.ph-check-double
-      //-   | Đánh dấu tất cả là đã đọc
+    +pgHeader({ eyebrow: 'Thông báo & Hoạt động', icon: 'ph-bold ph-bell', scale: 'compact', h1: 'Thông báo', subtitle: 'Quản lý các thông báo và cập nhật trên toàn hệ thống.' })
 
     if notifications && notifications.length > 0
       .bento-card.p-0.overflow-hidden
@@ -32,8 +27,4 @@ block admin-content
                 //-   button.btn-ghost.btn-sm.rounded-full.text-muted-foreground.hover_text-primary(title="Đánh dấu là đã đọc")
                 //-     i.ph-bold.ph-check
     else
-      .empty-state.bento-card.py-20
-        .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
-          i.ph-fill.ph-bell-slash.text-3xl(class='text-muted-foreground/50')
-        h2.text-lg.font-bold.text-foreground Không có thông báo mới!
-        p.text-sm.text-muted-foreground.mt-1 Bạn không có thông báo nào mới vào lúc này.
+      +emptyState({ icon: 'ph-fill ph-bell-slash', title: 'Không có thông báo mới!', desc: 'Bạn không có thông báo nào mới vào lúc này.' })

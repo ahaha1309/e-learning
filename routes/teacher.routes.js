@@ -10,6 +10,7 @@ const discussionRoutes = require('./teacher.discussion.routes');
 const { renderChatRoom } = require('../controller/teacher/chat.controller');
 const { renderClassroomAnalytics, renderGlobalAnalytics } = require('../controller/teacher/analytics.controller');
 const { renderGlobalAttendance } = require('../controller/teacher/attendance.controller');
+const { renderGlobalAssignments } = require('../controller/teacher/assignment.controller');
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.get('/classrooms/:classroomId/chat', renderChatRoom);
 router.get('/classrooms/:classroomId/analytics', renderClassroomAnalytics);
 router.get('/analytics', renderGlobalAnalytics);
 router.get('/attendance', renderGlobalAttendance);
+router.get('/assignments', renderGlobalAssignments);
 router.use('/question-banks', qbRoutes);
 
 module.exports = router;

@@ -216,71 +216,203 @@ async function startServer() {
 
   const port = Number(process.env.PORT || 3000);
   const server = http.createServer(app);
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || (process.env.NODE_ENV === 'production' ? false : '*');
+  // In dev, wildcard '*' cannot be used together with credentials:true (browser blocks it).
+  // Use an explicit list of localhost origins instead.
+  const defaultLocalOrigins = [
+    `http://localhost:${port}`,
+    `http://127.0.0.1:${port}`,
+  ];
+  const allowedOrigin = process.env.ALLOWED_ORIGIN
+    ? process.env.ALLOWED_ORIGIN.split(',')
+    : (process.env.NODE_ENV === 'production' ? false : defaultLocalOrigins);
   const io = new Server(server, {
     cors: {
       origin: allowedOrigin,
       methods: ['GET', 'POST'],
       credentials: true,
     },
+    // Allow polling fallback so localhost works even if WebSocket upgrade is slow
+    transports: ['websocket', 'polling'],
   });
 
+  function parseCookie(cookieString, name) {
+    if (!cookieString) return null;
+    const match = cookieString.match(new RegExp('(^|;\\s*)' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[2]) : null;
+  }
+
+  // Common authentication middleware for Socket.IO namespaces
+  const socketAuthMiddleware = (socket, next) => {
+    try {
+      let token = null;
+      const cookieHeader = socket.handshake.headers.cookie;
+      if (cookieHeader) {
+        token = parseCookie(cookieHeader, 'accessToken');
+      }
+      if (!token && socket.handshake.auth && socket.handshake.auth.token) {
+        token = socket.handshake.auth.token;
+      }
+      if (!token && socket.handshake.headers.authorization) {
+        const parts = socket.handshake.headers.authorization.split(' ');
+        if (parts.length === 2 && parts[0] === 'Bearer') {
+          token = parts[1];
+        }
+      }
+      if (!token) {
+        return next(new Error('Authentication error: No token provided'));
+      }
+      const jwt = require('jsonwebtoken');
+      const payload = jwt.verify(token, process.env.JWT_SECRET || 'test_secret');
+      socket.userId = payload.sub;
+      socket.userRole = payload.role;
+      next();
+    } catch (err) {
+      next(new Error('Authentication error: Invalid token'));
+    }
+  };
+
   // Exam monitoring namespace
-  // NOTE (audit H3): this namespace has no authenticated socket middleware yet;
-  // join-exam/teacher-join accept any connection and any examId, and sender
-  // identity is not verified. Full socket auth is tracked separately. The
-  // violation persistence below is intentionally defensive about payload shape
-  // and caps the per-submission stored array, but does NOT yet close the auth
-  // gap — that is the audit's Phase-1 H3 work.
   const examMonitor = io.of('/exam-monitor');
+  examMonitor.use(socketAuthMiddleware);
+
   examMonitor.on('connection', (socket) => {
-    socket.on('join-exam', (data) => {
-      if (data && data.examId) socket.join(data.examId);
+    socket.on('join-exam', async (data) => {
+      if (!data || !data.examId) return;
+      const studentId = socket.userId;
+      if (!studentId) return;
+
+      const Exam = require('./models/Exam');
+      const exam = await Exam.findById(data.examId);
+      if (!exam) return;
+
+      const ClassroomMember = require('./models/ClassroomMember');
+      const isMember = await ClassroomMember.findOne({
+        classroom: exam.classroom,
+        student: studentId,
+        status: 'approved'
+      });
+      const isTeacher = (socket.userRole === 'teacher' || socket.userRole === 'admin') && String(exam.teacher) === studentId;
+
+      if (isMember || isTeacher) {
+        socket.join(data.examId);
+      }
     });
-    socket.on('teacher-join', (data) => {
-      if (data && data.examId) socket.join(data.examId);
+
+    socket.on('teacher-join', async (data) => {
+      if (!data || !data.examId) return;
+      if (socket.userRole !== 'teacher' && socket.userRole !== 'admin') return;
+
+      const Exam = require('./models/Exam');
+      const exam = await Exam.findOne({ _id: data.examId, teacher: socket.userId });
+      if (exam || socket.userRole === 'admin') {
+        socket.join(data.examId);
+      }
     });
-    // Student anti-cheat signals. Persisted SERVER-side so the record can't be
-    // forged or dropped by the client the way req.body.violationsJson could be.
-    // The HTTP submit path no longer writes violations — this is the only path.
+
+    // Student anti-cheat signals. Persisted SERVER-side.
     socket.on('cheat-violation', async (data) => {
-      if (!data || !data.examId || !data.studentId || !data.type) return;
+      if (!data || !data.examId) return;
+      const studentId = socket.userId;
+      if (!studentId) return;
+
+      const vObj = data.violation || data;
+      const vType    = vObj.type    || data.type;
+      const vDetails = vObj.details || data.details;
+      if (!vType) return;
+
       try {
         const ExamSubmission = require('./models/ExamSubmission');
         const submission = await ExamSubmission.findOne({
           exam: data.examId,
-          student: data.studentId,
+          student: studentId,
           status: 'in_progress',
         });
         if (!submission) return;
-        // Cap the embedded array; the rest are counted, not stored verbatim,
-        // to avoid unbounded growth flagged in the audit (ExamSubmission.violations).
+        // Cap the embedded array to avoid unbounded growth.
         if (submission.violations.length < 200) {
           submission.violations.push({
-            type: data.type,
+            type: vType,
             time: new Date(),
-            details: data.details ? String(data.details).slice(0, 500) : '',
+            details: vDetails ? String(vDetails).slice(0, 500) : '',
           });
           await submission.save();
         }
+
+        const User = require('./models/User');
+        const studentUser = await User.findById(studentId);
+        const studentName = studentUser ? studentUser.name : 'Student';
+
+        // Forward to teacher monitor room
+        examMonitor.to(data.examId).emit('student-violation', {
+          examId:      data.examId,
+          studentId:   studentId,
+          studentName: studentName,
+          violation: {
+            type:    vType,
+            time:    vObj.time || new Date().toISOString(),
+            details: vDetails || '',
+          },
+        });
       } catch (err) {
         console.error('Exam violation persist error', err);
       }
-      examMonitor.to(data.examId).emit('student-violation', data);
     });
   });
 
   // Chat namespace
   const chatMonitor = io.of('/chat');
+  chatMonitor.use(socketAuthMiddleware);
+
   chatMonitor.on('connection', (socket) => {
-    socket.on('join_chat', (data) => { socket.join(data.classroomId); });
+    socket.on('join_chat', async (data) => {
+      if (!data || !data.classroomId) return;
+      const senderId = socket.userId;
+      const ClassroomMember = require('./models/ClassroomMember');
+      const isMember = await ClassroomMember.findOne({
+        classroom: data.classroomId,
+        student: senderId,
+        status: 'approved'
+      });
+      const Classroom = require('./models/Classroom');
+      const isTeacher = await Classroom.findOne({
+        _id: data.classroomId,
+        teacher: senderId
+      });
+      if (isMember || isTeacher || socket.userRole === 'admin') {
+        socket.join(data.classroomId);
+      }
+    });
+
     socket.on('send_message', async (data) => {
       try {
+        if (!data || !data.classroomId || !data.content) return;
+        const senderId = socket.userId;
+        if (!senderId) return;
+
+        // Content length and sanitization
+        const content = String(data.content).trim().slice(0, 1000);
+        if (!content) return;
+
+        const ClassroomMember = require('./models/ClassroomMember');
+        const isMember = await ClassroomMember.findOne({
+          classroom: data.classroomId,
+          student: senderId,
+          status: 'approved'
+        });
+        const Classroom = require('./models/Classroom');
+        const isTeacher = await Classroom.findOne({
+          _id: data.classroomId,
+          teacher: senderId
+        });
+        if (!isMember && !isTeacher && socket.userRole !== 'admin') {
+          return; // Access denied
+        }
+
         const ChatMessage = require('./models/ChatMessage');
         const newMessage = await ChatMessage.create({
           classroom: data.classroomId,
-          sender: data.senderId,
-          content: data.content,
+          sender: senderId,
+          content: content,
         });
         const populatedMessage = await newMessage.populate('sender', 'name avatarUrl');
         chatMonitor.to(data.classroomId).emit('receive_message', {

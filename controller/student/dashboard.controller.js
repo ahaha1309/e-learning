@@ -325,7 +325,64 @@ function renderStudentCertificates(req, res) {
   });
 }
 
+async function askGlobalAiAssistantHandler(req, res, next) {
+  try {
+    const studentId = req.user.id;
+    const userMessage = req.body.message?.toString().trim();
+    if (!userMessage) {
+      return res.status(400).json({ error: 'Message content is required' });
+    }
+
+    const allMemberships = await ClassroomMember.find({ student: studentId, status: 'approved' }).populate('classroom').lean();
+    const classrooms = allMemberships.map(m => m.classroom).filter(Boolean);
+
+    const context = `
+    Bạn là Trợ lý Học tập AI (AI Tutor) thân thiện dành cho sinh viên: "${req.user.name}".
+    Học viên này đang tham gia ${classrooms.length} lớp học:
+    ${classrooms.map(c => `- Lớp học: ${c.name} (Mã: ${c.code}). Mô tả: ${c.description || 'Chưa có'}`).join('\n')}
+
+    Nhiệm vụ của bạn:
+    1. Trả lời câu hỏi của học sinh một cách rõ ràng, ngắn gọn và hữu ích.
+    2. Nếu học sinh hỏi về môn học cụ thể nào trong các lớp học trên, hãy tư vấn cho họ dựa trên thông tin lớp học.
+    3. Hỗ trợ giải đáp các câu hỏi học tập chung, phương pháp ôn thi, lập lịch học tập.
+    4. Trả lời bằng tiếng Việt thân thiện, khuyến khích học tập.
+    `;
+
+    const SystemSetting = require('../../models/SystemSetting');
+    const dbSetting = await SystemSetting.findOne({ key: 'geminiApiKey' });
+    const apiKey = (dbSetting ? dbSetting.value : null) || process.env.GEMINI_API_KEY;
+
+    if (apiKey) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: context + "\n\nUser Question: " + userMessage }]
+            }]
+          })
+        });
+        const data = await response.json();
+        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Không thể nhận câu trả lời từ AI lúc này.";
+        return res.json({ answer });
+      } catch (err) {
+        console.error('Gemini API Error:', err);
+        return res.status(500).json({ error: 'Failed to query AI engine.' });
+      }
+    } else {
+      let mockAnswer = `Xin chào **${req.user.name}**! Tôi là Trợ lý AI học tập của bạn. Hiện tại hệ thống chưa cấu hình \`GEMINI_API_KEY\`, nên tôi đang chạy ở chế độ Demo. \n\nBạn đang tham gia ${classrooms.length} lớp học. Hãy cấu hình API Key để tôi hỗ trợ bạn thông minh nhất nhé!`;
+      return res.json({ answer: mockAnswer });
+    }
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   renderStudentDashboard,
   renderStudentCertificates,
+  askGlobalAiAssistantHandler,
 };

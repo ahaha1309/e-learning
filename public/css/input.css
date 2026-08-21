@@ -2278,7 +2278,8 @@
 
   /* ── Exam Focus Mode ──────────────────────────────── */
   .exam-shell {
-    min-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
     background: hsl(var(--background));
     display: grid;
     grid-template-rows: auto 1fr auto;

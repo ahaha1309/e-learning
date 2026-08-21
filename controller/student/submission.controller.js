@@ -29,7 +29,7 @@ async function renderSubmissionForm(req, res, next) {
       });
     }
 
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate) && !assignment.allowLateSubmission) {
       return res.status(403).render('errors/403', {
         title: 'Deadline passed',
         message: 'This assignment is past its due date and cannot accept new or edited submissions.',
@@ -75,7 +75,7 @@ async function createSubmissionHandler(req, res, next) {
       });
     }
 
-    if (assignment.dueDate && new Date() > new Date(assignment.dueDate)) {
+    if (assignment.dueDate && new Date() > new Date(assignment.dueDate) && !assignment.allowLateSubmission) {
       return res.status(403).render('errors/403', {
         title: 'Deadline passed',
         message: 'This assignment is past its due date and cannot accept new or edited submissions.',

@@ -1,12 +1,10 @@
 extends ../layouts/admin
 
+include ../../layouts/mixins
+
 block admin-content
   .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
-    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
-      div
-        p.eyebrow Danh mục Lớp học
-        h1.text-3xl.font-extrabold.tracking-tight Lớp học
-        p.text-muted-foreground.mt-2.text-sm Xem và quản lý tất cả các lớp học trên nền tảng.
+    +pgHeader({ eyebrow: 'Danh mục Lớp học', icon: 'ph-bold ph-chalkboard', scale: 'compact', h1: 'Lớp học', subtitle: 'Xem và quản lý tất cả các lớp học trên nền tảng.' })
 
     .bento-card.p-0.overflow-hidden.flex.flex-col
       //- Toolbar
@@ -74,8 +72,4 @@ block admin-content
                 a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/classrooms?page=' + (currentPage + 1) + '&q=' + (query || ''))
                   i.ph-bold.ph-caret-right
       else
-        .empty-state.border-0.rounded-none.bg-transparent.py-16
-          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
-            i.ph-fill.ph-chalkboard.text-3xl(class='text-muted-foreground/50')
-          h2.text-lg.font-bold.text-foreground Không tìm thấy lớp học nào
-          p.text-sm.text-muted-foreground.mt-1 Không có lớp học nào khớp với tìm kiếm của bạn.
+        +emptyState({ icon: 'ph-fill ph-chalkboard', title: 'Không tìm thấy lớp học nào', desc: 'Không có lớp học nào khớp với tìm kiếm của bạn.' })

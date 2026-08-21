@@ -10,6 +10,50 @@ const { checkItemAccess } = require('../../services/completion.service');
 // Terminal statuses that already count as a consumed attempt.
 const ATTEMPT_STATUSES = ['submitted', 'graded', 'late', 'auto_submitted'];
 
+// ── Cross-classroom aggregator: all published exams across the student's
+// approved enrollments, each annotated with consumed-attempt count + whether a
+// fresh attempt is allowed. Audit A2: one sidebar entry instead of drilling
+// into each classroom.
+async function renderAllStudentExams(req, res, next) {
+  try {
+    const memberships = await ClassroomMember.find({ student: req.user.id, status: 'approved' })
+      .populate('classroom', 'name code').lean();
+    const valid = memberships.filter(m => m.classroom);
+    const classroomIds = valid.map(m => m.classroom._id);
+
+    let groups = [];
+    if (classroomIds.length) {
+      const exams = await Exam.find({ classroom: { $in: classroomIds }, isPublished: true })
+        .populate('classroom', 'name code').sort({ createdAt: -1 }).lean();
+      if (exams.length) {
+        const inProgress = await ExamSubmission.find({
+          exam: { $in: exams.map(e => e._id) }, student: req.user.id, status: 'in_progress'
+        }).lean();
+        const ipByExam = {};
+        inProgress.forEach(s => { ipByExam[String(s.exam)] = s; });
+        const byClass = {};
+        for (const exam of exams) {
+          const key = String(exam.classroom._id);
+          if (!byClass[key]) byClass[key] = { classroom: exam.classroom, items: [] };
+          const usedAttempts = await ExamSubmission.countDocuments({
+            exam: exam._id, student: req.user.id, status: { $in: ATTEMPT_STATUSES }
+          });
+          byClass[key].items.push(Object.assign(exam, {
+            usedAttempts,
+            canStart: canStartAttempt(usedAttempts, exam.maxAttempts),
+            hasInProgress: Boolean(ipByExam[String(exam._id)]),
+          }));
+        }
+        groups = Object.values(byClass);
+      }
+    }
+
+    return res.render('student/exams/all', { title: 'Tất cả bài thi', groups });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function renderStudentExams(req, res, next) {
   try {
     const membership = await ClassroomMember.findOne({ classroom: req.params.classroomId, student: req.user.id, status: 'approved' }).populate('classroom');
@@ -135,7 +179,7 @@ async function submitExamHandler(req, res, next) {
     const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id });
     if (!exam) return res.status(404).send('Not found');
 
-    const submission = await ExamSubmission.findOne({ _id: req.body.submissionId, student: req.user.id, status: 'in_progress' });
+    const submission = await ExamSubmission.findOne({ _id: req.body.submissionId, exam: exam.id, student: req.user.id, status: 'in_progress' });
     if (!submission) return res.status(400).send('No active submission');
 
     const questions = await Question.find({ exam: exam.id });
@@ -231,7 +275,7 @@ async function renderExamResult(req, res, next) {
     const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id });
     if (!exam) return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
 
-    const submissions = await ExamSubmission.find({ exam: exam.id, student: req.user.id, status: 'submitted' }).sort({ submittedAt: -1 }).populate('answers.question');
+    const submissions = await ExamSubmission.find({ exam: exam.id, student: req.user.id, status: { $in: ATTEMPT_STATUSES } }).sort({ submittedAt: -1 }).populate('answers.question');
 
     return res.render('student/exams/result', {
       title: `${exam.title} Result`,
@@ -245,6 +289,7 @@ async function renderExamResult(req, res, next) {
 }
 
 module.exports = {
+  renderAllStudentExams,
   renderStudentExams,
   renderTakeExam,
   submitExamHandler,

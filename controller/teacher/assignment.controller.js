@@ -4,6 +4,42 @@ const Assignment = require('../../models/Assignment');
 const ClassroomMember = require('../../models/ClassroomMember');
 const { sendNotification } = require('../../helper/notification.helper');
 
+async function renderGlobalAssignments(req, res, next) {
+  try {
+    const teacherId = req.user.id;
+    const query = req.query.q;
+
+    const classrooms = await Classroom.find({ teacher: teacherId, isArchived: false })
+      .sort({ createdAt: -1 }).lean();
+    const classroomIds = classrooms.map(c => c._id);
+
+    let filter = { teacher: teacherId, classroom: { $in: classroomIds } };
+    if (query) {
+      filter.title = { $regex: query, $options: 'i' };
+    }
+
+    const assignments = await Assignment.find(filter)
+      .populate('classroom', 'name _id')
+      .sort({ dueDate: 1, createdAt: -1 })
+      .lean();
+
+    const now = new Date();
+    const enriched = assignments.map(a => ({
+      ...a,
+      isOverdue: a.dueDate && a.dueDate < now && !a.allowLateSubmission,
+    }));
+
+    return res.render('teacher/assignments/all', {
+      title: 'Tất cả bài tập',
+      assignments: enriched,
+      classrooms,
+      query,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 function formatValidationErrors(req) {
   const result = validationResult(req);
   return result.isEmpty() ? null : result.array().map((item) => item.msg).join('. ');
@@ -101,7 +137,7 @@ async function createAssignmentHandler(req, res, next) {
         m.student,
         'New Assignment',
         `Teacher posted a new assignment: ${assignment.title}`,
-        `/student/classrooms/${m.id}/assignments`
+        `/student/classrooms/${classroom.id}/assignments`
       );
     });
     await Promise.allSettled(notificationPromises);
@@ -145,4 +181,5 @@ module.exports = {
   renderCreateAssignment,
   createAssignmentHandler,
   renderAssignmentDetail,
+  renderGlobalAssignments,
 };

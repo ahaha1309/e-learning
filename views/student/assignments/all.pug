@@ -1,0 +1,46 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8.pt-8
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-file-text', h1: 'Tất cả bài tập', subtitle: 'Mọi bài tập trên các lớp học của bạn, sắp xếp theo từng lớp. Mở và nộp bài chỉ trong một cú nhấp chuột.' })
+      .glass-panel.rounded-2xl.p-4.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
+          i.ph-bold.ph-stack.text-lg
+        div
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Bài tập
+          p.font-mono.text-2xl.font-bold.tracking-tighter= groups.reduce((n, g) => n + g.items.length, 0)
+
+    if groups && groups.length
+      .space-y-10.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each group in groups
+          section.space-y-4
+            .flex.items-center.gap-2
+              i.ph-bold.ph-chalkboard.text-base.text-muted-foreground
+              h2.text-lg.font-extrabold.tracking-tight= group.classroom.name
+              if group.classroom.code
+                span.text-xs.font-mono.text-muted-foreground · #{group.classroom.code}
+            .space-y-4
+              each assignment in group.items
+                article.card.p-5.transition-colors(class='hover_border-primary/50')
+                  .flex.flex-col.md_flex-row.md_items-start.justify-between.gap-4
+                    .flex-1
+                      h3.text-lg.font-bold= assignment.title
+                      p.text-sm.text-muted-foreground.mt-1= assignment.description || 'Chưa có mô tả.'
+                      .flex.flex-wrap.items-center.gap-3.mt-3
+                        span.badge-warning= (assignment.totalPoints || 0) + ' điểm'
+                        if assignment.dueDate
+                          span.text-xs.text-muted-foreground Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
+                        if assignment.mySubmission
+                          span.badge.badge-success.badge-sm Đã nộp
+                  .flex.flex-wrap.gap-2.mt-4.pt-4.border-t.border-border
+                    a.btn-secondary.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}`) Mở bài tập
+                    if assignment.mySubmission
+                      a.btn-outline.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}/submissions/${assignment.mySubmission._id}`) Xem bài nộp
+                    else
+                      a.btn-primary.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}/submission/new`)
+                        i.ph-bold.ph-upload-simple
+                        | Nộp bài
+    else
+      +emptyState({ icon: 'ph-fill ph-file-text', title: 'Chưa có bài tập nào', desc: 'Khi giảng viên xuất bản bài tập trên lớp học bạn đã tham gia, chúng sẽ xuất hiện tại đây. Hãy tham gia một lớp học để bắt đầu.', ctaText: 'Tìm lớp học', ctaHref: '/catalog' })

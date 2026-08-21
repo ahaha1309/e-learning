@@ -1,5 +1,43 @@
 const ClassroomMember = require('../../models/ClassroomMember');
 const Assignment = require('../../models/Assignment');
+const Submission = require('../../models/Submission');
+
+// ── Cross-classroom aggregator: all assignments across the student's approved
+// enrollments, each annotated with the student's submission state. Audit A2:
+// promotes "my assignments" from 3–4 clicks (sidebar → classrooms → pick class
+// → Assignments tab, one classroom at a time) to a single sidebar entry.
+async function renderAllStudentAssignments(req, res, next) {
+  try {
+    const memberships = await ClassroomMember.find({ student: req.user.id, status: 'approved' })
+      .populate('classroom', 'name code').lean();
+    const valid = memberships.filter(m => m.classroom);
+    const classroomIds = valid.map(m => m.classroom._id);
+
+    let groups = [];
+    if (classroomIds.length) {
+      const assignments = await Assignment.find({ classroom: { $in: classroomIds }, isPublished: true })
+        .populate('classroom', 'name code').sort({ dueDate: 1, createdAt: -1 }).lean();
+      const submissions = await Submission.find({ student: req.user.id, assignment: { $in: assignments.map(a => a._id) } }).lean();
+      const subByAssignment = {};
+      submissions.forEach(s => { subByAssignment[String(s.assignment)] = s; });
+      // Group by classroom for a scannable cross-classroom list
+      const byClass = {};
+      assignments.forEach(a => {
+        const key = String(a.classroom._id);
+        if (!byClass[key]) byClass[key] = { classroom: a.classroom, items: [] };
+        byClass[key].items.push(Object.assign(a, { mySubmission: subByAssignment[String(a._id)] || null }));
+      });
+      groups = Object.values(byClass);
+    }
+
+    return res.render('student/assignments/all', {
+      title: 'Tất cả bài tập',
+      groups,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
 
 async function renderStudentAssignments(req, res, next) {
   try {
@@ -59,6 +97,7 @@ async function renderStudentAssignmentDetail(req, res, next) {
 }
 
 module.exports = {
+  renderAllStudentAssignments,
   renderStudentAssignments,
   renderStudentAssignmentDetail,
 };

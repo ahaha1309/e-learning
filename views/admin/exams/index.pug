@@ -1,12 +1,10 @@
 extends ../layouts/admin
 
+include ../../layouts/mixins
+
 block admin-content
   .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
-    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
-      div
-        p.eyebrow Danh mục Bài thi
-        h1.text-3xl.font-extrabold.tracking-tight Bài thi
-        p.text-muted-foreground.mt-2.text-sm Xem tất cả bài thi trên nền tảng.
+    +pgHeader({ eyebrow: 'Danh mục Bài thi', icon: 'ph-bold ph-exam', scale: 'compact', h1: 'Bài thi', subtitle: 'Xem tất cả bài thi trên nền tảng.' })
 
     .bento-card.p-0.overflow-hidden.flex.flex-col
       //- Toolbar
@@ -59,8 +57,4 @@ block admin-content
                       a.p-2.inline-flex.rounded-lg.text-muted-foreground.hover_bg-muted.hover_text-foreground.transition-colors(href='/admin/exams/' + exam.id)
                         i.ph-bold.ph-arrow-right.text-lg
       else
-        .empty-state.border-0.rounded-none.bg-transparent.py-16
-          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
-            i.ph-fill.ph-exam.text-3xl(class='text-muted-foreground/50')
-          h2.text-lg.font-bold.text-foreground Không tìm thấy bài thi nào
-          p.text-sm.text-muted-foreground.mt-1 Chưa có bài thi nào được tạo.
+        +emptyState({ icon: 'ph-fill ph-exam', title: 'Không tìm thấy bài thi nào', desc: 'Chưa có bài thi nào được tạo.' })

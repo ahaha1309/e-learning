@@ -19,6 +19,10 @@ block content
     //- ── LEFT PANE: Media viewer ──────────────────────────────────────────
     section.split-pane-media(aria-label='Lecture content')
 
+      //- Reading progress bar (visible on scroll for text content)
+      .lecture-reading-progress(role='progressbar', aria-hidden='true')
+        #lecture-progress-bar.lecture-reading-progress-bar
+
       //- Lecture header strip
       .flex.items-center.justify-between.px-6.py-4.border-b.border-border.flex-shrink-0
         .flex.items-center.min-w-0(class='gap-3')
@@ -51,28 +55,73 @@ block content
         data-resource-url=lecture.resourceUrl,
         data-resource-type=lecture.resourceType
       )
-        //- Rendered server-side based on resource type
-        if lecture.resourceType === 'video'
+        //- Loading skeleton (removed by JS on load)
+        #lecture-skeleton.lecture-skeleton(aria-hidden='true')
+          .lecture-skeleton-bar(style='width:60%')
+          .lecture-skeleton-bar(style='width:40%;height:0.75rem;margin-top:0.5rem')
+          .lecture-skeleton-body
+          .lecture-skeleton-bar(style='width:80%;margin-top:1rem')
+          .lecture-skeleton-bar(style='width:55%;height:0.75rem;margin-top:0.5rem')
+
+        //- VIDEO
+        if preview && preview.mode === 'video'
           video#lecture-video.w-full.h-full.bg-black(
             controls,
             preload='metadata',
             aria-label='Video bài giảng: ' + lecture.title
           )
-            source(src=lecture.resourceUrl, type='video/mp4')
+            source(src=preview.resourceUrl, type='video/mp4')
             p Trình duyệt của bạn không hỗ trợ phát lại video.
 
-        else if lecture.resourceType === 'pdf' || lecture.resourceType === 'ppt'
-          iframe#lecture-iframe(
-            src=lecture.previewUrl || lecture.resourceUrl,
+        //- PDF — embedded viewer
+        else if preview && preview.mode === 'pdf'
+          iframe#lecture-iframe.w-full.h-full(
+            src=preview.resourceUrl,
+            title='PDF bài giảng: ' + lecture.title,
+            loading='lazy',
+            allowfullscreen
+          )
+
+        //- DOCX / PPT / external link — Office Online viewer
+        else if preview && preview.mode === 'office'
+          iframe#lecture-iframe.w-full.h-full(
+            src=preview.officeUrl,
             title='Tài liệu bài giảng: ' + lecture.title,
             loading='lazy',
             allowfullscreen
           )
 
+        //- LOCAL DOCX — render inline with mammoth.js (client-side)
+        else if preview && preview.mode === 'download'
+          .lecture-prose-wrap#lecture-docx-viewer(
+            tabindex='0',
+            role='article',
+            aria-label='Nội dung tài liệu',
+            data-resource-url=preview.resourceUrl
+          )
+            .lecture-docx-loading#docx-loading-state
+              i.ph-bold.ph-file-doc.text-4xl(aria-hidden='true')
+              p.mt-3.text-sm.font-medium Đang hiển thị tài liệu...
+
+        //- TEXT / RICH CONTENT — inline prose
+        else if preview && preview.mode === 'text'
+          .lecture-prose-wrap#lecture-prose(
+            tabindex='0',
+            role='article',
+            aria-label='Nội dung bài giảng'
+          )
+            if lecture.content
+              != lecture.content
+            else
+              p.text-muted-foreground Chưa có nội dung nào được thêm vào bài giảng này.
+
+        //- EMPTY — no resource attached
         else
-          //- Text / rich content fallback
-          .p-8.prose.prose-slate.dark_prose-invert.max-w-none.overflow-y-auto.h-full
-            != lecture.content || '<p class="text-muted-foreground">Không có nội dung cho bài giảng này.</p>'
+          .media-embed-fallback#media-empty.visible(aria-label='Không có bản xem trước')
+            .w-16.h-16.rounded-2xl.flex.items-center.justify-center.mb-4.bg-muted
+              i.ph-bold.ph-file-slash.text-3xl.text-muted-foreground(aria-hidden='true')
+            h3.text-lg.font-bold.tracking-tight Không có tệp đính kèm
+            p.text-sm.text-muted-foreground.mt-1.mb-4 Bài giảng này chưa có tệp hoặc URL tài nguyên.
 
         //- Fallback panel — shown when embed fails
         .media-embed-fallback#media-fallback(aria-hidden='true')
@@ -257,21 +306,97 @@ block content
         chatList.scrollTop = chatList.scrollHeight;
       });
 
-      // ── Media embed fallback ─────────────────────────────────────────────
-      var iframe = document.getElementById('lecture-iframe');
-      var video  = document.getElementById('lecture-video');
-      var fallback = document.getElementById('media-fallback');
+      // ── Skeleton & media load handling ────────────────────────────────────
+      var skeleton    = document.getElementById('lecture-skeleton');
+      var iframe      = document.getElementById('lecture-iframe');
+      var video       = document.getElementById('lecture-video');
+      var fallback    = document.getElementById('media-fallback');
+      var prose       = document.getElementById('lecture-prose');
+      var docxViewer  = document.getElementById('lecture-docx-viewer');
+
+      function hideSkeleton() {
+        if (skeleton) {
+          skeleton.style.opacity = '0';
+          skeleton.style.transition = 'opacity 0.3s';
+          setTimeout(function () { if (skeleton) skeleton.remove(); }, 300);
+        }
+      }
 
       if (iframe) {
+        iframe.addEventListener('load', hideSkeleton);
         iframe.addEventListener('error', function () {
+          hideSkeleton();
           if (fallback) { fallback.classList.add('visible'); iframe.style.display = 'none'; }
         });
-      }
-      if (video) {
+      } else if (video) {
+        video.addEventListener('loadedmetadata', hideSkeleton);
         video.addEventListener('error', function () {
+          hideSkeleton();
           if (fallback) { fallback.classList.add('visible'); video.style.display = 'none'; }
         });
+      } else if (docxViewer) {
+        renderDocx(docxViewer);
+      } else {
+        hideSkeleton();
       }
+
+      // ── DOCX rendering via mammoth.js ─────────────────────────────────────
+      function renderDocx(container) {
+        var url = container.dataset.resourceUrl;
+        if (!url) { hideSkeleton(); return; }
+        if (typeof mammoth === 'undefined') {
+          var checkInterval = setInterval(function () {
+            if (typeof mammoth !== 'undefined') {
+              clearInterval(checkInterval);
+              doRender(container, url);
+            }
+          }, 100);
+          return;
+        }
+        doRender(container, url);
+      }
+
+      function doRender(container, url) {
+        fetch(url)
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.arrayBuffer();
+          })
+          .then(function (buffer) {
+            return mammoth.convertToHtml({ arrayBuffer: buffer });
+          })
+          .then(function (result) {
+            container.innerHTML = result.value ||
+              '<p class="text-muted-foreground">Tài liệu có vẻ trống.</p>';
+            hideSkeleton();
+            wireProgressBar(container);
+          })
+          .catch(function (err) {
+            container.innerHTML =
+              '<div class="docx-render-error">'
+              + '<i class="ph-bold ph-warning-circle" aria-hidden="true"></i>'
+              + '<p>Không thể hiển thị tài liệu.</p>'
+              + '<p class="text-xs mt-1">' + err.message + '</p>'
+              + '<a class="btn-outline btn-sm rounded-full mt-4" style="display:inline-flex;gap:0.5rem;align-items:center;" href="' + url + '" download>'
+              + '<i class="ph-bold ph-download-simple" aria-hidden="true"></i> Tải xuống thay thế</a>'
+              + '</div>';
+            hideSkeleton();
+          });
+      }
+
+      // ── Reading progress bar ──────────────────────────────────────────────
+      var progressBar = document.getElementById('lecture-progress-bar');
+      function wireProgressBar(scrollEl) {
+        if (!progressBar || !scrollEl) return;
+        scrollEl.addEventListener('scroll', function () {
+          var max = scrollEl.scrollHeight - scrollEl.clientHeight;
+          if (max > 0) {
+            progressBar.style.width = ((scrollEl.scrollTop / max) * 100).toFixed(1) + '%';
+          }
+        });
+      }
+      if (prose) wireProgressBar(prose);
+
 
       // ── Connection banner helpers ────────────────────────────────────────
       function showBanner(type, msg) {
@@ -288,3 +413,9 @@ block content
     })();
 
 block scripts
+  //- mammoth.js — loaded only for local DOCX lectures
+  if preview && preview.mode === 'download'
+    script(
+      src='https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
+      crossorigin='anonymous'
+    )

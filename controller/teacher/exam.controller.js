@@ -208,7 +208,8 @@ async function addQuestionHandler(req, res, next) {
 async function deleteQuestionHandler(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom?.id, teacher: req.user.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
     if (!exam) return res.status(404).send('Not found');
 
     const question = await Question.findOneAndDelete({ _id: req.params.questionId, exam: exam.id });
@@ -252,7 +253,8 @@ async function generateMatrixHandler(req, res, next) {
 async function renderSubmissions(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom?.id, teacher: req.user.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
     if (!exam) return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
 
     const submissions = await ExamSubmission.find({ exam: exam.id })
@@ -274,7 +276,8 @@ async function renderSubmissions(req, res, next) {
 async function renderGradeSubmission(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom?.id, teacher: req.user.id });
+    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
     if (!exam) return res.status(404).send('Exam not found');
 
     const submission = await ExamSubmission.findOne({ _id: req.params.submissionId, exam: exam.id })

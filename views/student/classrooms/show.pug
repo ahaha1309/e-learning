@@ -166,3 +166,149 @@ block content
       else
         .empty-state.text-center.py-8
           p.text-sm.text-muted-foreground Tiến độ khóa học hiện không khả dụng.
+
+    //- Floating AI Assistant Button & Chatbox
+    #ai-assistant-container.fixed.bottom-6.right-6.z-50
+      //- Button
+      button#ai-assistant-btn.flex.items-center.justify-center.w-14.h-14.rounded-full.bg-primary.text-primary-foreground.shadow-lg.hover_scale-110.transition-all.cursor-pointer.border-none(
+        aria-label='Chat with AI Tutor',
+        title='Hỏi Trợ lý AI'
+      )
+        i.ph-bold.ph-cpu.text-2xl
+      
+      //- Chat Box (initially hidden)
+      #ai-chatbox.hidden.absolute.bottom-18.right-0.w-96.glass-panel.rounded-2xl.shadow-2xl.flex.flex-col.overflow-hidden.border.border-border.transition-all.bg-background(style='height: 480px;')
+        //- Header
+        div(class="p-4 bg-primary/5 border-b border-border flex items-center justify-between")
+          .flex.items-center.gap-2.text-primary
+            i.ph-bold.ph-cpu.text-xl
+            div
+              h3.text-sm.font-bold.text-foreground Trợ lý Học tập AI
+              p.text-xs.text-muted-foreground.font-medium Trực tuyến
+          button#close-chat-btn.text-muted-foreground.hover_text-foreground.transition-colors.cursor-pointer.bg-transparent.border-none
+            i.ph-bold.ph-x.text-lg
+            
+        //- Messages Area
+        #ai-messages.flex-1.p-4.overflow-y-auto.space-y-4.text-sm
+          div(class="ai-message bg-muted p-3 rounded-2xl rounded-tl-none max-w-[85%] space-y-2")
+            p Xin chào! Tôi là trợ lý học tập AI của lớp học **#{membership.classroom.name}**.
+            p Bạn có thắc mắc gì về các bài giảng, bài tập hoặc tiến trình học tập của môn học này không?
+            
+        //- Input Box
+        form#ai-chat-form.p-4.border-t.border-border.flex.gap-2.m-0
+          input#ai-input.flex-1.bg-muted.border.border-border.rounded-xl.px-4.py-2.text-sm.focus_outline-none.focus_border-primary(
+            type='text',
+            placeholder='Hỏi gì đó về môn học...',
+            required=true,
+            autocomplete='off'
+          )
+          button.btn-primary.px-4.rounded-xl.flex.items-center.justify-center.border-none(type='submit')
+            i.ph-bold.ph-paper-plane-tilt.text-base
+
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      const btn = document.getElementById('ai-assistant-btn');
+      const chatbox = document.getElementById('ai-chatbox');
+      const closeBtn = document.getElementById('close-chat-btn');
+      const form = document.getElementById('ai-chat-form');
+      const input = document.getElementById('ai-input');
+      const messagesContainer = document.getElementById('ai-messages');
+
+      // Toggle Chatbox
+      btn.addEventListener('click', () => {
+        chatbox.classList.toggle('hidden');
+        if (!chatbox.classList.contains('hidden')) {
+          input.focus();
+          if (window.renderMathInElement) {
+            try {
+              window.renderMathInElement(messagesContainer, {
+                delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false},
+                  {left: '\\(', right: '\\)', display: false},
+                  {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+              });
+            } catch (e) {}
+          }
+        }
+      });
+
+      closeBtn.addEventListener('click', () => {
+        chatbox.classList.add('hidden');
+      });
+
+      // Handle Submit
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Add user message
+        const userMsgEl = document.createElement('div');
+        userMsgEl.className = 'user-message bg-primary text-primary-foreground p-3 rounded-2xl rounded-tr-none max-w-[85%] ml-auto text-right';
+        userMsgEl.textContent = text;
+        messagesContainer.appendChild(userMsgEl);
+        input.value = '';
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        // Add typing indicator
+        const typingEl = document.createElement('div');
+        typingEl.className = 'ai-message bg-muted p-3 rounded-2xl rounded-tl-none max-w-[85%] text-muted-foreground flex items-center gap-1';
+        typingEl.innerHTML = '<span class="animate-bounce">●</span><span class="animate-bounce" style="animation-delay: 0.1s">●</span><span class="animate-bounce" style="animation-delay: 0.2s">●</span>';
+        messagesContainer.appendChild(typingEl);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+        try {
+          const res = await fetch(window.location.pathname + '/ai-assistant', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'CSRF-Token': '#{csrfToken}'
+            },
+            body: JSON.stringify({ message: text })
+          });
+          const data = await res.json();
+          typingEl.remove();
+
+          const aiMsgEl = document.createElement('div');
+          aiMsgEl.className = 'ai-message bg-muted p-3 rounded-2xl rounded-tl-none max-w-[85%] text-foreground space-y-1';
+          
+          if (data.answer) {
+            // Render markdown lists and bold text cleanly (basic converter)
+            let formattedAnswer = data.answer
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              .replace(/^- (.*?)$/gm, '• $1')
+              .replace(/<br><br>/g, '<br>');
+            aiMsgEl.innerHTML = formattedAnswer;
+            if (window.renderMathInElement) {
+              try {
+                window.renderMathInElement(aiMsgEl, {
+                  delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                  ],
+                  throwOnError: false
+                });
+              } catch (e) {}
+            }
+          } else {
+            aiMsgEl.textContent = data.error || 'Có lỗi xảy ra.';
+          }
+          
+          messagesContainer.appendChild(aiMsgEl);
+        } catch (err) {
+          typingEl.remove();
+          const errEl = document.createElement('div');
+          errEl.className = 'ai-message bg-destructive/10 text-destructive p-3 rounded-2xl rounded-tl-none max-w-[85%]';
+          errEl.textContent = 'Lỗi kết nối máy chủ.';
+          messagesContainer.appendChild(errEl);
+        }
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
+    });

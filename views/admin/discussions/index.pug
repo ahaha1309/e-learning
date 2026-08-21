@@ -1,12 +1,10 @@
 extends ../layouts/admin
 
+include ../../layouts/mixins
+
 block admin-content
   .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
-    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
-      div
-        p.eyebrow Danh mục Thảo luận
-        h1.text-3xl.font-extrabold.tracking-tight Thảo luận
-        p.text-muted-foreground.mt-2.text-sm Xem tất cả các chủ đề thảo luận trên nền tảng.
+    +pgHeader({ eyebrow: 'Danh mục Thảo luận', icon: 'ph-bold ph-chats', scale: 'compact', h1: 'Thảo luận', subtitle: 'Xem tất cả các chủ đề thảo luận trên nền tảng.' })
       form.flex-1.flex.max-w-md(method='GET', action='/admin/discussions')
         .relative.w-full
           i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground(class='top-1/2 -translate-y-1/2')
@@ -43,8 +41,4 @@ block admin-content
                 | Xem luồng
 
     else
-      .empty-state.bento-card.py-20
-        .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
-          i.ph-fill.ph-chats.text-3xl(class='text-muted-foreground/50')
-        h2.text-lg.font-bold.text-foreground Không tìm thấy thảo luận nào
-        p.text-sm.text-muted-foreground.mt-1 Chưa có chủ đề thảo luận nào được tạo.
+      +emptyState({ icon: 'ph-fill ph-chats', title: 'Không tìm thấy thảo luận nào', desc: 'Chưa có chủ đề thảo luận nào được tạo.' })

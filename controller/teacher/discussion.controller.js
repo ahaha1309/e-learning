@@ -1,6 +1,7 @@
 const Classroom = require('../../models/Classroom');
 const DiscussionTopic = require('../../models/DiscussionTopic');
 const DiscussionReply = require('../../models/DiscussionReply');
+const { sanitizeRichHtml, sanitizePlainText } = require('../../helper/sanitize');
 
 async function renderIndex(req, res, next) {
   try {
@@ -30,11 +31,14 @@ async function createTopic(req, res, next) {
     const { title, content } = req.body;
     if (!title || !content) return res.status(400).send('Missing fields');
 
+    const cleanTitle = sanitizePlainText(title, 255);
+    const cleanContent = sanitizeRichHtml(content);
+
     await DiscussionTopic.create({
       classroom: classroom.id,
       author: req.user.id,
-      title,
-      content
+      title: cleanTitle,
+      content: cleanContent
     });
 
     return res.redirect(`/teacher/classrooms/${classroom.id}/discussions`);
@@ -81,10 +85,12 @@ async function createReply(req, res, next) {
       return res.redirect(`/teacher/classrooms/${classroom.id}/discussions/${topic.id}?feedback=Reply+cannot+be+empty`);
     }
 
+    const cleanContent = sanitizeRichHtml(content);
+
     await DiscussionReply.create({
       topic: topic.id,
       author: req.user.id,
-      content
+      content: cleanContent
     });
 
     return res.redirect(`/teacher/classrooms/${classroom.id}/discussions/${topic.id}?feedback=Reply+added`);

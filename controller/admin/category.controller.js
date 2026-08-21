@@ -5,6 +5,7 @@ async function listCategories(req, res, next) {
     const categories = await Category.find().sort({ name: 1 });
     res.render('admin/categories/index', {
       title: 'Manage Categories',
+      activeNav: 'categories',
       categories,
       feedback: req.query.feedback || null,
     });
@@ -16,6 +17,7 @@ async function listCategories(req, res, next) {
 function renderNewCategory(req, res) {
   res.render('admin/categories/form', {
     title: 'New Category',
+    activeNav: 'categories',
     category: {},
     errorMessage: null,
   });
@@ -29,6 +31,7 @@ async function createCategory(req, res, next) {
     if (existing) {
       return res.status(422).render('admin/categories/form', {
         title: 'New Category',
+        activeNav: 'categories',
         category: req.body,
         errorMessage: 'Slug already exists. Please choose another one.',
       });
@@ -40,6 +43,7 @@ async function createCategory(req, res, next) {
     if (error.code === 11000) {
       return res.status(422).render('admin/categories/form', {
         title: 'New Category',
+        activeNav: 'categories',
         category: req.body,
         errorMessage: 'A category with this name or slug already exists.',
       });
@@ -56,6 +60,7 @@ async function renderEditCategory(req, res, next) {
     }
     res.render('admin/categories/form', {
       title: 'Edit Category',
+      activeNav: 'categories',
       category,
       errorMessage: null,
     });
@@ -76,6 +81,7 @@ async function updateCategory(req, res, next) {
     if (existing) {
       return res.status(422).render('admin/categories/form', {
         title: 'Edit Category',
+        activeNav: 'categories',
         category: { ...category.toObject(), name, slug, description, icon },
         errorMessage: 'Slug already exists. Please choose another one.',
       });
@@ -92,6 +98,7 @@ async function updateCategory(req, res, next) {
     if (error.code === 11000) {
       return res.status(422).render('admin/categories/form', {
         title: 'Edit Category',
+        activeNav: 'categories',
         category: { ...req.body, _id: req.params.categoryId },
         errorMessage: 'A category with this name or slug already exists.',
       });

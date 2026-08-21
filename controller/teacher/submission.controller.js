@@ -118,7 +118,8 @@ async function gradeSubmissionHandler(req, res, next) {
       });
     }
 
-    submission.score = Number(req.body.score);
+    const scoreVal = Number(req.body.score);
+    submission.score = Math.max(0, Math.min(scoreVal, assignment.totalPoints));
     submission.teacherComment = req.body.teacherComment || '';
     submission.status = 'graded';
     submission.gradedAt = new Date();

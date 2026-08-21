@@ -143,8 +143,8 @@ block content
         each msg in messages
           .message(class=msg.sender._id.toString() === currentUser.id.toString() ? 'mine' : '')
             .message-avatar
-              if msg.sender.avatar
-                img(src=msg.sender.avatar alt=msg.sender.name)
+              if msg.sender.avatarUrl
+                img(src=msg.sender.avatarUrl alt=msg.sender.name)
               else
                 span= msg.sender.name.charAt(0)
             
@@ -163,12 +163,22 @@ block content
   script.
     const classroomId = '#{classroom.id}';
     const senderId = '#{currentUser.id}';
-    const socket = io('/chat');
+    const socket = io('/chat', { reconnectionDelay: 1000, reconnectionAttempts: 10 });
     const messagesContainer = document.getElementById('chat-messages');
     const inputField = document.getElementById('chat-input-field');
     const sendBtn = document.getElementById('chat-send-btn');
     
     socket.emit('join_chat', { classroomId });
+    
+    socket.on('connect', function() {
+      socket.emit('join_chat', { classroomId });
+    });
+    socket.on('disconnect', function() {
+      console.warn('[Chat] Disconnected, will retry...');
+    });
+    socket.on('connect_error', function(err) {
+      console.error('[Chat] Connection error:', err.message);
+    });
     
     function scrollToBottom() {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;

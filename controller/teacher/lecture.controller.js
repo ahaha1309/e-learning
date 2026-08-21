@@ -164,14 +164,6 @@ async function renderLecturePreview(req, res, next) {
   }
 }
 
-module.exports = {
-  renderLectureIndex,
-  renderCreateLecture,
-  createLectureHandler,
-  renderLectureDetail,
-  renderLecturePreview,
-};
-
 async function renderEditLecture(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });

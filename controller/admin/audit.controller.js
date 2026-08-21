@@ -23,6 +23,7 @@ async function listAuditLogs(req, res, next) {
 
     res.render('admin/audit-log', {
       title: 'Audit Logs',
+      activeNav: 'audit',
       logs,
       currentPage: page,
       totalPages: Math.ceil(total / limit),

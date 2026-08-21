@@ -1,0 +1,36 @@
+extends ../../layouts/base
+
+include ../../layouts/mixins
+
+block content
+  .page.space-y-8.pt-8
+    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-book-open', h1: 'Tất cả bài giảng', subtitle: 'Mọi bài giảng trên các lớp học của bạn, nhóm theo lớp học. Mở bài giảng để học ngay.' })
+      .glass-panel.rounded-2xl.p-4.flex.items-center.gap-4(class='border-border/60')
+        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
+          i.ph-bold.ph-book-open.text-lg
+        div
+          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Bài giảng
+          p.font-mono.text-2xl.font-bold.tracking-tighter= groups.reduce((n, g) => n + g.items.length, 0)
+
+    if groups && groups.length
+      .space-y-10.animate-in.slide-in-up(style='animation-delay:100ms;')
+        each group in groups
+          section.space-y-4
+            .flex.items-center.gap-2
+              i.ph-bold.ph-chalkboard.text-base.text-muted-foreground
+              h2.text-lg.font-extrabold.tracking-tight= group.classroom.name
+              if group.classroom.code
+                span.text-xs.font-mono.text-muted-foreground · #{group.classroom.code}
+            a.group.block.card.p-5.transition-colors(href=`/student/classrooms/${group.classroom._id}/lectures`, class='hover_border-primary/50')
+              .flex.items-center.justify-between
+                .flex.items-center.gap-2
+                  i.ph-bold.ph-stack.text-base.text-muted-foreground
+                  span.text-sm.font-bold= group.items.length + ' bài giảng'
+                i.ph-bold.ph-arrow-right.text-muted-foreground.group-hover_text-primary.transition-colors
+              .flex.flex-wrap.gap-2.mt-3
+                each lecture in group.items.slice(0, 4)
+                  span.badge.badge-muted.badge-sm.truncate= lecture.title
+                if group.items.length > 4
+                  span.text-xs.text-muted-foreground + #{group.items.length - 4} khác
+    else
+      +emptyState({ icon: 'ph-fill ph-book-open', title: 'Chưa có bài giảng nào', desc: 'Khi giảng viên xuất bản bài giảng trên lớp học bạn đã tham gia, chúng sẽ xuất hiện tại đây. Hãy tham gia một lớp học để bắt đầu.', ctaText: 'Tìm lớp học', ctaHref: '/catalog' })

@@ -14,9 +14,20 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {}
 
   // Ensure Socket.io is available
-  const socket = typeof io !== 'undefined' ? io('/exam-monitor') : null;
+  const socket = typeof io !== 'undefined'
+    ? io('/exam-monitor', { reconnectionDelay: 1000, reconnectionAttempts: 15 })
+    : null;
   if (socket) {
-    socket.emit('join-exam', { examId: config.examId, studentId: config.studentId, studentName: config.studentName });
+    socket.on('connect', () => {
+      socket.emit('join-exam', { examId: config.examId, studentId: config.studentId, studentName: config.studentName });
+    });
+    socket.on('connect_error', (err) => {
+      console.warn('[Anti-Cheat] Socket connect error:', err.message);
+    });
+    socket.on('reconnect', () => {
+      // Re-join room after reconnect so violations are still forwarded
+      socket.emit('join-exam', { examId: config.examId, studentId: config.studentId, studentName: config.studentName });
+    });
   }
 
   const violationOverlay  = document.getElementById('violation-overlay');
@@ -28,6 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = { type, time: new Date().toISOString(), details };
     violations.push(v);
     violationsInput.value = JSON.stringify(violations);
+    
+    // Log ra console để dễ chụp ảnh làm báo cáo
+    console.warn(`[ANTI-CHEAT SYSTEM] Phát hiện gian lận: ${details} (${type})`);
 
     // Update integrity indicator
     if (integrityDot)   integrityDot.classList.add('violated');

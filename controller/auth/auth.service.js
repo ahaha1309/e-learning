@@ -22,13 +22,15 @@ async function registerUser(payload) {
     throw error;
   }
 
+  const targetRole = payload.role === 'teacher' ? 'teacher' : 'student';
+
   const user = new User({
     name: payload.name,
     email,
-    role: payload.role,
+    role: targetRole,
     phone: payload.phone || null,
     provider: 'local',
-    status: payload.role === 'teacher' ? 'pending' : 'active',
+    status: targetRole === 'teacher' ? 'pending' : 'active',
   });
 
   await user.setPassword(payload.password);

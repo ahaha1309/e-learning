@@ -1,12 +1,10 @@
 extends ../layouts/admin
 
+include ../../layouts/mixins
+
 block admin-content
   .max-w-7xl.mx-auto.space-y-6.animate-in.fade-in(style='animation-duration: 400ms;')
-    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
-      div
-        p.eyebrow Danh mục Học sinh
-        h1.text-3xl.font-extrabold.tracking-tight Học sinh
-        p.text-muted-foreground.mt-2.text-sm Xem và quản lý tất cả tài khoản học sinh.
+    +pgHeader({ eyebrow: 'Danh mục Học sinh', icon: 'ph-bold ph-student', scale: 'compact', h1: 'Học sinh', subtitle: 'Xem và quản lý tất cả tài khoản học sinh.' })
 
     .bento-card.p-0.overflow-hidden.flex.flex-col
       //- Toolbar
@@ -100,11 +98,4 @@ block admin-content
                 a.btn-outline.h-8.w-8.p-0.rounded-lg(href='/admin/students?page=' + (currentPage + 1) + '&q=' + (query || ''))
                   i.ph-bold.ph-caret-right
       else
-        .empty-state.border-0.rounded-none.bg-transparent.py-16
-          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mb-4
-            i.ph-fill.ph-student.text-3xl(class='text-muted-foreground/50')
-          h2.text-lg.font-bold.text-foreground Không tìm thấy học sinh nào
-          p.text-sm.text-muted-foreground.mt-1 Không có tài khoản học sinh nào khớp với tìm kiếm của bạn.
-          a.btn-primary.h-10.px-5.rounded-lg.inline-flex.items-center.gap-2.mt-2(href='/admin/users/new')
-            i.ph-bold.ph-user-plus
-            | Thêm học sinh
+        +emptyState({ icon: 'ph-fill ph-student', title: 'Không tìm thấy học sinh nào', desc: 'Không có tài khoản học sinh nào khớp với tìm kiếm của bạn.', ctaText: 'Thêm học sinh', ctaHref: '/admin/users/new' })

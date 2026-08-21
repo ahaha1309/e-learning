@@ -48,23 +48,229 @@ block content
         p.text-sm.text-muted-foreground Chưa có câu hỏi nào. Sử dụng "Quản lý Câu hỏi" để thêm.
 
   if exam.strictMode
+    style.
+      /* ── Live Monitor Panel ─────────────────────────────── */
+      #monitor-panel { margin-top: 2rem; }
+      .monitor-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;
+      }
+      .monitor-title { display: flex; align-items: center; gap: 0.75rem; }
+      .live-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        background: hsl(var(--destructive)/0.1); color: hsl(var(--destructive));
+        border: 1px solid hsl(var(--destructive)/0.25);
+        border-radius: 9999px; padding: 0.25rem 0.75rem;
+        font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      }
+      .live-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: hsl(var(--destructive)); animation: pulse-dot 1.4s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%,100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(0.7); }
+      }
+      .monitor-stats { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+      .stat-chip {
+        display: flex; align-items: center; gap: 0.4rem;
+        background: hsl(var(--muted)/0.4); border: 1px solid hsl(var(--border));
+        border-radius: 0.75rem; padding: 0.35rem 0.75rem;
+        font-size: 0.78rem; font-weight: 600; color: hsl(var(--muted-foreground));
+      }
+      .stat-chip .stat-val { font-weight: 800; color: hsl(var(--foreground)); margin-left: 0.2rem; }
+      /* Student list */
+      #student-roster {
+        display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem;
+      }
+      .student-chip {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.3rem 0.65rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;
+        border: 1px solid hsl(var(--border)); background: hsl(var(--card));
+        transition: all 0.25s;
+      }
+      .student-chip .sc-dot { width:7px; height:7px; border-radius:50%; background: hsl(var(--success)); }
+      .student-chip .sc-count {
+        font-size: 0.7rem; font-weight: 800;
+        background: hsl(var(--destructive)/0.15); color: hsl(var(--destructive));
+        border-radius: 9999px; padding: 0 0.35rem; display: none;
+      }
+      .student-chip.has-violations { border-color: hsl(var(--destructive)/0.35); }
+      .student-chip.has-violations .sc-count { display: inline; }
+      /* Violation feed */
+      #violation-feed { max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; }
+      .viol-item {
+        display: flex; align-items: flex-start; gap: 0.75rem;
+        padding: 0.75rem 1rem; border-radius: 0.9rem; border: 1px solid;
+        font-size: 0.82rem; animation: slide-in 0.25s ease;
+      }
+      @keyframes slide-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+      .viol-item.sev-high   { border-color: hsl(var(--destructive)/0.3); background: hsl(var(--destructive)/0.07); }
+      .viol-item.sev-med    { border-color: hsl(38 92% 50%/0.3); background: hsl(38 92% 50%/0.07); }
+      .viol-item.sev-low    { border-color: hsl(var(--border)); background: hsl(var(--muted)/0.3); }
+      .viol-icon { font-size: 1.1rem; flex-shrink:0; margin-top:0.05rem; }
+      .viol-body { flex:1; min-width:0; }
+      .viol-meta { display:flex; align-items:center; gap:0.5rem; margin-bottom:0.15rem; flex-wrap:wrap; }
+      .viol-name { font-weight: 700; color: hsl(var(--foreground)); }
+      .viol-time { font-size: 0.72rem; color: hsl(var(--muted-foreground)); }
+      .viol-badge {
+        font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+        padding: 0.1rem 0.45rem; border-radius: 9999px;
+      }
+      .viol-badge.sev-high { background: hsl(var(--destructive)/0.15); color: hsl(var(--destructive)); }
+      .viol-badge.sev-med  { background: hsl(38 92% 50%/0.15); color: hsl(38 80% 40%); }
+      .viol-badge.sev-low  { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
+      .viol-desc { color: hsl(var(--muted-foreground)); }
+      /* Empty state */
+      .monitor-empty {
+        text-align:center; padding: 2.5rem 1rem; color: hsl(var(--muted-foreground));
+        display: flex; flex-direction:column; align-items:center; gap:0.75rem;
+      }
+      .monitor-empty i { font-size:2rem; }
+
     script(src='/socket.io/socket.io.js')
     script.
-      (function() {
+      (function () {
         var examId = '!{exam.id}';
-        var socket = typeof io !== 'undefined' ? io('/exam-monitor') : null;
-        if (socket) {
+        var socket = typeof io !== 'undefined'
+          ? io('/exam-monitor', { reconnectionDelay: 1000, reconnectionAttempts: 15 })
+          : null;
+        if (!socket) return;
+
+        // ── Violation metadata ────────────────────────────────────────────
+        var VIOL_META = {
+          blur:             { sev:'high', icon:'ph-arrow-square-out', label:'Chuyển tab',    desc:'Chuyển sang tab / cửa sổ khác' },
+          visibility_hidden:{ sev:'high', icon:'ph-eye-slash',        label:'Ẩn tab',        desc:'Tab bị ẩn / thu nhỏ' },
+          fullscreen_exit:  { sev:'med',  icon:'ph-arrows-in',        label:'Thoát FullScr', desc:'Thoát chế độ toàn màn hình' },
+          copy:             { sev:'med',  icon:'ph-copy',             label:'Sao chép',      desc:'Cố gắng sao chép nội dung' },
+          cut:              { sev:'med',  icon:'ph-scissors',         label:'Cắt',           desc:'Cố gắng cắt nội dung' },
+          paste:            { sev:'med',  icon:'ph-clipboard',        label:'Dán',           desc:'Cố gắng dán nội dung' },
+          right_click:      { sev:'low',  icon:'ph-mouse-right-click',label:'Chuột phải',   desc:'Nhấp chuột phải' },
+        };
+        function getMeta(type) {
+          return VIOL_META[type] || { sev:'low', icon:'ph-warning', label: type, desc: '' };
+        }
+
+        // ── State ─────────────────────────────────────────────────────────
+        var students = {};   // { studentId: { name, count, chip } }
+        var totalViolations = 0;
+
+        // ── DOM ──────────────────────────────────────────────────────────
+        var page = document.querySelector('.page');
+        var panel = document.createElement('div');
+        panel.id = 'monitor-panel';
+        panel.innerHTML = [
+          '<div class="card p-5">',
+            '<div class="monitor-header">',
+              '<div class="monitor-title">',
+                '<h2 class="text-xl font-extrabold tracking-tight">Giám sát Bài thi</h2>',
+                '<span class="live-badge"><span class="live-dot"></span>TRỰC TIẾP</span>',
+              '</div>',
+              '<div class="monitor-stats">',
+                '<div class="stat-chip">👤 Học sinh online: <span class="stat-val" id="stat-students">0</span></div>',
+                '<div class="stat-chip">⚠️ Tổng vi phạm: <span class="stat-val" id="stat-total">0</span></div>',
+              '</div>',
+            '</div>',
+            '<div id="student-roster">',
+              '<span class="text-xs text-muted-foreground italic">Chưa có học sinh nào kết nối...</span>',
+            '</div>',
+            '<div id="violation-feed">',
+              '<div class="monitor-empty"><i class="ph-bold ph-shield-check"></i><p class="text-sm font-semibold">Chưa phát hiện vi phạm nào</p><p class="text-xs">Màn hình sẽ cập nhật ngay khi có sự kiện</p></div>',
+            '</div>',
+          '</div>',
+        ].join('');
+        page.appendChild(panel);
+
+        var rosterEl = document.getElementById('student-roster');
+        var feedEl   = document.getElementById('violation-feed');
+        var statStudents = document.getElementById('stat-students');
+        var statTotal    = document.getElementById('stat-total');
+
+        // ── Teacher joins room ────────────────────────────────────────────
+        socket.on('connect', function () {
           socket.emit('teacher-join', { examId: examId });
-          var container = document.createElement('div');
-          container.className = 'card p-4 mt-6';
-          container.innerHTML = '<h3 class="text-lg font-bold mb-3">Giám sát Bài thi Trực tiếp</h3><div id="live-violations" class="space-y-2"></div>';
-          document.querySelector('.page').appendChild(container);
-          socket.on('student-violation', function(data) {
-            var list = document.getElementById('live-violations');
-            var item = document.createElement('div');
-            item.className = 'p-3 rounded-lg border text-sm';
-            item.innerHTML = '<strong>' + new Date(data.violation.time).toLocaleTimeString() + ' - ' + data.studentName + '</strong>: ' + data.violation.details + ' (' + data.violation.type + ')';
-            list.prepend(item);
-          });
+        });
+        socket.on('connect_error', function (err) {
+          console.warn('[Monitor] Socket error:', err.message);
+        });
+
+        // ── Receive violation ─────────────────────────────────────────────
+        socket.on('student-violation', function (data) {
+          var sid  = data.studentId;
+          var name = data.studentName || 'Học sinh';
+          var v    = data.violation || {};
+          var meta = getMeta(v.type || data.type);
+          var time = new Date(v.time || Date.now()).toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+          var desc = v.details || meta.desc;
+
+          // Update student roster
+          if (!students[sid]) {
+            students[sid] = { name: name, count: 0 };
+            // Clear placeholder
+            var placeholder = rosterEl.querySelector('span.italic');
+            if (placeholder) placeholder.remove();
+            // Create chip
+            var chip = document.createElement('span');
+            chip.className = 'student-chip';
+            chip.id = 'chip-' + sid;
+            chip.innerHTML =
+              '<span class="sc-dot"></span>' +
+              '<span class="sc-name">' + name + '</span>' +
+              '<span class="sc-count" id="cnt-' + sid + '">0</span>';
+            rosterEl.appendChild(chip);
+            students[sid].chip = chip;
+            statStudents.textContent = Object.keys(students).length;
+          }
+
+          students[sid].count++;
+          totalViolations++;
+
+          // Update chip count + styling
+          var cntEl = document.getElementById('cnt-' + sid);
+          if (cntEl) cntEl.textContent = students[sid].count;
+          if (students[sid].chip) students[sid].chip.classList.add('has-violations');
+
+          // Update total counter
+          statTotal.textContent = totalViolations;
+
+          // Remove empty state
+          var emptyEl = feedEl.querySelector('.monitor-empty');
+          if (emptyEl) emptyEl.remove();
+
+          // Build violation card
+          var item = document.createElement('div');
+          item.className = 'viol-item sev-' + meta.sev;
+          item.innerHTML =
+            '<i class="ph-bold ' + meta.icon + ' viol-icon"></i>' +
+            '<div class="viol-body">' +
+              '<div class="viol-meta">' +
+                '<span class="viol-name">' + name + '</span>' +
+                '<span class="viol-time">' + time + '</span>' +
+                '<span class="viol-badge sev-' + meta.sev + '">' + meta.label + '</span>' +
+              '</div>' +
+              '<div class="viol-desc">' + desc + '</div>' +
+            '</div>';
+
+          // Prepend (newest on top)
+          feedEl.insertBefore(item, feedEl.firstChild);
+
+          // Flash page title
+          var origTitle = document.title;
+          document.title = '⚠️ Vi phạm! — ' + name;
+          setTimeout(function () { document.title = origTitle; }, 3000);
+
+          // Browser notification (if permission granted)
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            new Notification('⚠️ Vi phạm: ' + name, {
+              body: meta.label + ' — ' + desc,
+              icon: '/favicon.ico',
+              tag: 'violation-' + sid,
+            });
+          }
+        });
+
+        // Request notification permission on load
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          Notification.requestPermission();
         }
       })();

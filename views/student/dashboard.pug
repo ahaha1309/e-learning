@@ -378,6 +378,19 @@ block scripts
         aiPanel.classList.add('open');
         aiFab.setAttribute('aria-expanded', 'true');
         aiIcon.className = 'ph-bold ph-x text-xl';
+        if (window.renderMathInElement) {
+          try {
+            window.renderMathInElement(aiMessages, {
+              delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+              ],
+              throwOnError: false
+            });
+          } catch (e) {}
+        }
         setTimeout(() => aiInput.focus(), 300);
       } else {
         aiFab.classList.remove('open');
@@ -416,8 +429,31 @@ block scripts
     function addAIMessage(content, role) {
       const div = document.createElement('div');
       div.className = 'ai-msg ai-msg-' + role;
-      div.textContent = content;
+      if (role === 'assistant') {
+        let formatted = content
+          .replace(/\n/g, '<br>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+          .replace(/^- (.*?)$/gm, '• $1')
+          .replace(/<br><br>/g, '<br>');
+        div.innerHTML = formatted;
+      } else {
+        div.textContent = content;
+      }
       aiMessages.appendChild(div);
+      if (role === 'assistant' && window.renderMathInElement) {
+        try {
+          window.renderMathInElement(div, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+          });
+        } catch (e) {}
+      }
       aiMessages.scrollTop = aiMessages.scrollHeight;
       return div;
     }
@@ -437,20 +473,24 @@ block scripts
       addAIMessage(text, 'user');
       const typing = addTypingIndicator();
 
-      // Simulated responses (replace with actual API call)
-      const responses = {
-        'explain a concept': 'Sure! Tell me which concept you\'d like me to explain, and I\'ll break it down step by step.',
-        'quiz me': 'Great idea! Which subject or topic should I quiz you on?',
-        'study tips': 'Here are some evidence-backed study tips: 1) Use spaced repetition — review material at increasing intervals. 2) Practice active recall instead of passive reading. 3) Take breaks every 25 minutes (Pomodoro technique). 4) Teach the material to someone else.',
-        'summarize notes': 'Please paste your notes and I\'ll create a concise summary with key points highlighted.',
-      };
+      try {
+        const res = await fetch('/student/ai-assistant', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CSRF-Token': '#{csrfToken}'
+          },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        typing.remove();
 
-      await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
-      typing.remove();
-
-      const lowerText = text.toLowerCase();
-      const response = responses[lowerText] || `I can help with that! For "${text}", let me suggest: start by reviewing your course materials related to this topic. Do you have specific questions about the content from your classrooms?`;
-      addAIMessage(response, 'assistant');
+        const response = data.answer || data.error || 'Có lỗi xảy ra.';
+        addAIMessage(response, 'assistant');
+      } catch (err) {
+        typing.remove();
+        addAIMessage('Lỗi kết nối máy chủ.', 'assistant');
+      }
     }
 
     // Close on Escape

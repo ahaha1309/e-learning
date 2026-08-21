@@ -52,9 +52,10 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
-    "concurrently": "^10.0.3",
+    "concurrently": "^10.0.5",
+    "docx": "^9.7.1",
     "jest": "^30.4.2",
-    "nodemon": "^3.1.7",
+    "nodemon": "^3.1.14",
     "postcss": "^8.4.49",
     "supertest": "^7.2.2"
   }

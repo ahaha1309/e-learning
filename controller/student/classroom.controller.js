@@ -96,8 +96,94 @@ async function renderStudentClassroomDetail(req, res, next) {
   }
 }
 
+async function askAiAssistantHandler(req, res, next) {
+  try {
+    const membership = await ClassroomMember.findOne({ 
+      classroom: req.params.classroomId, 
+      student: req.user.id, 
+      status: 'approved' 
+    }).populate('classroom');
+
+    if (!membership || !membership.classroom) {
+      return res.status(404).json({ error: 'Classroom not found or membership not approved' });
+    }
+
+    const classroom = membership.classroom;
+    const userMessage = req.body.message?.toString().trim();
+    if (!userMessage) {
+      return res.status(400).json({ error: 'Message content is required' });
+    }
+
+    const Lecture = require('../../models/Lecture');
+    const Assignment = require('../../models/Assignment');
+    const Exam = require('../../models/Exam');
+
+    const [lectures, assignments, exams] = await Promise.all([
+      Lecture.find({ classroom: classroom.id, isPublished: true }).select('title summary').lean(),
+      Assignment.find({ classroom: classroom.id, isPublished: true }).select('title description').lean(),
+      Exam.find({ classroom: classroom.id, isPublished: true }).select('title description').lean()
+    ]);
+
+    const context = `
+    Bạn là Trợ lý Học tập AI (AI Tutor) thân thiện dành riêng cho lớp học: "${classroom.name}".
+    Mô tả lớp học: "${classroom.description || 'Chưa có mô tả'}".
+    Cấp độ lớp học: ${classroom.level || 'Cơ bản'}.
+
+    Dưới đây là nội dung giáo trình của lớp học này để bạn tham khảo khi trả lời:
+    - Danh sách các Bài giảng:
+      ${lectures.map(l => `- Tiêu đề: ${l.title}. Tóm tắt: ${l.summary || 'Không có'}`).join('\n')}
+    - Danh sách các Bài tập về nhà:
+      ${assignments.map(a => `- Tiêu đề: ${a.title}. Mô tả: ${a.description || 'Không có'}`).join('\n')}
+    - Danh sách các Bài thi/kiểm tra:
+      ${exams.map(e => `- Tiêu đề: ${e.title}. Mô tả: ${e.description || 'Không có'}`).join('\n')}
+
+    Nhiệm vụ của bạn:
+    1. Trả lời câu hỏi của học sinh một cách rõ ràng, ngắn gọn và hữu ích.
+    2. Cố gắng hướng câu trả lời liên quan đến nội dung giáo trình của khóa học nếu có thể.
+    3. Trả lời bằng tiếng Việt.
+    `;
+
+    const SystemSetting = require('../../models/SystemSetting');
+    const dbSetting = await SystemSetting.findOne({ key: 'geminiApiKey' });
+    const apiKey = (dbSetting ? dbSetting.value : null) || process.env.GEMINI_API_KEY;
+
+    if (apiKey) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{ text: context + "\n\nUser Question: " + userMessage }]
+            }]
+          })
+        });
+        const data = await response.json();
+        const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "Không thể nhận câu trả lời từ AI lúc này.";
+        return res.json({ answer });
+      } catch (err) {
+        console.error('Gemini API Error:', err);
+        return res.status(500).json({ error: 'Failed to query AI engine.' });
+      }
+    } else {
+      // Fallback smart mock response
+      let mockAnswer = `Xin chào! Tôi là Trợ lý AI của lớp học **${classroom.name}**. Hiện tại hệ thống chưa cấu hình \`GEMINI_API_KEY\`, nên tôi đang chạy ở chế độ Demo để biểu diễn. Dưới đây là thông tin tóm tắt giáo trình lớp học của bạn:\n\n`;
+      mockAnswer += `📚 **Bài giảng**: Lớp học có ${lectures.length} bài giảng hoạt động.\n`;
+      mockAnswer += `📝 **Bài tập**: Có ${assignments.length} bài tập về nhà cần hoàn thành.\n`;
+      mockAnswer += `✏️ **Bài thi**: Có ${exams.length} bài kiểm tra đang được mở.\n\n`;
+      mockAnswer += `Bạn có thể nhập câu hỏi thử, khi Quản trị viên cấu hình API Key trong file \`.env\` hoặc mục Cài đặt hệ thống, tôi sẽ trả lời thông minh chi tiết mọi nội dung học tập!`;
+      return res.json({ answer: mockAnswer });
+    }
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   renderStudentClassrooms,
   joinClassroomHandler,
   renderStudentClassroomDetail,
+  askAiAssistantHandler,
 };

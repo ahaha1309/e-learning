@@ -78,6 +78,7 @@ async function gradeSubmission(submissionId, examId, teacherId, answersData) {
   }
 
   submission.score = totalScore;
+  submission.status = 'graded';
   submission.gradingStatus = GRADING_STATUS.FULLY_GRADED;
   await submission.save();
 
@@ -105,7 +106,7 @@ async function gradeSubmission(submissionId, examId, teacherId, answersData) {
       submission.student,
       'Exam Graded',
       `Your exam "${exam.title}" has been graded. Score: ${totalScore}/${exam.totalPoints}`,
-      `/student/classrooms/${membership.id}/exams`
+      `/student/classrooms/${exam.classroom}/exams`
     );
   }
 

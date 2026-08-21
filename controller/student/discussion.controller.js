@@ -42,11 +42,14 @@ async function createTopic(req, res, next) {
     const { title, content } = req.body;
     if (!title || !content) return res.status(400).send('Missing fields');
 
+    const cleanTitle = sanitizePlainText(title, 255);
+    const cleanContent = sanitizeRichHtml(content);
+
     await DiscussionTopic.create({
       classroom: membership.classroom,
       author: req.user.id,
-      title,
-      content
+      title: cleanTitle,
+      content: cleanContent
     });
 
     return res.redirect(`/student/classrooms/${req.params.classroomId}/discussions`);
@@ -101,10 +104,11 @@ async function createReply(req, res, next) {
 
     const { content } = req.body;
     if (content) {
+      const cleanContent = sanitizeRichHtml(content);
       await DiscussionReply.create({
         topic: topic.id,
         author: req.user.id,
-        content
+        content: cleanContent
       });
     }
 
@@ -164,7 +168,39 @@ async function deleteReply(req, res, next) {
   }
 }
 
+// ── Cross-classroom aggregator: all discussion topics across the student's
+// approved enrollments, grouped by classroom. Audit A2.
+async function renderAllStudentDiscussions(req, res, next) {
+  try {
+    const memberships = await ClassroomMember.find({ student: req.user.id, status: 'approved' })
+      .populate('classroom', 'name code').lean();
+    const valid = memberships.filter(m => m.classroom);
+    const classroomIds = valid.map(m => m.classroom._id);
+
+    let groups = [];
+    if (classroomIds.length) {
+      const topics = await DiscussionTopic.find({ classroom: { $in: classroomIds } })
+        .populate('author', 'name role avatarUrl')
+        .populate('classroom', 'name code')
+        .sort({ isPinned: -1, createdAt: -1 }).lean();
+      const byClass = {};
+      topics.forEach(t => {
+        if (!t.classroom) return;
+        const key = String(t.classroom._id);
+        if (!byClass[key]) byClass[key] = { classroom: t.classroom, items: [] };
+        byClass[key].items.push(t);
+      });
+      groups = Object.values(byClass);
+    }
+
+    return res.render('student/discussions/all', { title: 'Tất cả thảo luận', groups });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
+  renderAllStudentDiscussions,
   renderIndex,
   createTopic,
   renderShow,
@@ -172,3 +208,4 @@ module.exports = {
   deleteTopic,
   deleteReply
 };
+

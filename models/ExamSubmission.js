@@ -87,7 +87,7 @@ const examSubmissionSchema = new Schema(
     },
     violations: [
       {
-        type: { type: String, enum: ['blur', 'fullscreen_exit', 'copy', 'paste', 'tab_switch', 'right_click'] },
+        type: { type: String, enum: ['blur', 'visibility_hidden', 'fullscreen_exit', 'copy', 'cut', 'paste', 'tab_switch', 'right_click'] },
         time: { type: Date },
         details: { type: String },
       },

@@ -114,6 +114,41 @@ async function updateUser(req, res, next) {
     }
 
     const { name, email, role, status, phone } = req.body;
+
+    // Validate role and status enums
+    if (role && !['admin', 'teacher', 'student'].includes(role)) {
+      return res.status(422).render('admin/users/edit', {
+        title: 'Edit User',
+        editUser: user,
+        errorMessage: 'Invalid role selected.'
+      });
+    }
+    if (status && !['pending', 'active', 'rejected'].includes(status)) {
+      return res.status(422).render('admin/users/edit', {
+        title: 'Edit User',
+        editUser: user,
+        errorMessage: 'Invalid status selected.'
+      });
+    }
+
+    // Prevent self-demotion or self-deactivation
+    if (user.id === req.user.id) {
+      if (role && role !== 'admin') {
+        return res.status(422).render('admin/users/edit', {
+          title: 'Edit User',
+          editUser: user,
+          errorMessage: 'You cannot change your own role from administrator.'
+        });
+      }
+      if (status && status !== 'active') {
+        return res.status(422).render('admin/users/edit', {
+          title: 'Edit User',
+          editUser: user,
+          errorMessage: 'You cannot deactivate or reject your own administrator account.'
+        });
+      }
+    }
+
     user.name = name;
     user.email = email;
     user.role = role;
@@ -129,6 +164,9 @@ async function updateUser(req, res, next) {
 
 async function deleteUser(req, res, next) {
   try {
+    if (req.params.userId === req.user.id) {
+      return res.status(400).send('You cannot delete your own administrator account.');
+    }
     await User.findByIdAndDelete(req.params.userId);
     return res.redirect('/admin/users');
   } catch (error) {
