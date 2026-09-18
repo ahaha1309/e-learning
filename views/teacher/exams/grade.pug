@@ -19,37 +19,85 @@ block content
     form(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/submissions/' + submission.id + '/grade').space-y-6.mt-4
       input(type='hidden', name='_csrf', value=csrfToken)
 
-      each ans, index in submission.answers
-        if ans.question
-          article.card.p-5
-            .flex.justify-between
-              h3.text-lg.font-bold Câu hỏi #{index + 1}
-              span.text-sm.text-muted-foreground #{ans.question.points} điểm
-
+      if exam.type === 'upload'
+        article.card.p-5
+          h3.text-lg.font-bold.mb-4 Tệp đã nộp
+          if submission.attachment && submission.attachment.url
             .mb-4.p-4.bg-muted.rounded-xl
-              | !{ans.question.content}
-
-            if ans.question.type === 'essay'
-              div.mb-4
-                p.text-sm.font-medium Câu trả lời của Học sinh:
-                div.p-4.bg-muted.rounded-xl.mt-2.whitespace-pre-wrap.text-sm= ans.text || '(Không có câu trả lời)'
-
-              div.p-4.rounded-xl(class='bg-primary/5 border border-dashed border-primary')
+              .flex.items-center.gap-3
+                i.ph-bold.ph-file-text.text-2xl
                 div
-                  label.text-sm.font-medium(for='points_' + ans._id) Điểm được cho (Tối đa: #{ans.question.points})
-                  input.mt-2(type='number', name='points_' + ans._id, value=ans.pointsAchieved, max=ans.question.points, min='0', step='0.1', required)
-                div
-                  label.text-sm.font-medium(for='comment_' + ans._id) Nhận xét của Giảng viên
-                  textarea#comment.mt-2(name='comment_' + ans._id, rows='3')= ans.teacherComment || ''
-            else
-              div
-                p.text-sm.font-medium
-                  | Trạng thái:
-                  if ans.isCorrect
-                    span.text-success.font-bold Đúng
+                  a.text-primary.font-bold.hover_underline(href=submission.attachment.url, target='_blank')= submission.attachment.name
+                  p.text-xs.text-muted-foreground Kích thước: #{Math.round(submission.attachment.size / 1024)} KB
+          else
+            p.text-sm.text-muted-foreground.italic Không có tệp nào được tải lên.
+
+          div.p-4.rounded-xl.mt-4(class='bg-primary/5 border border-dashed border-primary')
+            div
+              label.text-sm.font-medium(for='uploadScore') Điểm được cho
+              input#uploadScore.mt-2.w-full.p-3.rounded-xl.border.bg-background(type='number', name='uploadScore', value=submission.score, min='0', step='0.1', required)
+            div.mt-4
+              label.text-sm.font-medium(for='uploadComment') Nhận xét của Giảng viên
+              textarea#uploadComment.mt-2.w-full.p-3.rounded-xl.border.bg-background(name='uploadComment', rows='3')= submission.teacherComment || ''
+
+      else
+        - var pointPerQuestion = submission.answers.length > 0 ? (exam.totalPoints / submission.answers.length) : 0;
+        each ans, index in submission.answers
+          if ans.question
+            article.card.p-5
+              .flex.justify-between
+                h3.text-lg.font-bold Câu hỏi #{index + 1}
+                span.text-sm.text-muted-foreground #{pointPerQuestion.toFixed(2)} điểm
+
+              .mb-4.p-4.bg-muted.rounded-xl
+                | !{ans.question.content}
+
+              if ans.question.type === 'essay'
+                div.mb-4
+                  p.text-sm.font-medium Câu trả lời của Học sinh:
+                  if exam.isCoding
+                    textarea.code-editor-readonly.mt-2= ans.text || ''
                   else
-                    span.text-destructive.font-bold Sai
-                  |  (Điểm: #{ans.pointsAchieved})
+                    div.p-4.bg-muted.rounded-xl.mt-2.whitespace-pre-wrap.text-sm= ans.text || '(Không có câu trả lời)'
+
+                div.p-4.rounded-xl(class='bg-primary/5 border border-dashed border-primary')
+                  div
+                    label.text-sm.font-medium(for='points_' + ans._id) Điểm được cho (Tối đa: #{pointPerQuestion.toFixed(2)})
+                    input.mt-2(type='number', name='points_' + ans._id, value=ans.pointsAchieved, max=pointPerQuestion.toFixed(2), min='0', step='0.1', required)
+                  div
+                    label.text-sm.font-medium(for='comment_' + ans._id) Nhận xét của Giảng viên
+                    textarea#comment.mt-2(name='comment_' + ans._id, rows='3')= ans.teacherComment || ''
+              else
+                div
+                  p.text-sm.font-medium
+                    | Trạng thái:
+                    if ans.isCorrect
+                      span.text-success.font-bold Đúng
+                    else
+                      span.text-destructive.font-bold Sai
+                    |  (Điểm: #{ans.pointsAchieved})
 
       .flex.justify-end
         button.btn-primary.text-lg.px-8.py-4(type='submit') Lưu Điểm & Tính lại Điểm
+
+block scripts
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css")
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css")
+  style.
+    .CodeMirror { height: auto; border-radius: 0.5rem; font-size: 14px; }
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js")
+  script.
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelectorAll('.code-editor-readonly').forEach(function(el) {
+        CodeMirror.fromTextArea(el, {
+          lineNumbers: true,
+          mode: "javascript",
+          theme: "dracula",
+          readOnly: true,
+          viewportMargin: Infinity
+        });
+      });
+    });

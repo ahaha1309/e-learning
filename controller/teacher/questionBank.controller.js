@@ -36,7 +36,7 @@ async function renderCreateQuestion(req, res, next) {
 
 async function createQuestionHandler(req, res, next) {
   try {
-    const { subject, chapter, difficulty, type, content, points } = req.body;
+    const { subject, chapter, difficulty, type, content } = req.body;
     
     let options = [];
     if (type === 'multiple_choice' || type === 'multiple_answer') {
@@ -60,7 +60,6 @@ async function createQuestionHandler(req, res, next) {
       type: type || 'multiple_choice',
       content,
       options,
-      points: Number(points || 1),
     });
 
     await qb.save();

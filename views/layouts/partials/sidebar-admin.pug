@@ -112,6 +112,14 @@
       i.ph-bold.ph-clipboard-text.text-base(aria-hidden='true')
       span Nhật ký kiểm toán
 
+    a.shell-sidebar-link(
+      href='/admin/sis',
+      class=path && path.startsWith('/admin/sis') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/admin/sis') ? 'page' : false
+    )
+      i.ph-bold.ph-database.text-base(aria-hidden='true')
+      span Tích hợp SIS
+
     //- System section
     .section-label Hệ thống
 

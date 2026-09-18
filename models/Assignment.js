@@ -49,6 +49,15 @@ const assignmentSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    type: {
+      type: String,
+      enum: ['upload', 'quiz'],
+      default: 'upload',
+    },
+    questionCount: {
+      type: Number,
+      default: 0,
+    },
     // Optional Rubric used for criteria-based grading. null = freehand point
     // grading (the historical path). The gradebook reads submission.score
     // regardless of which grading path produced it.
@@ -57,6 +66,16 @@ const assignmentSchema = new Schema(
       ref: 'Rubric',
       default: null,
     },
+    // Attached files uploaded by Teacher (guides, sample code, problem sheets, PDFs, etc.)
+    attachments: [
+      {
+        fileName: { type: String, required: true },
+        fileUrl: { type: String, required: true },
+        fileType: { type: String, default: 'file' },
+        fileSize: { type: Number, default: 0 },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -7,16 +7,23 @@ block admin-content
         p.eyebrow Chi tiết Bài tập
         h1.text-3xl.font-extrabold.tracking-tight= assignment.title
         p.text-muted-foreground.mt-2= assignment.description || 'Không có mô tả'
-      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/assignments')
-        i.ph-bold.ph-arrow-left
-        | Quay lại
+      .flex.items-center.gap-2
+        a.btn-primary.h-10.px-4.rounded-lg(href='/admin/assignments/' + assignment.id + '/edit')
+          i.ph-bold.ph-pencil-simple
+          | Chỉnh sửa & Gia hạn
+        a.btn-outline.h-10.px-4.rounded-lg(href='/admin/assignments')
+          i.ph-bold.ph-arrow-left
+          | Quay lại
 
     .grid.grid-cols-1.lg_grid-cols-3.gap-6
       .lg_col-span-2.space-y-6
         .bento-card.p-6
           h2.text-lg.font-bold.mb-4 Hướng dẫn
-          .text-sm.text-muted-foreground.prose.max-w-none
-            p= assignment.instructions || 'Không có hướng dẫn nào được cung cấp.'
+          .text-sm.text-foreground.leading-relaxed.space-y-2.max-w-none
+            if assignment.instructions
+              div!= assignment.instructions
+            else
+              p.text-muted-foreground Không có hướng dẫn nào được cung cấp.
 
         .bento-card.p-6
           h2.text-lg.font-bold.mb-4 Bài nộp (#{submissions.length})

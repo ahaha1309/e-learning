@@ -50,6 +50,12 @@ const examSubmissionSchema = new Schema(
         },
       },
     ],
+    attachment: {
+      name: String,
+      url: String,
+      mimeType: String,
+      size: Number,
+    },
     score: {
       type: Number,
       default: 0,

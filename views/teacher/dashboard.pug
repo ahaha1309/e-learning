@@ -143,12 +143,85 @@ block content
         div
           h2.text-xl.font-extrabold.tracking-tight.mb-5 Hành động nhanh
           .grid.grid-cols-2.gap-3.sm_grid-cols-4
-            each action in [['Học sinh', 'ph-users', '/teacher/students', 'primary'], ['Bài tập', 'ph-file-text', '/teacher/assignments', 'info'], ['Lịch', 'ph-calendar', '/teacher/calendar', 'warning'], ['Cài đặt', 'ph-gear', '/teacher/settings', 'muted']]
-              a.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action[2])
-                .w-9.h-9.rounded-xl.flex.items-center.justify-center.transition-transform.duration-300.group-hover_scale-110(class='bg-' + action[3] + '/10 text-' + action[3])
-                  i.ph-bold.text-base(class=action[1])
-                span.text-sm.font-bold.text-foreground= action[0]
+            each action in quickActions
+              a.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action.href)
+                .w-9.h-9.rounded-xl.flex.items-center.justify-center.transition-transform.duration-300.group-hover_scale-110(class='bg-' + action.tone + '/10 text-' + action.tone)
+                  i.ph-bold.text-base(class=action.icon)
+                span.text-sm.font-bold.text-foreground= action.label
                 i.ph-bold.ph-arrow-right.text-xs.text-muted-foreground.group-hover_text-primary.transition-colors.mt-auto
+        //- ── ANALYTICS ROW: WEEKLY + RADAR + HEATMAP ───────────────
+        .grid.grid-cols-1.gap-8.md_grid-cols-2.mt-4.animate-in(style='animation-delay: 400ms;')
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Phân tích Học tập
+            p.text-xs.text-muted-foreground.mb-4 Bài nộp nhận được tuần này
+            div.relative.w-full(class='h-[180px]')
+              canvas#weeklyChart(aria-label='Khối lượng nộp bài hàng tuần', role='img')
+            .mt-4.flex.items-center.justify-between.text-xs
+              span.text-muted-foreground Tuần này
+              span.font-mono.font-bold.text-primary= (weekly && weekly.total) || 0
+              span.text-muted-foreground sự kiện
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Biểu đồ Giảng dạy
+            p.text-xs.text-muted-foreground.mb-4 Các khía cạnh hiệu suất của bạn
+            div.relative.w-full(class='h-[200px]')
+              canvas#radarChart(aria-label='Biểu đồ giảng dạy', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Bản đồ Hoạt động
+            p.text-xs.text-muted-foreground.mb-4 17 tuần qua
+            #heatmap.heatmap-grid(aria-label='Bản đồ hoạt động', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Báo cáo Hàng tháng
+            p.text-xs.text-muted-foreground.mb-4 Bài nộp đã nhận (6 tháng)
+            div.relative.w-full(class='h-[200px]')
+              canvas#monthlyChart(aria-label='Bài nộp nhận được hàng tháng', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            .flex.items-center.justify-between.mb-4
+              h2.text-base.font-extrabold.tracking-tight Lịch
+              span.text-xs.font-bold.text-muted-foreground= calendarMonth
+            .calendar-grid
+              each d in ['C','H','B','T','N','S','B']
+                .cal-dow= d
+              - var lead = calendarStartWeekday;
+              - var total = lead + calendarDaysInMonth;
+              each _, i in new Array(total)
+                if i < lead
+                  .cal-day.cal-empty
+                else
+                  - var dayNum = i - lead + 1;
+                  - var isToday = dayNum === todayDate;
+                  - var events = (calendarEvents || []).filter(function(e){ return e.day === dayNum; });
+                  .cal-day(class=(isToday ? 'cal-today' : '') + (events.length ? ' cal-has' : ''))
+                    span.cal-num= dayNum
+                    if events.length
+                      .cal-dots
+                        each e in events.slice(0, 3)
+                          span.cal-dot(class='cal-dot-' + e.type, title=e.title)
+
+          .glass-panel.p-6.flex.flex-col(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Điểm danh
+            p.text-xs.text-muted-foreground.mb-4 Trên các lớp học của bạn
+            .flex.items-end.gap-2.mb-4
+              p.text-4xl.font-mono.font-bold.tracking-tighter(class=(attendanceRate === null ? 'text-muted-foreground' : 'text-success'))
+                if attendanceRate === null
+                  | —
+                else
+                  | #{attendanceRate}%
+              p.text-xs.text-muted-foreground(class='mb-1.5')= attendanceRate === null ? 'chưa có buổi học' : 'tỷ lệ điểm danh'
+            .progress.mb-5
+              .progress-bar(style='width: ' + (attendanceRate || 0) + '%', class='bg-success')
+            .space-y-2.text-xs
+              .flex.items-center.justify-between
+                span.text-muted-foreground Số buổi đã học
+                span.font-mono.font-bold= sessionsHeld || 0
+            a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors.mt-2(class='hover_text-primary/80', href='/teacher/attendance')
+              | Quản lý điểm danh
+              i.ph-bold.ph-arrow-right.text-xs
+
+
 
       //- ── RIGHT RAIL ─────────────────────────────────────────
       .space-y-6
@@ -233,80 +306,6 @@ block content
                       p.text-xs.text-muted-foreground.truncate(class='mt-0.5')= n.message
             else
               p.text-xs.text-muted-foreground.text-center.py-4 Chưa có thông báo nào
-
-    //- ── ANALYTICS ROW: WEEKLY + RADAR + HEATMAP ───────────────
-    .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-4.animate-in(style='animation-delay: 400ms;')
-      .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-        h2.text-base.font-extrabold.tracking-tight.mb-1 Phân tích Học tập
-        p.text-xs.text-muted-foreground.mb-4 Bài nộp nhận được tuần này
-        div.relative.w-full(class='h-[180px]')
-          canvas#weeklyChart(aria-label='Khối lượng nộp bài hàng tuần', role='img')
-        .mt-4.flex.items-center.justify-between.text-xs
-          span.text-muted-foreground Tuần này
-          span.font-mono.font-bold.text-primary= (weekly && weekly.total) || 0
-          span.text-muted-foreground sự kiện
-
-      .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-        h2.text-base.font-extrabold.tracking-tight.mb-1 Biểu đồ Giảng dạy
-        p.text-xs.text-muted-foreground.mb-4 Các khía cạnh hiệu suất của bạn
-        div.relative.w-full(class='h-[200px]')
-          canvas#radarChart(aria-label='Biểu đồ giảng dạy', role='img')
-
-      .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-        h2.text-base.font-extrabold.tracking-tight.mb-1 Bản đồ Hoạt động
-        p.text-xs.text-muted-foreground.mb-4 17 tuần qua
-        #heatmap.heatmap-grid(aria-label='Bản đồ hoạt động', role='img')
-
-    //- ── REPORTS ROW: MONTHLY + CALENDAR + ATTENDANCE ──────────
-    .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-4.animate-in(style='animation-delay: 500ms;')
-      .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-        h2.text-base.font-extrabold.tracking-tight.mb-1 Báo cáo Hàng tháng
-        p.text-xs.text-muted-foreground.mb-4 Bài nộp đã nhận (6 tháng)
-        div.relative.w-full(class='h-[200px]')
-          canvas#monthlyChart(aria-label='Bài nộp nhận được hàng tháng', role='img')
-
-      .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-        .flex.items-center.justify-between.mb-4
-          h2.text-base.font-extrabold.tracking-tight Lịch
-          span.text-xs.font-bold.text-muted-foreground= calendarMonth
-        .calendar-grid
-          each d in ['C','H','B','T','N','S','B']
-            .cal-dow= d
-          - var lead = calendarStartWeekday;
-          - var total = lead + calendarDaysInMonth;
-          each _, i in new Array(total)
-            if i < lead
-              .cal-day.cal-empty
-            else
-              - var dayNum = i - lead + 1;
-              - var isToday = dayNum === todayDate;
-              - var events = (calendarEvents || []).filter(function(e){ return e.day === dayNum; });
-              .cal-day(class=(isToday ? 'cal-today' : '') + (events.length ? ' cal-has' : ''))
-                span.cal-num= dayNum
-                if events.length
-                  .cal-dots
-                    each e in events.slice(0, 3)
-                      span.cal-dot(class='cal-dot-' + e.type, title=e.title)
-
-      .lg_col-span-1.glass-panel.p-6.flex.flex-col(class='rounded-2xl border-border/60')
-        h2.text-base.font-extrabold.tracking-tight.mb-1 Điểm danh
-        p.text-xs.text-muted-foreground.mb-4 Trên các lớp học của bạn
-        .flex.items-end.gap-2.mb-4
-          p.text-4xl.font-mono.font-bold.tracking-tighter(class=(attendanceRate === null ? 'text-muted-foreground' : 'text-success'))
-            if attendanceRate === null
-              | —
-            else
-              | #{attendanceRate}%
-          p.text-xs.text-muted-foreground(class='mb-1.5')= attendanceRate === null ? 'chưa có buổi học' : 'tỷ lệ điểm danh'
-        .progress.mb-5
-          .progress-bar(style='width: ' + (attendanceRate || 0) + '%', class='bg-success')
-        .space-y-2.text-xs
-          .flex.items-center.justify-between
-            span.text-muted-foreground Số buổi đã học
-            span.font-mono.font-bold= sessionsHeld || 0
-        a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors.mt-2(class='hover_text-primary/80', href='/teacher/attendance')
-          | Quản lý điểm danh
-          i.ph-bold.ph-arrow-right.text-xs
 
 block scripts
   script(src='https://cdn.jsdelivr.net/npm/chart.js')

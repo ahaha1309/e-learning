@@ -3,6 +3,7 @@ const Classroom = require('../../models/Classroom');
 const ClassroomMember = require('../../models/ClassroomMember');
 const { computeCourseProgress } = require('../../services/courseProgress.service');
 const { evaluateClassroomCompletion } = require('../../services/completion.service');
+const meetingService = require('../../services/meeting.service');
 
 function formatValidationErrors(req) {
   const result = validationResult(req);
@@ -28,12 +29,17 @@ async function renderStudentClassrooms(req, res, next) {
 
 async function joinClassroomHandler(req, res, next) {
   try {
+
     const validationMessage = formatValidationErrors(req);
     if (validationMessage) {
+      const memberships = await ClassroomMember.find({ student: req.user.id }).populate('classroom').sort({ requestedAt: -1 });
+      const pendingMemberships = memberships.filter((membership) => membership.status === 'pending');
+      const approvedMemberships = memberships.filter((membership) => membership.status === 'approved');
+
       return res.status(422).render('student/classrooms/index', {
         title: 'My classrooms',
-        pendingMemberships: [],
-        approvedMemberships: [],
+        pendingMemberships,
+        approvedMemberships,
         feedback: validationMessage,
       });
     }
@@ -42,12 +48,12 @@ async function joinClassroomHandler(req, res, next) {
     const classroom = await Classroom.findOne({ code, isArchived: false });
 
     if (!classroom) {
-      return res.redirect('/student/classrooms?feedback=' + encodeURIComponent('Classroom code not found.'));
+      return res.redirect('/student/classrooms?feedback=' + encodeURIComponent('Không tìm thấy mã lớp học.'));
     }
 
     const existingMember = await ClassroomMember.findOne({ classroom: classroom.id, student: req.user.id });
     if (existingMember) {
-      return res.redirect('/student/classrooms?feedback=' + encodeURIComponent('You already requested or joined this classroom.'));
+      return res.redirect('/student/classrooms?feedback=' + encodeURIComponent('Bạn đã gửi yêu cầu tham gia hoặc đã ở trong lớp học này rồi.'));
     }
 
     const member = new ClassroomMember({
@@ -58,8 +64,11 @@ async function joinClassroomHandler(req, res, next) {
     });
 
     await member.save();
-    return res.redirect('/student/classrooms?feedback=' + encodeURIComponent(classroom.approvalRequired ? 'Join request submitted.' : 'Joined classroom successfully.'));
+    return res.redirect('/student/classrooms?feedback=' + encodeURIComponent(classroom.approvalRequired ? 'Đã gửi yêu cầu tham gia lớp học.' : 'Đã tham gia lớp học thành công.'));
   } catch (error) {
+    if (error.code === 11000) {
+      return res.redirect('/student/classrooms?feedback=' + encodeURIComponent('Bạn đã gửi yêu cầu tham gia lớp học này rồi.'));
+    }
     return next(error);
   }
 }
@@ -75,21 +84,18 @@ async function renderStudentClassroomDetail(req, res, next) {
       });
     }
 
-    // Syllabus progress: fully computed by the service — structure, status,
-    // unlock, remaining counts, and current/next navigation all derived from
-    // the DB. The view only renders courseProgress; it computes nothing.
+    // Syllabus progress
     const courseProgress = await computeCourseProgress(member.classroom, req.user.id);
-
-    // Course-level completion verdict (Phase C): is the course complete/passing
-    // per the teacher's completionRules? Drives the completion banner and is the
-    // exact same evaluation the certificate engine will use (Phase D).
     const courseCompletion = await evaluateClassroomCompletion(member.classroom, req.user.id);
+    const io = req.app.get('io');
+    const activeMeeting = await meetingService.getActiveOrUpcomingMeeting(member.classroom.id || member.classroom._id, io);
 
     return res.render('student/classrooms/show', {
       title: member.classroom.name,
       membership: member,
       courseProgress,
       courseCompletion,
+      activeMeeting,
     });
   } catch (error) {
     return next(error);

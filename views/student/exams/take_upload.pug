@@ -1,0 +1,225 @@
+//- ── EXAM ENGINE: Focus Mode UI ─────────────────────────────────────────
+//- vars: exam, submission, questions, classroom, currentUser, csrfToken
+//- Anti-cheat: anti-cheat-config JSON embedded for anti-cheat.js
+
+extends ../../layouts/base
+
+block head
+  //- Lock the entire page layout for focus mode
+  style.
+    body {
+      overflow: hidden;
+    }
+    /* Prevent right-click context menu visual feedback */
+    * { -webkit-user-select: none; user-select: none; }
+    textarea, input[type="text"] { -webkit-user-select: text; user-select: text; }
+
+block content
+  //- Anti-cheat config consumed by /js/anti-cheat.js
+  script#anti-cheat-config(type='application/json').
+    !{JSON.stringify({ examId: exam.id, studentId: currentUser.id, studentName: currentUser.name, strictMode: exam.strictMode, maxViolations: exam.maxViolations })}
+
+  //- ── PRE-EXAM FULLSCREEN GATE (replaces raw JS overlay with styled Pug) ──
+  #exam-gate.exam-blur-overlay(
+    role='alertdialog',
+    aria-modal='true',
+    aria-labelledby='exam-gate-title',
+    aria-describedby='exam-gate-desc'
+  )
+    .exam-violation-card(style='border-color: hsl(var(--primary)/0.3);')
+      .w-14.h-14.rounded-2xl.flex.items-center.justify-center.mx-auto.mb-6(class='bg-primary/10')
+        i.ph-bold.ph-exam.text-2xl.text-primary(aria-hidden='true')
+      h2.text-xl.font-extrabold.tracking-tight.mb-2(id='exam-gate-title')= exam.title
+      p.text-sm.text-muted-foreground.mb-1.leading-relaxed(id='exam-gate-desc')
+        | Đây là bài thi có tính giờ và được giám sát. Khi bạn bắt đầu, bộ đếm thời gian sẽ chạy và không thể tạm dừng.
+      if exam.strictMode
+        .mt-4.p-4.rounded-xl.text-left.space-y-2.mb-6(class='bg-destructive/5 border border-destructive/15')
+          p.text-xs.font-bold.uppercase.tracking-widest.text-destructive.mb-3 Chế độ Nghiêm ngặt Đang bật
+          .flex.items-start.gap-2.text-xs.text-muted-foreground
+            i.ph-bold.ph-prohibit.text-destructive.text-sm.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+            | Không chuyển đổi tab hoặc cửa sổ
+          .flex.items-start.gap-2.text-xs.text-muted-foreground
+            i.ph-bold.ph-prohibit.text-destructive.text-sm.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+            | Không thoát chế độ toàn màn hình
+          .flex.items-start.gap-2.text-xs.text-muted-foreground
+            i.ph-bold.ph-prohibit.text-destructive.text-sm.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+            | Không sao chép, dán hoặc nhấp chuột phải
+          if exam.maxViolations > 0
+            .flex.items-start.gap-2.text-xs.text-muted-foreground
+              i.ph-bold.ph-warning.text-warning.text-sm.flex-shrink-0(class='mt-0.5', aria-hidden='true')
+              | Tự động nộp bài sau #{exam.maxViolations} vi phạm
+      else
+        .mb-6
+      //- Duration display
+      if exam.duration > 0
+        .flex.items-center.justify-center.gap-2.text-sm.font-bold.text-muted-foreground.mb-6
+          i.ph-bold.ph-clock.text-primary(aria-hidden='true')
+          span Thời lượng: #{exam.duration} phút
+
+      button#start-exam-btn.btn-primary.w-full.h-12.rounded-xl.font-bold.text-base(type='button')
+        if exam.strictMode
+          i.ph-bold.ph-arrows-out.text-lg(aria-hidden='true')
+          | Vào Toàn màn hình & Bắt đầu
+        else
+          i.ph-bold.ph-play.text-lg(aria-hidden='true')
+          | Bắt đầu Bài thi
+
+  //- ── VIOLATION OVERLAY (non-panic, informational) ─────────────────────
+  #violation-overlay.exam-blur-overlay(
+    role='alertdialog',
+    aria-modal='true',
+    aria-labelledby='violation-title',
+    aria-describedby='violation-desc'
+  )
+    .exam-violation-card
+      .w-12.h-12.rounded-2xl.flex.items-center.justify-center.mx-auto.mb-5(class='bg-destructive/10')
+        i.ph-bold.ph-warning-circle.text-2xl.text-destructive(aria-hidden='true')
+      h3.text-lg.font-extrabold.tracking-tight.mb-1(id='violation-title') Cảnh báo Toàn vẹn
+      p.text-sm.text-muted-foreground.leading-relaxed.mb-4(id='violation-desc')
+        | Phát hiện một vấn đề toàn vẹn tiềm ẩn. Vui lòng quay lại bài thi.
+      p.text-xs.font-bold.text-muted-foreground.mb-5(id='violation-count-text') Đã ghi nhận vi phạm.
+      button#dismiss-violation.btn-primary.w-full.h-11.rounded-xl.font-bold(type='button')
+        i.ph-bold.ph-arrow-u-up-left(aria-hidden='true')
+        | Quay lại Bài thi
+
+  //- ── EXAM SHELL ──────────────────────────────────────────────────────────
+  .exam-shell#exam-shell
+
+    //- Sticky topbar (always visible)
+    header.exam-topbar(role='banner', aria-label='Exam controls')
+      //- Left: title + live badge
+      .flex.items-center.min-w-0(class='gap-3')
+        .inline-flex.items-center.gap-2.rounded-full.px-3.text-xs.font-bold.uppercase.tracking-widest.text-destructive.flex-shrink-0(class='bg-destructive/10 py-1.5')
+          span.w-2.h-2.rounded-full.bg-destructive.animate-pulse(aria-hidden='true')
+          | Trực tiếp
+        h1.text-base.font-bold.tracking-tight.truncate= exam.title
+
+      //- Center: countdown timer
+      if exam.duration > 0
+        .flex.items-center(class='gap-2')
+          i.ph-bold.ph-timer.text-muted-foreground(aria-hidden='true')
+          time#timer.exam-timer(
+            datetime='',
+            data-duration=exam.duration,
+            data-started=submission.startedAt.toISOString(),
+            aria-label='Thời gian còn lại'
+          ) --:--
+      else
+        .text-sm.text-muted-foreground Thời gian không giới hạn
+
+      //- Right: integrity status
+      .flex.items-center(class='gap-2')
+        .exam-integrity-dot#integrity-dot(aria-hidden='true')
+        span#integrity-label.text-xs.font-bold.text-muted-foreground Đang giám sát
+
+    //- Question area (scrollable)
+    main.overflow-y-auto(aria-label='Exam questions')
+      form#exam-form.max-w-3xl.mx-auto.px-4.py-10.space-y-8(
+        method='POST',
+        action='/student/classrooms/' + classroom.id + '/exams/' + exam.id + '/submit',
+        enctype='multipart/form-data'
+      )
+        input(type='hidden', name='_csrf', value=csrfToken)
+        input(type='hidden', name='submissionId', value=submission.id)
+        input(type='hidden', id='violationsJson', name='violationsJson', value='[]')
+
+        article.glass-panel.rounded-2xl.border-border.p-8
+          h2.text-xl.font-bold.tracking-tight.mb-4 Đề bài
+          if exam.instructions
+            .prose.prose-sm.max-w-none.mb-6 !{exam.instructions}
+          else
+            p.text-sm.text-muted-foreground.mb-6 Giảng viên không cung cấp nội dung đề bài cụ thể.
+
+          if exam.attachments && exam.attachments.length > 0
+            h3.text-sm.font-bold.mb-3 Tệp đính kèm từ Giảng viên
+            ul.space-y-2.mb-8
+              each file in exam.attachments
+                li.flex.items-center.gap-2.text-sm
+                  i.ph.ph-file
+                  a.text-primary.hover_underline(href=file.fileUrl, target='_blank')= file.fileName
+
+          h3.text-sm.font-bold.mb-3 Nộp bài làm của bạn
+          input#attachment.w-full.p-3.rounded-xl.bg-background.border.font-medium(
+            class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent',
+            type='file',
+            name='attachment',
+            required
+          )
+          p.text-xs.text-muted-foreground.mt-2 Hãy chắc chắn rằng bạn đã tải lên đúng tệp trước khi nộp.
+
+        //- Submit bar
+        .sticky.bottom-6.flex.justify-end.pt-6(style='z-index: 100;')
+          button.btn-primary.h-12.px-8.rounded-full.font-bold.shadow-diffused.active_scale-95.transition-transform(
+            type='submit',
+            id='submit-exam-btn'
+          )
+            i.ph-bold.ph-paper-plane-tilt(aria-hidden='true')
+            | Nộp bài thi
+
+
+
+  //- ── TIMER SCRIPT ────────────────────────────────────────────────────────
+  script.
+    (function () {
+      var timerEl = document.getElementById('timer');
+      if (timerEl) {
+        var durationMins = parseInt(timerEl.dataset.duration, 10);
+        var startedAt    = new Date(timerEl.dataset.started).getTime();
+        var endTime      = startedAt + durationMins * 60 * 1000;
+
+        var interval = setInterval(function () {
+          var now      = Date.now();
+          var distance = endTime - now;
+
+          if (distance <= 0) {
+            clearInterval(interval);
+            timerEl.textContent = '00:00';
+            timerEl.classList.add('urgent');
+            document.getElementById('exam-form').submit();
+            return;
+          }
+
+          var m = Math.floor((distance / 1000 / 60) % 60);
+          var s = Math.floor((distance / 1000) % 60);
+          timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+          timerEl.setAttribute('datetime', 'PT' + m + 'M' + s + 'S');
+
+          if (m < 5) timerEl.classList.add('urgent');
+        }, 500);
+      }
+
+      //- Gate: show pre-exam screen, then begin on click
+      var gate    = document.getElementById('exam-gate');
+      var startBtn = document.getElementById('start-exam-btn');
+      var shell   = document.getElementById('exam-shell');
+
+      shell.style.display = 'none';
+      gate.style.display  = 'flex';
+
+      startBtn.addEventListener('click', function () {
+        var doStart = function () {
+          gate.classList.remove('visible');
+          gate.style.display = 'none';
+          shell.style.display = '';
+        };
+
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen().then(doStart).catch(doStart);
+        } else {
+          doStart();
+        }
+      });
+
+      //- Violation overlay dismiss
+      var dismissBtn = document.getElementById('dismiss-violation');
+      if (dismissBtn) {
+        dismissBtn.addEventListener('click', function () {
+          document.getElementById('violation-overlay').classList.remove('visible');
+        });
+      }
+    })();
+
+  //- Anti-cheat scripts (only in strict mode)
+  if exam.strictMode
+    script(src='/socket.io/socket.io.js')
+    script(src='/js/anti-cheat.js')

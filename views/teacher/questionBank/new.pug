@@ -21,16 +21,13 @@ block content
           label.text-sm.font-medium(for='chapter') Chương / Chủ đề
           input#chapter.mt-2(type='text', name='chapter', value=formData.chapter, required, placeholder='ví dụ: Đại số')
 
-      .grid.grid-cols-1.gap-4(class='md_grid-cols-2')
+      .grid.grid-cols-1.gap-4
         div
           label.text-sm.font-medium(for='difficulty') Độ khó
           select#difficulty.mt-2(name='difficulty', required)
             option(value='nhan_biet', selected=formData.difficulty === 'nhan_biet') Nhận biết (Dễ)
             option(value='thong_hieu', selected=formData.difficulty === 'thong_hieu') Thông hiểu (Trung bình)
             option(value='van_dung', selected=formData.difficulty === 'van_dung') Vận dụng (Khó)
-        div
-          label.text-sm.font-medium(for='points') Điểm
-          input#points.mt-2(type='number', name='points', value=formData.points || 1, required, min='0', step='0.1')
 
       div
         label.text-sm.font-medium(for='type') Loại Câu hỏi
@@ -62,10 +59,33 @@ block content
     (function() {
       var typeSelect = document.getElementById('type');
       var optionsContainer = document.getElementById('options-container');
+      var checkboxes = document.querySelectorAll('input[name="optionCorrect[]"]');
+
       typeSelect.addEventListener('change', function() {
         optionsContainer.style.display = typeSelect.value === 'essay' ? 'none' : 'block';
+        
+        if (this.value === 'multiple_choice') {
+          var checkedCount = 0;
+          checkboxes.forEach(function(cb) {
+            if (cb.checked) {
+              if (checkedCount > 0) cb.checked = false;
+              checkedCount++;
+            }
+          });
+        }
       });
+
       if (typeSelect.value === 'essay') {
         optionsContainer.style.display = 'none';
       }
+
+      checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          if (typeSelect.value === 'multiple_choice' && this.checked) {
+            checkboxes.forEach(function(cb) {
+              if (cb !== checkbox) cb.checked = false;
+            });
+          }
+        });
+      });
     })();

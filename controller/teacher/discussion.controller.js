@@ -2,6 +2,7 @@ const Classroom = require('../../models/Classroom');
 const DiscussionTopic = require('../../models/DiscussionTopic');
 const DiscussionReply = require('../../models/DiscussionReply');
 const { sanitizeRichHtml, sanitizePlainText } = require('../../helper/sanitize');
+const { sendNotification } = require('../../helper/notification.helper');
 
 async function renderIndex(req, res, next) {
   try {
@@ -77,7 +78,7 @@ async function createReply(req, res, next) {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
     if (!classroom) return res.status(404).send('Not found');
 
-    const topic = await DiscussionTopic.findOne({ _id: req.params.topicId, classroom: classroom.id });
+    const topic = await DiscussionTopic.findOne({ _id: req.params.topicId, classroom: classroom.id }).populate('author');
     if (!topic) return res.status(404).send('Topic not found');
 
     const { content } = req.body;
@@ -92,6 +93,16 @@ async function createReply(req, res, next) {
       author: req.user.id,
       content: cleanContent
     });
+
+    if (topic.author && topic.author.id !== req.user.id) {
+      const linkPrefix = topic.author.role === 'teacher' ? 'teacher' : 'student';
+      await sendNotification(
+        topic.author.id,
+        'Phản hồi mới',
+        `${req.user.name || 'Giáo viên'} đã trả lời chủ đề thảo luận của bạn: "${topic.title}"`,
+        `/${linkPrefix}/classrooms/${classroom.id}/discussions/${topic.id}`
+      );
+    }
 
     return res.redirect(`/teacher/classrooms/${classroom.id}/discussions/${topic.id}?feedback=Reply+added`);
   } catch (error) {

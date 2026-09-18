@@ -21,8 +21,58 @@ block content
         .w-14.h-14.rounded-2xl.flex.items-center.justify-center.border(class='bg-primary/10 text-primary border-primary/20')
           i.ph-bold.ph-key.text-2xl
 
+    //- Central Meeting Status Banner for Students
+    #meeting-banner-container(
+      data-classroom-id=membership.classroom.id,
+      data-is-teacher='false',
+      data-csrf-token=csrfToken
+    )
+      if activeMeeting && activeMeeting.status === 'LIVE'
+        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-md.animate-in.slide-in-up(
+          class='md_px-5 rounded-2xl border border-destructive/40 bg-destructive/5 sm_flex-row'
+        )
+          .flex.items-center.min-w-0(class='gap-3.5')
+            .relative.flex.items-center.justify-center.w-10.h-10.rounded-xl.bg-destructive.text-white.shadow-md.flex-shrink-0
+              i.ph-bold.ph-video-camera.text-lg
+              span.absolute.flex.h-3.w-3(class='-top-0.5 -right-0.5')
+                span.animate-ping.absolute.inline-flex.h-full.w-full.rounded-full.bg-destructive.opacity-75
+                span.relative.inline-flex.rounded-full.h-3.w-3.bg-destructive.border-2.border-background
+            .min-w-0
+              .flex.items-center.gap-2.mb-1
+                span.badge-destructive.px-2.font-black.uppercase.tracking-wider.flex.items-center.gap-1.shadow-sm(class='py-0.5 text-[10px]')
+                  span.rounded-full.bg-white.animate-ping(class='w-1.5 h-1.5')
+                  | LIVE
+                span.text-xs.text-muted-foreground.truncate.font-medium • Giảng viên đang tổ chức
+              h3.text-sm.font-extrabold.text-foreground.truncate= activeMeeting.title
+          .flex.items-center.gap-2.w-full.flex-shrink-0.justify-end(class='sm_w-auto')
+            a.btn-primary.h-9.px-5.rounded-xl.text-xs.font-extrabold.shadow.bg-destructive.text-white.flex.items-center.justify-center.transition-transform(
+              class='gap-1.5 hover_bg-destructive/90 hover_scale-105',
+              href='/classrooms/' + membership.classroom.id + '/meetings/' + activeMeeting.id + '/room'
+            )
+              i.ph-bold.ph-sign-in.text-sm
+              | JOIN MEETING
+      else if activeMeeting && activeMeeting.status === 'SCHEDULED'
+        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-sm.animate-in.slide-in-up(
+          class='md_px-5 rounded-2xl border border-primary/30 bg-primary/5 sm_flex-row'
+        )
+          .flex.items-center.min-w-0(class='gap-3.5')
+            .w-10.h-10.rounded-xl.text-primary.flex.items-center.justify-center.flex-shrink-0(class='bg-primary/10 border border-primary/20')
+              i.ph-bold.ph-calendar-blank.text-xl
+            .min-w-0
+              .flex.items-center.gap-2.mb-1
+                span.badge-primary.px-2.font-bold.uppercase.tracking-wider(class='py-0.5 text-[10px]')
+                  | 📅 UPCOMING MEETING
+              h3.text-sm.font-extrabold.text-foreground.truncate= activeMeeting.title
+              p#meeting-countdown.text-xs.font-semibold.text-primary.flex.items-center.gap-1(
+                data-start-time=activeMeeting.startTime.toISOString()
+              )
+                | ⏱️ Đang tính thời gian...
+          .flex.items-center.gap-2.w-full.flex-shrink-0.justify-end(class='sm_w-auto')
+            a.btn-outline.h-9.px-4.rounded-xl.text-xs.font-bold.opacity-75.pointer-events-none.border-border(href='#')
+              | Chờ bắt đầu
+
     //- Navigation Bento Grid
-    .grid.grid-cols-2.md_grid-cols-3.lg_grid-cols-5.gap-6.animate-in.slide-in-up(style='animation-delay: 150ms;')
+    .grid.grid-cols-2.md_grid-cols-3.lg_grid-cols-6.gap-6.animate-in.slide-in-up(style='animation-delay: 150ms;')
       a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/lectures', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-primary/10 border border-primary/20')
           i.ph-fill.ph-monitor-play.text-2xl
@@ -47,6 +97,11 @@ block content
         .w-14.h-14.rounded-2xl.text-info.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-info/10 border border-info/20')
           i.ph-fill.ph-check-square.text-2xl
         p.text-sm.font-bold.tracking-tight Điểm danh
+
+      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/obe-report', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
+        .w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-primary/10 border border-primary/20')
+          i.ph-fill.ph-target.text-2xl
+        p.text-sm.font-bold.tracking-tight Chuẩn OBE
 
     //- Dynamic Syllabus Progress
     //- Everything below is rendered from `courseProgress` returned by the backend
@@ -312,3 +367,6 @@ block content
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       });
     });
+
+  script(src='/socket.io/socket.io.js')
+  script(src='/js/classroom-meeting-banner.js')

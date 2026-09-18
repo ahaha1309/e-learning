@@ -61,7 +61,9 @@ async function renderSubmissionDetail(req, res, next) {
       });
     }
 
-    const submission = await Submission.findOne({ _id: req.params.submissionId, assignment: assignment.id }).populate('student');
+    const submission = await Submission.findOne({ _id: req.params.submissionId, assignment: assignment.id })
+      .populate('student')
+      .populate('answers.question');
     if (!submission) {
       return res.status(404).render('errors/404', {
         title: 'Submission not found',
@@ -210,10 +212,43 @@ async function rubricGradeHandler(req, res, next) {
   }
 }
 
+async function deleteSubmissionHandler(req, res, next) {
+  try {
+    const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
+    if (!classroom) {
+      return res.status(404).render('errors/404', {
+        title: 'Classroom not found',
+        path: req.originalUrl,
+      });
+    }
+
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    if (!assignment) {
+      return res.status(404).render('errors/404', {
+        title: 'Assignment not found',
+        path: req.originalUrl,
+      });
+    }
+
+    const submission = await Submission.findOneAndDelete({ _id: req.params.submissionId, assignment: assignment.id });
+    if (!submission) {
+      return res.status(404).render('errors/404', {
+        title: 'Submission not found',
+        path: req.originalUrl,
+      });
+    }
+
+    return res.redirect(`/teacher/classrooms/${classroom.id}/assignments/${assignment.id}/submissions?feedback=${encodeURIComponent('Đã xóa bài nộp thành công, sinh viên có thể làm lại bài.')}`);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   renderSubmissionsIndex,
   renderSubmissionDetail,
   gradeSubmissionHandler,
   renderRubricGrade,
   rubricGradeHandler,
+  deleteSubmissionHandler,
 };

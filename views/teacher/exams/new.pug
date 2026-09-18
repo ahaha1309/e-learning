@@ -24,7 +24,7 @@ block content
           i.ph-bold.ph-x.text-lg
           | Hủy
 
-    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/exams')
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/exams', enctype='multipart/form-data')
       input(type='hidden', name='_csrf', value=csrfToken)
 
       //- Main Content Col
@@ -44,8 +44,37 @@ block content
             input#title.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='title', required, value=formData.title || '', placeholder='ví dụ: Kiểm tra Giữa kỳ — Chương 1-4')
 
           .space-y-2
-            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Hướng dẫn cho Học sinh
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='totalPoints') Tổng điểm
+            input#totalPoints.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', min='0', step='0.5', name='totalPoints', value=formData.totalPoints || 10, required)
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Bài thi
+            select#type.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='type')
+              option(value='quiz', selected=formData.type !== 'upload') Trắc nghiệm
+              option(value='upload', selected=formData.type === 'upload') Nộp tệp đính kèm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Hướng dẫn Ngắn gọn
             textarea#description.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='description', rows='5', placeholder='Mô tả phạm vi bài thi, quy tắc và bất kỳ hướng dẫn nào cho học sinh của bạn...')= formData.description || ''
+
+          .space-y-2#instructions-block(style='display: none;')
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='instructions') Nội dung Đề bài (Dành cho thi nộp tệp)
+            textarea#instructions.tinymce.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(name='instructions', rows='8')= formData.instructions || ''
+
+          .space-y-2#attachment-block(style='display: none;')
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground Bổ sung Tệp đính kèm (Tùy chọn)
+            input#attachmentFiles.w-full.p-3.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='file', name='attachmentFiles', multiple=true)
+            p.text-xs.text-muted-foreground Thêm tệp đề bài (PDF, Word, Excel, ZIP...).
+
+          .space-y-2.pt-2
+            label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0
+                input#isCoding.peer.sr-only(type='checkbox', name='isCoding', value='true', checked=formData.isCoding === 'true')
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              div
+                p.text-sm.font-bold.text-foreground Đây là bài thi Lập trình
+                p.text-xs.text-muted-foreground Sử dụng trình soạn thảo code (CodeMirror) cho các câu hỏi tự luận thay vì văn bản thường.
 
         //- Step 2: Time & Access
         .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
@@ -54,16 +83,12 @@ block content
               span.font-bold.text-sm 2
             h3.text-lg.font-bold Thời gian & Quyền truy cập
 
-          .grid.grid-cols-1.md_grid-cols-2.gap-6
+          .grid.grid-cols-1.gap-6
             .space-y-2
               label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='duration') Giới hạn Thời gian (Phút)
               input#duration.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', name='duration', value=formData.duration || 60, required, min='0')
               p.text-xs.text-muted-foreground Đặt bằng 0 cho thời gian không giới hạn.
-
-            .space-y-2
-              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='maxAttempts') Số lần thử tối đa cho phép
-              input#maxAttempts.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', name='maxAttempts', value=formData.maxAttempts || 1, required, min='0')
-              p.text-xs.text-muted-foreground 0 = số lần thử không giới hạn.
+              input(type='hidden', name='maxAttempts', value='1')
 
           .grid.grid-cols-1.md_grid-cols-2.gap-6
             .space-y-2
@@ -109,7 +134,7 @@ block content
               p.text-xs.text-muted-foreground Học sinh phải nhập mật khẩu này trước khi bắt đầu bài thi.
 
         //- Step 4: Questions
-        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+        #questions-step.glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
           .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
             .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-info/10 text-info')
               span.font-bold.text-sm 4
@@ -161,8 +186,8 @@ block content
               span.text-muted-foreground Thời lượng
               span.font-mono.font-bold#summary-duration= formData.duration || 60 + ' phút'
             .flex.items-center.justify-between
-              span.text-muted-foreground Số lần thử
-              span.font-medium#summary-attempts= formData.maxAttempts || 1
+              span.text-muted-foreground Bài thi lập trình
+              span.font-medium#summary-coding Tắt
             .flex.items-center.justify-between
               span.text-muted-foreground Giám sát
               span.font-medium#summary-proctoring Tắt
@@ -170,20 +195,40 @@ block content
               span.text-muted-foreground Đã xuất bản
               span.font-medium#summary-publish Có
 
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+    script(src='/js/tinymce-config.js')
     script.
       document.addEventListener('DOMContentLoaded', function() {
+        var typeSelect = document.getElementById('type');
+        var instructionsBlock = document.getElementById('instructions-block');
+        var attachmentBlock = document.getElementById('attachment-block');
+        var questionsStep = document.getElementById('questions-step');
+        var codingCheck = document.getElementById('isCoding').closest('.group');
+
+        function toggleType() {
+          var isUpload = typeSelect.value === 'upload';
+          if (instructionsBlock) instructionsBlock.style.display = isUpload ? 'block' : 'none';
+          if (attachmentBlock) attachmentBlock.style.display = isUpload ? 'block' : 'none';
+          if (questionsStep) questionsStep.style.display = isUpload ? 'none' : 'block';
+          if (codingCheck) codingCheck.style.display = isUpload ? 'none' : 'flex';
+        }
+        if (typeSelect) {
+          typeSelect.addEventListener('change', toggleType);
+          toggleType();
+        }
+
         var durationInput = document.getElementById('duration');
-        var attemptsInput = document.getElementById('maxAttempts');
         var strictCheck = document.getElementById('strictMode');
+        var codingCheckInput = document.getElementById('isCoding');
         var publishCheck = document.getElementById('isPublished');
         if (durationInput) durationInput.addEventListener('input', function() {
           document.getElementById('summary-duration').textContent = (this.value || 0) + ' phút';
         });
-        if (attemptsInput) attemptsInput.addEventListener('input', function() {
-          document.getElementById('summary-attempts').textContent = this.value || 0;
-        });
         if (strictCheck) strictCheck.addEventListener('change', function() {
           document.getElementById('summary-proctoring').textContent = this.checked ? 'Bật' : 'Tắt';
+        });
+        if (codingCheckInput) codingCheckInput.addEventListener('change', function() {
+          document.getElementById('summary-coding').textContent = this.checked ? 'Bật' : 'Tắt';
         });
         if (publishCheck) publishCheck.addEventListener('change', function() {
           document.getElementById('summary-publish').textContent = this.checked ? 'Có' : 'Không';

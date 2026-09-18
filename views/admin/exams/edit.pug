@@ -1,0 +1,85 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-8.animate-in.fade-in
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Admin - Quản lý Bài thi
+        h1.text-3xl.font-extrabold.tracking-tight Chỉnh sửa & Gia hạn Bài thi
+        p.text-muted-foreground.mt-2 Lớp: #{exam.classroom ? exam.classroom.name : ''} • Giảng viên: #{exam.teacher ? exam.teacher.name : ''}
+      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/exams/' + exam.id)
+        i.ph-bold.ph-arrow-left
+        | Quay lại
+
+    if errorMessage
+      .alert-danger.rounded-2xl= errorMessage
+
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-8(method='POST', action='/admin/exams/' + exam.id + '/edit')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      .lg_col-span-8.space-y-6
+        .bento-card.p-6.space-y-6
+          h2.text-lg.font-bold Thông tin bài thi
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tiêu đề Bài thi
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='text', name='title', value=formData.title || exam.title, required)
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Hướng dẫn cho Học sinh
+            textarea.w-full.p-4.rounded-xl.bg-background.border(name='description', rows='6')= formData.description || exam.description || ''
+
+          .space-y-4.pt-2
+            label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0
+                input#isCoding.peer.sr-only(type='checkbox', name='isCoding', value='true', checked=(formData.isCoding !== undefined ? formData.isCoding === 'true' : exam.isCoding))
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              div
+                p.text-sm.font-bold.text-foreground Đây là bài thi Lập trình
+                p.text-xs.text-muted-foreground Sử dụng trình soạn thảo code (CodeMirror) cho các câu hỏi tự luận.
+
+      .lg_col-span-4.space-y-6
+        .bento-card.p-6.space-y-6
+          h2.text-lg.font-bold Thiết lập Hạn chót & Thời gian
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Giới hạn thời gian (Phút)
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='number', name='duration', value=(formData.duration !== undefined ? formData.duration : exam.duration), required)
+            input(type='hidden', name='maxAttempts', value='1')
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Bắt đầu từ
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='datetime-local', name='startTime', value=(formData.startTime !== undefined ? formData.startTime : startTimeFormatted))
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-rose-400 Hạn chót mới (Gia hạn)
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='datetime-local', name='endTime', value=(formData.endTime !== undefined ? formData.endTime : endTimeFormatted))
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Công bố Kết quả
+            select.w-full.h-12.px-4.rounded-xl.bg-background.border(name='showResult')
+              - var curShowResult = formData.showResult !== undefined ? formData.showResult : exam.showResult
+              option(value='after_submit', selected=curShowResult === 'after_submit') Ngay sau khi nộp bài
+              option(value='after_exam_ends', selected=curShowResult === 'after_exam_ends') Sau khi cửa sổ bài thi đóng
+              option(value='none', selected=curShowResult === 'none') Công bố thủ công
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Chế độ Giám sát
+            select.w-full.h-12.px-4.rounded-xl.bg-background.border(name='strictMode')
+              - var curStrict = formData.strictMode !== undefined ? formData.strictMode === 'true' : exam.strictMode
+              option(value='false', selected=!curStrict) Tắt
+              option(value='true', selected=curStrict) Bật Nghiêm ngặt
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Số lần vi phạm tối đa
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='number', name='maxViolations', value=(formData.maxViolations !== undefined ? formData.maxViolations : exam.maxViolations), min='0')
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Trạng thái Xuất bản
+            select.w-full.h-12.px-4.rounded-xl.bg-background.border(name='isPublished')
+              - var curPub = formData.isPublished !== undefined ? formData.isPublished === 'true' : exam.isPublished
+              option(value='true', selected=curPub) Xuất bản
+              option(value='false', selected=!curPub) Ẩn / Nháp
+
+          button.btn-primary.w-full.h-12.rounded-xl.font-bold(type='submit')
+            i.ph-bold.ph-floppy-disk
+            | Lưu & Cập nhật

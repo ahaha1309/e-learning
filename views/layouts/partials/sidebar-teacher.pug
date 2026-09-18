@@ -57,6 +57,16 @@
     .section-label Tài khoản
 
     a.shell-sidebar-link(
+      href='/chat',
+      class=path && path.startsWith('/chat') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/chat') ? 'page' : false
+    )
+      i.ph-bold.ph-chats-teardrop.text-base(aria-hidden='true')
+      .flex.items-center.justify-between.flex-1
+        span Trò chuyện
+        span.badge.badge-danger.badge-sm.sidebar-chat-badge(class=(unreadChatCount > 0 ? '' : 'hidden'))= unreadChatCount
+
+    a.shell-sidebar-link(
       href='/notifications',
       class=path === '/notifications' ? 'shell-sidebar-link-active' : '',
       aria-current=path === '/notifications' ? 'page' : false

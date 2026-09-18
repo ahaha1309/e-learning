@@ -117,8 +117,6 @@ html(lang='en', class='light')
               span.font-bold.text-base.tracking-tight= siteName || 'EduSpace'
 
           nav.flex.items-center(class='gap-4', aria-label='Main')
-            a.text-sm.font-medium.text-muted-foreground.transition-colors.hidden(class='md_block hover_text-foreground', href='/catalog') Danh mục khóa học
-            .w-px.h-4.bg-border.hidden(class='md_block')
             a.text-sm.font-medium.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/auth/login') Đăng nhập
             a.btn.btn-primary.btn-sm.rounded-full.shadow-sm(href='/auth/register') Bắt đầu
 
@@ -139,7 +137,6 @@ html(lang='en', class='light')
             div
               h3.text-sm.font-bold.mb-4.tracking-tight Nền tảng
               ul.space-y-3.text-sm.text-muted-foreground
-                li: a.transition-colors(href='/catalog', class='hover_text-foreground') Danh mục khóa học
                 li: a.transition-colors(href='/auth/login', class='hover_text-foreground') Đăng nhập
                 li: a.transition-colors(href='/auth/register', class='hover_text-foreground') Bắt đầu
 

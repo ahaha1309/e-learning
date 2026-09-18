@@ -7,9 +7,13 @@ block admin-content
         p.eyebrow Chi tiết Bài thi
         h1.text-3xl.font-extrabold.tracking-tight= exam.title
         p.text-muted-foreground.mt-2= exam.description || 'Không có mô tả'
-      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/exams')
-        i.ph-bold.ph-arrow-left
-        | Quay lại
+      .flex.items-center.gap-2
+        a.btn-primary.h-10.px-4.rounded-lg(href='/admin/exams/' + exam.id + '/edit')
+          i.ph-bold.ph-pencil-simple
+          | Chỉnh sửa & Gia hạn
+        a.btn-outline.h-10.px-4.rounded-lg(href='/admin/exams')
+          i.ph-bold.ph-arrow-left
+          | Quay lại
 
     .grid.grid-cols-1.lg_grid-cols-3.gap-6
       .lg_col-span-2.space-y-6

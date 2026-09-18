@@ -64,6 +64,31 @@ const submissionSchema = new Schema(
       type: submissionFileSchema,
       default: () => ({}),
     },
+    answers: [
+      {
+        question: {
+          type: Schema.Types.ObjectId,
+          ref: 'Question',
+        },
+        selectedOptions: [
+          {
+            type: Schema.Types.ObjectId,
+          },
+        ],
+        text: {
+          type: String,
+          default: '',
+        },
+        isCorrect: {
+          type: Boolean,
+          default: false,
+        },
+        pointsAchieved: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
     status: {
       type: String,
       enum: ['draft', 'submitted', 'graded', 'returned'],

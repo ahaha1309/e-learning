@@ -15,6 +15,11 @@ block admin-content
           i.ph-bold.ph-check-circle.text-lg
           span= feedback
 
+      if errorMessage
+        .alert-danger.rounded-xl.mb-6
+          i.ph-bold.ph-warning.text-lg
+          span= errorMessage
+
       //- General
       .grid.grid-cols-1.md_grid-cols-3.gap-8
         .md_col-span-1
@@ -81,6 +86,15 @@ block admin-content
               select#defaultUserRole(name='defaultUserRole')
                 option(value='student', selected=config.defaultUserRole === 'student') Học sinh
                 option(value='teacher', selected=config.defaultUserRole === 'teacher') Giảng viên
+
+          .p-6.border-b.border-border
+            .grid.grid-cols-2.gap-4
+              .field
+                label.field-label(for='courseRegistrationStart') Bắt đầu Đăng ký Học phần
+                input#courseRegistrationStart(type='datetime-local', name='courseRegistrationStart', value=config.courseRegistrationStart)
+              .field
+                label.field-label(for='courseRegistrationEnd') Kết thúc Đăng ký Học phần
+                input#courseRegistrationEnd(type='datetime-local', name='courseRegistrationEnd', value=config.courseRegistrationEnd)
 
           .flex.items-start.justify-between.gap-4.p-6.border-b.border-border
             .space-y-1.pr-6

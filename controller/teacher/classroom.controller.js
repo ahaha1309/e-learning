@@ -4,6 +4,7 @@ const Classroom = require('../../models/Classroom');
 const ClassroomMember = require('../../models/ClassroomMember');
 const Category = require('../../models/Category');
 const { computeGradebook } = require('../../services/gradebook.service');
+const meetingService = require('../../services/meeting.service');
 
 function formatValidationErrors(req) {
   const result = validationResult(req);
@@ -26,12 +27,10 @@ async function renderClassroomIndex(req, res, next) {
 
 async function renderCreateClassroom(req, res, next) {
   try {
-    const categories = await Category.find().sort({ name: 1 });
     return res.render('teacher/classrooms/new', {
-      title: 'Create classroom',
+      title: 'Tạo lớp học',
       errorMessage: null,
       formData: {},
-      categories,
     });
   } catch (error) {
     next(error);
@@ -42,12 +41,10 @@ async function createClassroomHandler(req, res, next) {
   try {
     const validationMessage = formatValidationErrors(req);
     if (validationMessage) {
-      const categories = await Category.find().sort({ name: 1 });
       return res.status(422).render('teacher/classrooms/new', {
-        title: 'Create classroom',
+        title: 'Tạo lớp học',
         errorMessage: validationMessage,
         formData: req.body,
-        categories,
       });
     }
 
@@ -56,12 +53,10 @@ async function createClassroomHandler(req, res, next) {
       description: req.body.description || '',
       teacher: req.user.id,
       approvalRequired: req.body.approvalRequired !== 'false',
-      category: req.body.category || null,
-      level: req.body.level || 'Beginner',
     });
 
     await classroom.save();
-    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Classroom created.')}`);
+    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Đã tạo lớp học thành công.')}`);
   } catch (error) {
     return next(error);
   }
@@ -78,11 +73,14 @@ async function renderClassroomDetail(req, res, next) {
     }
 
     const members = await ClassroomMember.find({ classroom: classroom.id }).populate('student').sort({ requestedAt: -1 });
+    const io = req.app.get('io');
+    const activeMeeting = await meetingService.getActiveOrUpcomingMeeting(classroom.id, io);
 
     return res.render('teacher/classrooms/show', {
       title: classroom.name,
       classroom,
       members,
+      activeMeeting,
       feedback: req.query.feedback || null,
     });
   } catch (error) {
@@ -100,19 +98,14 @@ async function renderEditClassroom(req, res, next) {
       });
     }
 
-    const categories = await Category.find().sort({ name: 1 });
-
     return res.render('teacher/classrooms/edit', {
-      title: 'Edit classroom',
+      title: 'Chỉnh sửa lớp học',
       classroom,
       errorMessage: null,
-      categories,
       formData: {
         name: classroom.name,
-        description: classroom.description,
+        description: classroom.description || '',
         approvalRequired: classroom.approvalRequired ? 'true' : 'false',
-        category: classroom.category ? classroom.category.toString() : '',
-        level: classroom.level || 'Beginner',
       },
     });
   } catch (error) {
@@ -133,11 +126,28 @@ async function updateClassroomHandler(req, res, next) {
     classroom.name = req.body.name;
     classroom.description = req.body.description || '';
     classroom.approvalRequired = req.body.approvalRequired !== 'false';
-    classroom.category = req.body.category || null;
-    classroom.level = req.body.level || 'Beginner';
 
     await classroom.save();
-    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Settings saved.')}`);
+    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Đã lưu thay đổi.')}`);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function deleteClassroomHandler(req, res, next) {
+  try {
+    const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
+    if (!classroom) {
+      return res.status(404).render('errors/404', {
+        title: 'Classroom not found',
+        path: req.originalUrl,
+      });
+    }
+
+    classroom.isArchived = true;
+    await classroom.save();
+
+    return res.redirect(`/teacher/classrooms?feedback=${encodeURIComponent('Đã xóa lớp học thành công.')}`);
   } catch (error) {
     return next(error);
   }
@@ -313,6 +323,7 @@ module.exports = {
   renderClassroomDetail,
   renderEditClassroom,
   updateClassroomHandler,
+  deleteClassroomHandler,
   approveMemberHandler,
   rejectMemberHandler,
   removeMemberHandler,

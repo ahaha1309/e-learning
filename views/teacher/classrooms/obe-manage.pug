@@ -1,0 +1,155 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    //- Header
+    header.flex.flex-col.gap-4.mb-8
+      nav.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.flex.items-center.gap-2(aria-label='Breadcrumbs')
+        a.hover_text-primary.transition-colors(href='/teacher/classrooms') Lớp học giảng dạy
+        span(class="text-muted-foreground/40") /
+        a.hover_text-primary.transition-colors(href='/teacher/classrooms/' + classroom._id)= classroom.name
+        span(class="text-muted-foreground/40") /
+        span.text-foreground Cấu hình Chuẩn đầu ra OBE
+      
+      div.flex.flex-col.md_flex-row.md_items-center.justify-between.gap-6
+        div
+          h1.font-extrabold.tracking-tighter(style='font-size:clamp(2rem,5vw,2.5rem);line-height:1.1;')
+            | Cấu hình Chuẩn đầu ra OBE
+          p.text-muted-foreground.mt-2(style='font-size:0.9375rem;') Quản lý chuẩn môn học (CLO), liên kết với chương trình (PLO) và gán trọng số cho từng câu hỏi thi.
+
+        a.btn-outline.h-10.px-4.rounded-xl.inline-flex.items-center.gap-2(href='/teacher/classrooms/' + classroom._id)
+          i.ph-bold.ph-arrow-left
+          | Quay lại Lớp học
+
+    .grid.grid-cols-1.lg_grid-cols-3.gap-8
+      
+      //- Left: Create CLO form & List of existing CLOs
+      .lg_col-span-1.space-y-8
+        //- Add CLO Form
+        div(class="glass-panel p-6 rounded-2xl border border-border/60")
+          h3.text-base.font-extrabold.tracking-tight.mb-4 Thêm chuẩn đầu ra mới (CLO)
+          
+          form#create-clo-form.space-y-4
+            div
+              label.block.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2(for='clo-code') Mã CLO
+              input#clo-code.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-2.text-sm.focus_outline-none.focus_border-primary(type='text', placeholder='Ví dụ: CLO1', required=true)
+            
+            div
+              label.block.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2(for='clo-desc') Mô tả chuẩn đầu ra
+              textarea#clo-desc.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-2.text-sm.focus_outline-none.focus_border-primary(rows=3, placeholder='Ví dụ: Khả năng tính động năng $W_d = \\frac{1}{2}mv^2$ của một vật chuyển động...', required=true)
+            
+            div
+              label.block.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2(for='clo-threshold') Ngưỡng đạt (%)
+              input#clo-threshold.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-2.text-sm.focus_outline-none.focus_border-primary(type='number', min=1, max=100, value=50, required=true)
+
+
+            
+            button.btn-primary.w-full.h-10.rounded-xl.font-bold(type='submit') Tạo chuẩn đầu ra
+
+        //- Existing CLOs List
+        div(class="glass-panel p-6 rounded-2xl border border-border/60")
+          h3.text-base.font-extrabold.tracking-tight.mb-4 Danh sách chuẩn môn học (CLOs)
+          
+          #clos-list.space-y-3
+            if clos.length === 0
+              p.text-xs.text-muted-foreground.text-center.py-4 Chưa có CLO nào được thiết lập.
+            else
+              each clo in clos
+                div(class="p-3 rounded-xl border border-border/60 bg-muted/30 space-y-1", id='clo-node-' + clo._id)
+                  div(class="flex items-center justify-between")
+                    span(class="px-2 py-0.5 rounded-md bg-primary/10 text-primary font-bold text-xs")= clo.code
+                    span.text-xs.text-muted-foreground Ngưỡng đạt: #{clo.passThreshold}%
+                  p.text-xs.text-foreground.leading-normal.markdown-content= clo.description
+                  if clo.mappedPLOs && clo.mappedPLOs.length > 0
+                    div(class="flex flex-wrap gap-1 mt-2")
+                      each map in clo.mappedPLOs
+                        span(class="px-1.5 py-0.5 rounded bg-info/10 text-info font-mono font-bold", style='font-size:0.6rem;')
+                          | #{map.plo ? map.plo.code : 'PLO'} (w: #{map.weight})
+
+      //- Right: Exam List
+      .lg_col-span-2.space-y-6
+        div(class="glass-panel p-6 rounded-2xl border border-border/60")
+          h3.text-base.font-extrabold.tracking-tight.mb-1 Danh sách Bài kiểm tra (Exams)
+          p.text-xs.text-muted-foreground.mb-6 Chọn bài kiểm tra để thiết lập trọng số ảnh hưởng của mỗi câu hỏi tới kết quả chuẩn đầu ra (CLO).
+
+          if exams.length === 0
+            .text-center.py-12
+              .w-12.h-12.rounded-xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-4
+                i.ph-fill.ph-exam.text-2xl.text-muted-foreground/40
+              p.text-sm.font-bold.text-muted-foreground Chưa có bài kiểm tra nào
+              p.text-xs.text-muted-foreground.mt-1 Hãy tạo bài kiểm tra trước khi cấu hình OBE.
+          else
+            .space-y-3
+              each exam in exams
+                div(class="p-4 rounded-xl border border-border/60 bg-muted/20 flex flex-col sm_flex-row sm_items-center justify-between gap-4")
+                  div
+                    h4.text-sm.font-bold.text-foreground= exam.title
+                    p.text-xs.text-muted-foreground #{exam.questionCount || 0} câu hỏi
+                  a.btn-outline.h-9.px-4.rounded-lg.inline-flex.items-center.gap-2.text-xs.font-bold(href=`/teacher/classrooms/${classroom._id}/obe/exams/${exam._id}`)
+                    i.ph-bold.ph-sliders-horizontal
+                    | Cấu hình OBE
+
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      // Setup CSRF headers
+      const csrfToken = '#{csrfToken}';
+
+      // 1. Render KaTeX formulas in description list
+      function renderMathOnContent() {
+        if (window.renderMathInElement) {
+          document.querySelectorAll('.markdown-content, .markdown-content p').forEach(el => {
+            try {
+              window.renderMathInElement(el, {
+                delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false},
+                  {left: '\\(', right: '\\)', display: false},
+                  {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+              });
+            } catch (e) {}
+          });
+        }
+      }
+      renderMathOnContent();
+
+
+
+      // 3. Create CLO Form Handler
+      const cloForm = document.getElementById('create-clo-form');
+      if (cloForm) {
+        cloForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const code = document.getElementById('clo-code').value.trim();
+          const description = document.getElementById('clo-desc').value.trim();
+          const passThreshold = document.getElementById('clo-threshold').value;
+
+          const mappedPLOs = [];
+
+          try {
+            const res = await fetch(window.location.pathname + '/clos', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken,
+                'CSRF-Token': csrfToken
+              },
+              body: JSON.stringify({ _csrf: csrfToken, code, description, mappedPLOs, passThreshold })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              showToast('Tạo chuẩn đầu ra thành công!', 'success');
+              setTimeout(() => window.location.reload(), 1000);
+            } else {
+              showToast(data.error || 'Có lỗi xảy ra', 'error');
+            }
+          } catch (err) {
+            showToast('Lỗi kết nối máy chủ.', 'error');
+          }
+        });
+      }
+
+    });

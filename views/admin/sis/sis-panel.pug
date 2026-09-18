@@ -1,0 +1,61 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-6xl.mx-auto.space-y-8.pb-8
+    header.flex.flex-col.gap-2
+      h1.text-3xl.font-extrabold.tracking-tighter Tích hợp Hệ thống Trường học (SIS)
+      p.text-base.text-muted-foreground Quản lý đồng bộ danh sách học sinh và xuất bảng điểm tín chỉ môn học.
+
+    .grid.grid-cols-1.lg_grid-cols-2.gap-8
+      //- Import Roster
+      .bento-card.p-6.space-y-6
+        div(class="flex items-center gap-3 mb-2")
+          div(class="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center")
+            i.ph-bold.ph-user-plus.text-xl
+          div
+            h2.text-lg.font-extrabold.tracking-tight Nhập danh sách lớp học (Import)
+            p.text-xs.text-muted-foreground Đăng ký và ghi danh hàng loạt sinh viên từ tệp CSV
+
+        form(action='/admin/sis/import', method='POST', enctype='multipart/form-data', class='space-y-4')
+          input(type='hidden', name='_csrf', value=csrfToken)
+          
+          div
+            label.block.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2 Chọn lớp học nhận học viên
+            select(name='classroomId', class='w-full bg-muted border border-border rounded-xl px-4 py-2 text-sm focus_outline-none focus_border-primary', required=true)
+              each cls in classrooms
+                option(value=cls._id)= `${cls.name} (${cls.code || 'Mã lớp'})`
+          
+          div
+            label.block.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2 Chọn tệp danh sách (.csv)
+            input(type='file', name='rosterFile', accept='.csv', class='w-full text-sm file_mr-4 file_py-2 file_px-4 file_rounded-xl file_border-0 file_text-xs file_font-semibold file_bg-primary/10 file_text-primary hover_file_bg-primary/20', required=true)
+          
+          div(class="p-4 rounded-xl bg-muted/40 border border-border/60 text-xs text-muted-foreground space-y-2")
+            p.font-bold Định dạng tệp CSV yêu cầu:
+            pre(class="font-mono p-2 bg-background rounded border border-border/40")
+              | MSSV,Name,Email
+              | 20110321,Nguyen Van A,nva@student.edu.vn
+              | 20110322,Tran Thi B,ttb@student.edu.vn
+          
+          button.btn-primary.w-full.h-11.rounded-xl.font-bold(type='submit') Bắt đầu nhập dữ liệu
+
+      //- Export Gradebook
+      .bento-card.p-6.space-y-6
+        div(class="flex items-center gap-3 mb-2")
+          div(class="w-10 h-10 rounded-xl bg-info/10 text-info flex items-center justify-center")
+            i.ph-bold.ph-file-arrow-down.text-xl
+          div
+            h2.text-lg.font-extrabold.tracking-tight Xuất bảng điểm tín chỉ (Export)
+            p.text-xs.text-muted-foreground Tải xuống bảng điểm môn học quy đổi theo hệ 10, hệ chữ và GPA hệ 4
+
+        .space-y-3.max-h-96.overflow-y-auto.pr-2
+          if classrooms.length === 0
+            p.text-sm.text-muted-foreground.text-center.py-8 Chưa có lớp học nào hoạt động
+          else
+            each cls in classrooms
+              div(class="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/20")
+                div
+                  p.text-sm.font-bold.text-foreground= cls.name
+                  p.text-xs.text-muted-foreground Mã lớp: #{cls.code || '—'}
+                a.btn-outline.btn-xs.h-8.px-3.rounded-lg.inline-flex.items-center.gap-1.text-xs.font-bold(href='/admin/sis/export/' + cls._id)
+                  i.ph-bold.ph-download-simple
+                  | Tải Bảng Điểm

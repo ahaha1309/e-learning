@@ -24,7 +24,7 @@ block content
           i.ph-bold.ph-x.text-lg
           | Hủy
 
-    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments')
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments', enctype='multipart/form-data')
       input(type='hidden', name='_csrf', value=csrfToken)
 
       //- Main Content Col
@@ -37,11 +37,17 @@ block content
           .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
             .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
               span.font-bold.text-sm 1
-            h3.text-lg.font-bold Thông tin cơ bản
+            h3.text-lg.font-bold Thông tin cơ bản & Đính kèm
 
           .space-y-2
             label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='title') Tiêu đề Bài tập
             input#title.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='title', value=formData.title || '', placeholder='ví dụ: Thiết kế REST API — Bài tập về nhà', required)
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Bài tập
+            select#type.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='type')
+              option(value='upload', selected=(formData.type !== 'quiz')) Nộp tệp đính kèm
+              option(value='quiz', selected=(formData.type === 'quiz')) Trắc nghiệm
 
           .space-y-2
             label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Mô tả Ngắn
@@ -49,7 +55,12 @@ block content
 
           .space-y-2
             label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='instructions') Hướng dẫn Chi tiết
-            textarea#instructions.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='instructions', rows='8', placeholder='Cung cấp hướng dẫn từng bước, yêu cầu, hướng dẫn định dạng và bất kỳ tài nguyên nào học sinh cần...')= formData.instructions || ''
+            textarea#instructions.tinymce.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='instructions', rows='8', placeholder='Cung cấp hướng dẫn từng bước, yêu cầu, hướng dẫn định dạng và bất kỳ tài nguyên nào học sinh cần...')= formData.instructions || ''
+
+          #attachment-block.space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='attachmentFiles') Tệp đính kèm / File Hướng dẫn (Tùy chọn)
+            input#attachmentFiles.w-full.p-3.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='file', name='attachmentFiles', multiple=true)
+            p.text-xs.text-muted-foreground Cho phép tải lên tệp đính kèm hướng dẫn (PDF, Word, Excel, PowerPoint, Ảnh, Text, Code, ZIP...). Tối đa 5 tệp, 50MB/tệp.
 
         //- Step 2: Grading & Timeline
         .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
@@ -117,6 +128,8 @@ block content
               span.text-muted-foreground Xuất bản
               span.font-medium#summary-publish Có
 
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+    script(src='/js/tinymce-config.js')
     script.
       document.addEventListener('DOMContentLoaded', function() {
         var pointsInput = document.getElementById('totalPoints');
@@ -131,4 +144,14 @@ block content
         if (publishCheck) publishCheck.addEventListener('change', function() {
           document.getElementById('summary-publish').textContent = this.checked ? 'Có' : 'Không';
         });
+
+        var typeSelect = document.getElementById('type');
+        var attachmentBlock = document.getElementById('attachment-block');
+        if (typeSelect && attachmentBlock) {
+          const toggleAttachment = () => {
+            attachmentBlock.style.display = typeSelect.value === 'quiz' ? 'none' : 'block';
+          };
+          typeSelect.addEventListener('change', toggleAttachment);
+          toggleAttachment();
+        }
       });

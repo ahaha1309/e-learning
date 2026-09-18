@@ -51,15 +51,19 @@ block content
               option(value='multiple_choice') Trắc nghiệm (Một đáp án đúng)
               option(value='multiple_answer') Nhiều đáp án (Nhiều đáp án đúng)
               option(value='essay') Tự luận / Văn bản mở
+
+          if exam.isCoding
+            #is-coding-container.space-y-2.hidden
+              label.inline-flex.items-center.gap-2.cursor-pointer
+                input#isCoding.rounded.border-border(type='checkbox', name='isCoding', value='true')
+                span.text-sm.font-medium Đây là câu hỏi lập trình (sử dụng trình soạn thảo code)
+
           div
             label.text-sm.font-medium(for='content') Nội dung Câu hỏi
             textarea#content.tinymce.mt-2(name='content', rows='3')
-          .grid.grid-cols-1.gap-4(class='sm_grid-cols-2')
+          .grid.grid-cols-1.gap-4
             div
-              label.text-sm.font-medium(for='points') Điểm
-              input#points.mt-2(type='number', name='points', value='1', required, min='0')
-            div
-              label.text-sm.font-medium(for='order') Thứ tự
+              label.text-sm.font-medium(for='order') Thứ tự (Tùy chọn)
               input#order.mt-2(type='number', name='order', value='0')
 
           #options-container.border.border-dashed.border-border.p-4.rounded-xl
@@ -75,23 +79,22 @@ block content
 
           button.btn-primary(type='submit') Thêm Câu hỏi
 
-    h2.text-lg.font-bold.mb-4 Các Câu hỏi Hiện tại
+    h2.text-lg.font-bold.mb-4 Các Câu hỏi Hiện tại (Tổng số: <span id="question-count">#{questions.length}</span>)
     if questions.length
       .space-y-3
         each question, index in questions
-          article.card.p-4
+          article.card.p-4(id='question-' + question.id, data-question-id=question.id)
             .flex.items-start.justify-between.gap-4
               div
-                p.text-sm.font-medium Câu #{index + 1}. [#{question.type}] (#{question.points} điểm)
+                p.text-sm.font-medium
+                  | Câu <span class="q-index">#{index + 1}</span>. [#{question.type === 'essay' && question.isCoding ? 'Lập trình' : (question.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm')}]
                 div.mt-1.text-sm !{question.content}
                 if question.type === 'multiple_choice' || question.type === 'multiple_answer'
                   ul.text-xs.text-muted-foreground.mt-2.pl-4
                     each opt in question.options
                       li(class=opt.isCorrect ? 'text-success font-bold' : '') #{opt.text} #{opt.isCorrect ? '(Đúng)' : ''}
-              form(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions/' + question.id + '/delete', onsubmit='return confirm("Xóa câu hỏi này?");')
-                input(type='hidden', name='_csrf', value=csrfToken)
-                button.btn-ghost.btn-sm.text-destructive(type='submit')
-                  i.ph-bold.ph-trash
+              button.btn-ghost.btn-sm.text-destructive(type='button', onclick='deleteQuestion("' + classroom.id + '", "' + exam.id + '", "' + question.id + '", this)')
+                i.ph-bold.ph-trash
     else
       p.text-sm.text-muted-foreground Chưa có câu hỏi nào được thêm.
 
@@ -101,5 +104,70 @@ block content
     function toggleOptions() {
       var type = document.getElementById('type').value;
       document.getElementById('options-container').style.display = type === 'essay' ? 'none' : 'block';
+      var isCodingContainer = document.getElementById('is-coding-container');
+      if (isCodingContainer) {
+        isCodingContainer.style.display = type === 'essay' ? 'block' : 'none';
+      }
     }
     toggleOptions();
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var typeSelect = document.getElementById('type');
+      var checkboxes = document.querySelectorAll('input[name="optionCorrect[]"]');
+
+      checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          if (typeSelect.value === 'multiple_choice' && this.checked) {
+            checkboxes.forEach(function(cb) {
+              if (cb !== checkbox) cb.checked = false;
+            });
+          }
+        });
+      });
+
+      typeSelect.addEventListener('change', function() {
+        if (this.value === 'multiple_choice') {
+          var checkedCount = 0;
+          checkboxes.forEach(function(cb) {
+            if (cb.checked) {
+              if (checkedCount > 0) cb.checked = false;
+              checkedCount++;
+            }
+          });
+        }
+      });
+    });
+
+    async function deleteQuestion(classroomId, examId, questionId, btn) {
+      if (!confirm('Xóa câu hỏi này?')) return;
+      btn.disabled = true;
+      try {
+        const response = await fetch(`/teacher/classrooms/${classroomId}/exams/${examId}/questions/${questionId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+          }
+        });
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById('question-' + questionId).remove();
+          // Update indices
+          const qIndices = document.querySelectorAll('.q-index');
+          qIndices.forEach((el, idx) => {
+            el.textContent = idx + 1;
+          });
+          const qCount = document.getElementById('question-count');
+          if (qCount) qCount.textContent = qIndices.length;
+          // Show success toast if you have one, or simple alert
+          alert('Xóa câu hỏi thành công!');
+        } else {
+          alert(result.message || 'Lỗi khi xóa câu hỏi.');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Có lỗi xảy ra khi xóa câu hỏi.');
+        btn.disabled = false;
+      }
+    }

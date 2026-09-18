@@ -5,6 +5,8 @@ const {
   renderCreateExam,
   createExamHandler,
   renderExamDetail,
+  renderEditExam,
+  updateExamHandler,
   renderManageQuestions,
   addQuestionHandler,
   deleteQuestionHandler,
@@ -18,13 +20,16 @@ const {
   renderImportPage,
   bulkImportQuestionsHandler,
 } = require('../controller/teacher/examImport.controller');
+const { uploadExamFile } = require('../middleware/examUpload');
 
 const router = express.Router({ mergeParams: true });
 
 router.get('/', classroomIdRules, renderExamIndex);
 router.get('/new', classroomIdRules, renderCreateExam);
-router.post('/', classroomIdRules, createExamHandler);
+router.post('/', classroomIdRules, uploadExamFile, createExamHandler);
 router.get('/:examId', classroomIdRules, renderExamDetail);
+router.get('/:examId/edit', classroomIdRules, renderEditExam);
+router.post('/:examId/edit', classroomIdRules, uploadExamFile, updateExamHandler);
 router.get('/:examId/questions', classroomIdRules, renderManageQuestions);
 router.post('/:examId/questions', classroomIdRules, addQuestionHandler);
 router.post('/:examId/questions/:questionId/delete', classroomIdRules, deleteQuestionHandler);

@@ -30,11 +30,23 @@ block content
                 .flex.flex-wrap.items-center.gap-3.mt-3
                   span.badge-warning= assignment.totalPoints + ' điểm'
                   span.text-xs.text-muted-foreground Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
-            .flex.flex-wrap.gap-2.mt-4.pt-4.border-t.border-border
-              a.btn-secondary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment.id}`)
+            .flex.flex-wrap.items-center.gap-2.mt-4.pt-4.border-t.border-border
+              a.btn-secondary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment._id || assignment.id}`)
                 | Mở bài tập
-              a.btn-primary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment.id}/submission/new`)
-                i.ph-bold.ph-upload-simple
-                | Nộp bài
+              if assignment.mySubmission
+                a.btn-success.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment._id || assignment.id}/submission`)
+                  i.ph-bold.ph-check-circle
+                  | Đã nộp bài
+              else if assignment.isExpired
+                span.inline-flex.items-center.rounded-xl.text-xs.font-extrabold.border(class='gap-1.5 px-3 py-1.5 bg-rose-500/10 text-rose-400 border-rose-500/20')
+                  i.ph-bold.ph-flag.text-sm
+                  | 🚩 Hết hạn nộp bài
+              else
+                a.btn-primary.btn-sm(href=`/student/classrooms/${membership.classroom.id}/assignments/${assignment._id || assignment.id}/submission/new`)
+                  i.ph-bold.ph-upload-simple
+                  if assignment.isPastDue
+                    | Nộp bài muộn
+                  else
+                    | Nộp bài
     else
       +emptyState({ icon: 'ph-fill ph-file-text', title: 'Chưa có bài tập nào', desc: 'Bài tập sẽ xuất hiện ở đây khi giảng viên của bạn xuất bản chúng. Vui lòng quay lại sau, hoặc khám phá các lớp học khác của bạn để xem bài tập khác.', ctaText: 'Duyệt các lớp học', ctaHref: '/student/classrooms' })

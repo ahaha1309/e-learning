@@ -1,0 +1,257 @@
+extends ../layouts/base
+
+block content
+  #meeting-room-config(
+    data-meeting-id=meeting.id,
+    data-classroom-id=classroom.id,
+    data-user-id=currentUser.id,
+    data-user-name=currentUser.name,
+    data-user-role=currentUser.role
+  )
+
+  //- Pre-join Lobby (Sảnh chờ Microsoft Teams)
+  #teams-prejoin-lobby.fixed.inset-0.bg-slate-950.flex.items-center.justify-center.p-4(class='z-[10000] md_p-6')
+    .glass-panel.w-full.max-w-xl.bg-slate-900.border.border-slate-800.rounded-3xl.p-6.shadow-2xl.flex.flex-col.gap-6.animate-in.fade-in.zoom-in-95(class='md_p-8')
+      .text-center.space-y-2
+        .inline-flex.items-center.gap-2.px-3.py-1.rounded-full.bg-primary.text-primary-foreground(class='bg-[#5B5FC7]/20 text-[#7B83EB] text-xs font-bold border border-[#5B5FC7]/30')
+          i.ph-bold.ph-video-camera.text-sm
+          | Phòng họp trực tuyến
+        h2.text-2xl.font-black.text-white.tracking-tight= meeting.title
+        p.text-sm.text-slate-400= classroom.name + ' • Giáo viên: ' + (meeting.teacher ? meeting.teacher.name : 'Giáo viên')
+
+      //- Lobby Video Preview Box
+      .relative.w-full.aspect-video.bg-slate-950.rounded-2xl.overflow-hidden.border.border-slate-800.flex.items-center.justify-center.shadow-inner
+        video#lobby-video-preview.w-full.h-full.object-cover(autoplay=true, playsinline=true, muted=true)
+        #lobby-avatar-preview.flex.flex-col.items-center.justify-center.gap-3
+          .w-20.h-20.rounded-full.text-primary.flex.items-center.justify-center.font-black.text-3xl(class='bg-[#5B5FC7]/20 text-[#7B83EB] border-2 border-[#5B5FC7]/40')
+            = currentUser.name.charAt(0).toUpperCase()
+          p.text-sm.font-bold.text-slate-300= currentUser.name
+
+        .absolute.bottom-4.left-4.right-4.flex.items-center.justify-between.pointer-events-none
+          .backdrop-blur-md.px-3.rounded-full.text-xs.font-bold.text-white.border.border-white.flex.items-center(class='py-1.5 bg-black/60 border-white/10')
+            i.ph-bold.ph-user.text-sm
+            span= currentUser.name
+
+      //- Lobby Device Toggles
+      .flex.items-center.justify-center.gap-4
+        button#lobby-toggle-mic-btn.h-12.px-6.rounded-2xl.font-bold.text-sm.flex.items-center.gap-2.transition-all(
+          type='button',
+          class='bg-slate-800 text-slate-200 hover_bg-slate-700'
+        )
+          i.ph-bold.ph-microphone-slash.text-lg
+          span#lobby-mic-text Đã tắt Micro
+
+        button#lobby-toggle-cam-btn.h-12.px-6.rounded-2xl.font-bold.text-sm.flex.items-center.gap-2.transition-all(
+          type='button',
+          class='bg-slate-800 text-slate-200 hover_bg-slate-700'
+        )
+          i.ph-bold.ph-video-camera-slash.text-lg
+          span#lobby-cam-text Đã tắt Camera
+
+      //- Join Button
+      .flex.flex-col.gap-3.pt-2
+        button#lobby-join-now-btn.w-full.h-14.rounded-2xl.font-black.text-base.text-white.shadow-xl.flex.items-center.justify-center.gap-2.transition-all(
+          type='button',
+          class='bg-[#5B5FC7] hover_bg-[#4F52B2] hover_scale-[1.02]'
+        )
+          i.ph-bold.ph-sign-in.text-xl
+          | Tham gia cuộc họp ngay
+
+        a.text-xs.text-center.text-slate-400.transition-colors(
+          href=isTeacher ? '/teacher/classrooms/' + classroom.id : '/student/classrooms/' + classroom.id,
+          class='hover_text-slate-200'
+        ) Quay lại Lớp học
+
+      //- Waiting Approval Overlay for Student
+      #student-waiting-overlay.hidden.absolute.inset-0.bg-slate-950.z-30.flex.flex-col.items-center.justify-center.p-6.text-center.rounded-3xl
+        .w-20.h-20.rounded-full.flex.items-center.justify-center.mb-4.animate-bounce(class='bg-amber-500/20 text-amber-400 border-2 border-amber-500/40')
+          i.ph-bold.ph-hourglass-high.text-4xl
+        h2.text-xl.font-black.text-white.mb-2 Đang chờ Giảng viên duyệt...
+        p.text-sm.text-slate-400.max-w-md Yêu cầu tham gia cuộc họp của bạn đã được gửi. Vui lòng đợi Giảng viên chấp nhận để vào phòng.
+        button.mt-6.px-6.rounded-xl.bg-slate-800.text-xs.font-bold.text-slate-300(
+          type='button',
+          id='cancel-waiting-btn',
+          class='py-2.5 hover_bg-slate-700 hover_text-white cursor-pointer'
+        ) Hủy và Quay lại
+
+  //- Teams Live Meeting Room Container
+  .fixed.inset-0.bg-slate-950.flex.flex-col.overflow-hidden(class='z-[9999]')
+    //- Top Navigation Bar Header
+    header.h-14.px-5.border-b.border-slate-800.bg-slate-900.flex.items-center.justify-between.flex-shrink-0.z-20
+      .flex.items-center.gap-3
+        a.w-8.h-8.rounded-lg.flex.items-center.justify-center.bg-slate-800.text-slate-300.transition-colors(
+          href=isTeacher ? '/teacher/classrooms/' + classroom.id : '/student/classrooms/' + classroom.id,
+          class='hover_bg-slate-700 hover_text-white',
+          title='Quay lại Lớp học'
+        )
+          i.ph-bold.ph-arrow-left.text-sm
+        div
+          .flex.items-center(class='gap-2')
+            span.inline-flex.items-center.rounded-full.font-black.uppercase(class='bg-rose-500/20 text-rose-400 px-2 py-0.5 text-[10px] gap-1.5 border border-rose-500/30')
+              span.rounded-full.bg-rose-500.animate-ping(class='w-1.5 h-1.5')
+              | TRỰC TIẾP
+            h1.text-xs.font-extrabold.text-white.tracking-tight= meeting.title
+          p.text-xs.text-slate-400= classroom.name + ' • ' + (meeting.teacher ? meeting.teacher.name : 'Giáo viên')
+
+      //- Toast Notification Toast Overlay Container
+      #toast-notification-area.absolute.top-16.right-6.z-50.flex.flex-col.gap-2.pointer-events-none
+
+    //- Main Video Workspace Layout
+    main.flex-1.relative.bg-slate-950.overflow-hidden.flex.items-stretch
+      //- Floating Reactions Container
+      #floating-reactions-container.pointer-events-none.absolute.inset-0.z-30.overflow-hidden
+
+      //- 1. MODE BAN ĐẦU: NORMAL BALANCED GALLERY GRID (Mặc định khi CHƯA có ai chia sẻ màn hình)
+      #normal-gallery-grid.w-full.h-full.grid.grid-cols-1.gap-4.items-center.justify-center.p-4.overflow-y-auto(class='sm_grid-cols-2 lg_grid-cols-3 md_p-6')
+        //- Local User Video Tile in Gallery Grid
+        #local-user-tile.relative.bg-slate-900.rounded-3xl.overflow-hidden.border.border-slate-800.flex.items-center.justify-center.shadow-xl.group(class='min-h-[240px]')
+          video#local-video.w-full.h-full.object-cover.hidden(autoplay=true, playsinline=true, muted=true)
+          #local-avatar.flex.flex-col.items-center.justify-center.gap-3
+            .w-24.h-24.rounded-full.flex.items-center.justify-center.font-black.text-3xl(class='bg-[#5B5FC7]/20 text-[#7B83EB] border-2 border-[#5B5FC7]/40')
+              = currentUser.name.charAt(0).toUpperCase()
+            p.text-sm.font-bold.text-slate-200= currentUser.name
+          .absolute.bottom-4.left-4.backdrop-blur-md.rounded-full.font-bold.text-white.border.flex.items-center(class='px-3 py-1.5 gap-2 text-xs bg-black/70 border-white/10')
+            span#local-name-badge= currentUser.name + ' (Bạn)'
+            i#local-mic-icon.ph-bold.ph-microphone-slash.text-destructive.text-sm
+            span#local-hand-badge.hidden.text-base ✋
+
+      //- 2. MODE KHI CÓ CHIA SẺ MÀN HÌNH: PRESENTATION STAGE VIEW (Tự động kích hoạt khi có chia sẻ màn hình)
+      #presentation-stage-layout.hidden.w-full.h-full.flex.items-stretch
+        //- 🟢 CENTER STAGE (Shape Xanh Lá - Shared Screen Enlarged Stream)
+        #stage-container.flex-1.relative.bg-slate-950.flex.items-center.justify-center.overflow-hidden(class='p-1.5 md_p-2')
+          #stage-content-area.w-full.h-full.rounded-3xl.bg-slate-900.border.border-slate-800.flex.items-center.justify-center.relative.overflow-hidden.shadow-2xl
+            video#stage-video-stream.w-full.h-full.object-contain(autoplay=true, playsinline=true)
+            .absolute.left-3.backdrop-blur-md.px-3.rounded-t-xl.text-xs.font-bold.text-white.border-t.border-x.flex.items-center.gap-2.z-20(class='bottom-0 py-1 bg-black/85 border-white/10')
+              i.ph-bold.ph-screencast(class='text-[#7B83EB]')
+              span#stage-sharer-name Màn hình đang trình chiếu
+
+        //- 🌸 SIDEBAR STRIP (Shape Hồng + Shape Cam - Right Column)
+        aside.w-64.bg-slate-900.border-l.border-slate-800.p-3.flex.flex-col.justify-between.gap-3.flex-shrink-0(class='md_w-72')
+          //- Shape Hồng: Remote Participants List
+          .flex.flex-col.gap-2.flex-1.min-h-0
+            .flex.items-center.justify-between.px-1
+              span.font-extrabold.uppercase.tracking-wider.text-slate-400(class='text-[11px]') Thành viên khác
+              span#stage-sidebar-peer-count.font-mono.px-2.rounded-full.bg-slate-800.text-slate-300(class='text-[10px] py-0.5') 0
+
+            #stage-remote-peers-sidebar.flex-1.overflow-y-auto.space-y-3.pr-1
+              p#stage-no-peers-msg.text-xs.text-center.text-slate-500.py-8.font-medium Chưa có thành viên khác
+
+          //- Shape Cam: Fixed Bottom Right Self-Video Tile ("Bạn")
+          #stage-local-user-container.w-full.h-36.rounded-2xl.bg-slate-950.border-2.relative.overflow-hidden.shadow-xl.flex-shrink-0(class='border-[#5B5FC7]')
+            video#stage-local-video.w-full.h-full.object-cover.hidden(autoplay=true, playsinline=true, muted=true)
+            #stage-local-avatar.flex.flex-col.items-center.justify-center.h-full.gap-2
+              .w-12.h-12.rounded-full.flex.items-center.justify-center.font-black.text-base(class='bg-[#5B5FC7]/20 text-[#7B83EB] border border-[#5B5FC7]/40')
+                = currentUser.name.charAt(0).toUpperCase()
+              p.text-xs.font-bold.text-slate-300= currentUser.name
+            .absolute.bottom-2.left-2.backdrop-blur-md.rounded-full.font-bold.text-white.border.flex.items-center(class='px-2.5 gap-1.5 text-[11px] bg-black/70 border-white/10 py-1')
+              span= currentUser.name + ' (Bạn)'
+              i#stage-local-mic-icon.ph-bold.ph-microphone-slash.text-destructive.text-xs
+              span#stage-local-hand-badge.hidden.text-xs ✋
+
+      //- In-Meeting Chat Slide-over Panel
+      #meeting-chat-panel.hidden.absolute.top-4.right-4.bottom-4.w-80.bg-slate-900.rounded-3xl.shadow-2xl.flex.flex-col.overflow-hidden.border.border-slate-800.z-40(class='md_w-96')
+        .p-4.border-b.border-slate-800.bg-slate-950.flex.items-center.justify-between
+          .flex.items-center.gap-2.text-white
+            i.ph-bold.ph-chats.text-xl(class='text-[#7B83EB]')
+            h3.text-sm.font-bold Cuộc trò chuyện Teams
+          button.text-slate-400.hover_text-white(type='button', onclick="document.getElementById('meeting-chat-panel').classList.add('hidden')")
+            i.ph-bold.ph-x.text-lg
+        #meeting-chat-messages.flex-1.p-4.overflow-y-auto.space-y-3
+          p.text-xs.text-center.text-slate-400 Tin nhắn trong cuộc họp chỉ hiển thị với những người tham gia hiện tại.
+        form#meeting-chat-form.p-3.border-t.border-slate-800.bg-slate-950.flex.gap-2.m-0
+          input#meeting-chat-input.flex-1.bg-slate-900.border.border-slate-800.rounded-xl.px-4.py-2.text-sm.text-white.placeholder-slate-500(
+            class='focus_outline-none focus_border-[#5B5FC7]',
+            type='text',
+            placeholder='Gửi tin nhắn trong Teams...',
+            required=true,
+            autocomplete='off'
+          )
+          button.px-4.rounded-xl.flex.items-center.justify-center.text-white(type='submit', class='bg-[#5B5FC7] hover_bg-[#4F52B2]')
+            i.ph-bold.ph-paper-plane-tilt.text-base
+
+      //- Participants Slide-over Panel
+      #meeting-participants-panel.hidden.absolute.top-4.right-4.bottom-4.w-80.bg-slate-900.rounded-3xl.shadow-2xl.flex.flex-col.overflow-hidden.border.border-slate-800.z-40
+        .p-4.border-b.border-slate-800.bg-slate-950.flex.items-center.justify-between
+          .flex.items-center.gap-2.text-white
+            i.ph-bold.ph-users.text-xl(class='text-[#7B83EB]')
+            h3.text-sm.font-bold Danh sách người tham gia
+          button.text-slate-400.hover_text-white(type='button', onclick="document.getElementById('meeting-participants-panel').classList.add('hidden')")
+            i.ph-bold.ph-x.text-lg
+        if isTeacher
+          #waiting-approval-section.hidden.border-b.border-slate-800.p-3(class='bg-amber-500/10')
+            .flex.items-center.justify-between.mb-2
+              .flex.items-center.gap-2
+                span.text-base ⏳
+                h4.text-xs.font-extrabold.text-amber-400.uppercase.tracking-wider Yêu cầu tham gia
+              span#waiting-approval-count.px-2.rounded-full.text-amber-300.font-black(class='py-0.5 bg-amber-500/20 text-[10px]') 0
+            #waiting-approval-list.space-y-2
+
+          .p-3.border-b.border-slate-800.bg-slate-950
+            button#mute-all-btn.w-full.py-2.px-3.rounded-xl.bg-destructive.text-white.text-xs.font-bold.flex.items-center.justify-center.gap-2.shadow(
+              type='button',
+              class='hover_bg-destructive/90'
+            )
+              i.ph-bold.ph-microphone-slash.text-sm
+              | Tắt Micro tất cả học sinh
+        #meeting-participants-list.flex-1.p-4.overflow-y-auto.space-y-2
+
+    //- 💜 BOTTOM CONTROL BAR
+    footer.h-14.px-4.border-t.border-slate-800.bg-slate-900.flex.items-center.justify-center.flex-shrink-0.z-20(class='gap-2.5 md_h-16 md_px-6')
+      button#toggle-mic-btn.w-10.h-10.rounded-xl.bg-destructive.text-white.transition-all.flex.items-center.justify-center.shadow(
+        type='button',
+        title='Bật/Tắt Micro',
+        class='hover_scale-105'
+      )
+        i.ph-bold.ph-microphone-slash.text-lg
+
+      button#toggle-cam-btn.w-10.h-10.rounded-xl.bg-destructive.text-white.transition-all.flex.items-center.justify-center.shadow(
+        type='button',
+        title='Bật/Tắt Camera',
+        class='hover_scale-105'
+      )
+        i.ph-bold.ph-video-camera-slash.text-lg
+
+      button#toggle-screen-btn.w-10.h-10.rounded-xl.bg-slate-800.text-slate-200.transition-all.flex.items-center.justify-center.shadow(
+        type='button',
+        title='Chia sẻ màn hình',
+        class='hover_bg-slate-700 hover_scale-105'
+      )
+        i.ph-bold.ph-screencast.text-lg
+
+      .w-px.h-6.bg-slate-800.mx-1
+
+      button#toggle-raise-hand-btn.h-10.rounded-xl.text-xs.font-bold.transition-all.flex.items-center.shadow(
+        type='button',
+        title='Bấm để giơ tay phát biểu với Giảng viên',
+        class='px-3.5 gap-1.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 hover_bg-amber-500/30'
+      )
+        span.text-base ✋
+        span.hidden.sm_inline Giơ tay
+
+      button#toggle-chat-btn.relative.h-10.rounded-xl.text-xs.font-bold.text-slate-200.bg-slate-800.transition-all.flex.items-center.shadow(
+        type='button',
+        title='Mở khung chat',
+        class='px-3.5 gap-1.5 hover_bg-slate-700'
+      )
+        i.ph-bold.ph-chats.text-base
+        span.hidden.sm_inline Chat
+        span#unread-chat-badge.hidden.absolute.w-5.h-5.rounded-full.bg-destructive.text-white.font-black.flex.items-center.justify-center.shadow.animate-bounce(class='-top-1 -right-1 text-[10px]') 0
+
+      button#toggle-participants-btn.h-10.px-3.rounded-xl.text-xs.font-bold.text-slate-200.bg-slate-800.transition-all.flex.items-center.shadow(
+        type='button',
+        class='gap-1 hover_bg-slate-700'
+      )
+        i.ph-bold.ph-users.text-base
+        span#participant-count-badge 1
+
+      .w-px.h-6.bg-slate-800.mx-1
+
+      button#leave-meeting-btn.h-10.px-5.rounded-xl.bg-destructive.text-white.font-extrabold.text-xs.flex.items-center.shadow-lg(
+        type='button',
+        class='gap-1.5 hover_bg-destructive/90 hover_scale-105 transition-all'
+      )
+        i.ph-bold.ph-phone-disconnect.text-base
+        span Rời cuộc họp
+
+  script(src='/socket.io/socket.io.js')
+  script(src='/js/meeting-room.js')

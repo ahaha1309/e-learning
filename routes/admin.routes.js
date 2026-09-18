@@ -5,8 +5,9 @@ const { renderAdminDashboard, getDashboardApi } = require('../controller/admin/d
 const { listUsers, renderNewUser, createUser, renderEditUser, updateUser, deleteUser } = require('../controller/admin/user.controller');
 const { listStudents } = require('../controller/admin/student.controller');
 const { listClassrooms, showClassroom } = require('../controller/admin/classroom.controller');
-const { listExams, showExam } = require('../controller/admin/exam.controller');
-const { listAssignments, showAssignment } = require('../controller/admin/assignment.controller');
+const { listExams, showExam, renderAdminEditExam, updateAdminExamHandler } = require('../controller/admin/exam.controller');
+const { listAssignments, showAssignment, renderAdminEditAssignment, updateAdminAssignmentHandler } = require('../controller/admin/assignment.controller');
+const { uploadAssignmentFile } = require('../middleware/assignmentUpload');
 const { listDiscussions, showDiscussion } = require('../controller/admin/discussion.controller');
 const { listNotifications } = require('../controller/admin/notification.controller');
 const { renderSettings, updateSettingsHandler } = require('../controller/admin/setting.controller');
@@ -18,6 +19,7 @@ const {
 } = require('../controller/admin/teacherApproval.controller');
 const { listAuditLogs } = require('../controller/admin/audit.controller');
 const { teacherIdRules } = require('../validate/admin/teacherApproval.validate');
+const { renderSISPanel, importRosterHandler, exportGradesHandler } = require('../controller/admin/sis.controller');
 
 const router = express.Router();
 
@@ -150,10 +152,14 @@ router.post('/categories/:categoryId/delete', deleteCategory);
 // Exam management
 router.get('/exams', listExams);
 router.get('/exams/:examId', showExam);
+router.get('/exams/:examId/edit', renderAdminEditExam);
+router.post('/exams/:examId/edit', updateAdminExamHandler);
 
 // Assignment management
 router.get('/assignments', listAssignments);
 router.get('/assignments/:assignmentId', showAssignment);
+router.get('/assignments/:assignmentId/edit', renderAdminEditAssignment);
+router.post('/assignments/:assignmentId/edit', uploadAssignmentFile, updateAdminAssignmentHandler);
 
 // Discussion management
 router.get('/discussions', listDiscussions);
@@ -169,5 +175,10 @@ router.post('/settings', buildImageUpload(['logo', 'favicon']), updateSettingsHa
 
 // Audit Logs
 router.get('/audit', listAuditLogs);
+
+// SIS Integration
+router.get('/sis', renderSISPanel);
+router.post('/sis/import', require('multer')().single('rosterFile'), importRosterHandler);
+router.get('/sis/export/:classroomId', exportGradesHandler);
 
 module.exports = router;

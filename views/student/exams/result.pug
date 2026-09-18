@@ -33,7 +33,7 @@ block content
           article.card.p-6.mb-4
             .flex.items-center.justify-between.mb-6
               div
-                h2.text-lg.font-bold Lần thử #{submissions.length - idx}
+                h2.text-lg.font-bold Chi tiết Bài nộp
                 p.text-sm.text-muted-foreground Đã nộp lúc: #{sub.submittedAt ? sub.submittedAt.toLocaleString('en-GB') : 'N/A'}
               div.text-right
                 p.text-3xl.font-mono.font-bold.text-primary Điểm: #{sub.score} / #{exam.totalPoints}
@@ -41,19 +41,38 @@ block content
                   .progress.mt-2
                     .progress-bar(style='width:' + Math.round(sub.score / exam.totalPoints * 100) + '%')
 
-            h3.text-sm.font-semibold.text-muted-foreground.uppercase.tracking-wider.mb-4 Tóm tắt câu trả lời
-            .grid.gap-4
-              each ans, index in sub.answers
-                .p-4.rounded-xl.border.border-border
-                  strong.text-sm Q. #{ans.question ? ans.question.content.replace(/<[^>]+>/g, '') : 'Câu hỏi đã xóa'}
-                  if ans.question && ans.question.type === 'essay'
-                    p.text-sm.text-muted-foreground.mt-2 Bài tự luận của bạn đã được nộp. Đang chờ giảng viên chấm điểm.
-                  else
-                    .flex.justify-between.mt-2
-                      span.text-sm(class=ans.isCorrect ? 'text-success' : 'text-destructive')
-                        i(class=ans.isCorrect ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle')
-                        |  #{ans.isCorrect ? 'Đúng' : 'Sai'}
-                      span.text-sm.font-medium Điểm: #{ans.pointsAchieved} / #{ans.question ? ans.question.points : 0}
+            if exam.type === 'upload'
+              h3.text-sm.font-semibold.text-muted-foreground.uppercase.tracking-wider.mb-4 Tệp đã nộp
+              .p-4.rounded-xl.border.border-border
+                if sub.attachment && sub.attachment.url
+                  .flex.items-center.gap-3
+                    i.ph-bold.ph-file-text.text-2xl
+                    div
+                      a.text-primary.font-bold.hover_underline(href=sub.attachment.url, target='_blank')= sub.attachment.name
+                      p.text-xs.text-muted-foreground Kích thước: #{Math.round(sub.attachment.size / 1024)} KB
+                else
+                  p.text-sm.text-muted-foreground.italic Không có tệp nào được tải lên.
+                
+                if sub.teacherComment
+                  .mt-4.p-3.bg-muted.rounded-lg
+                    p.text-sm.font-bold Nhận xét của Giảng viên:
+                    p.text-sm.mt-1= sub.teacherComment
+
+            else
+              h3.text-sm.font-semibold.text-muted-foreground.uppercase.tracking-wider.mb-4 Tóm tắt câu trả lời
+              - var pointPerQuestion = sub.answers.length > 0 ? (exam.totalPoints / sub.answers.length) : 0;
+              .grid.gap-4
+                each ans, index in sub.answers
+                  .p-4.rounded-xl.border.border-border
+                    p.font-bold.text-sm Q. !{ans.question ? ans.question.content.replace(/&lt;/g, '<').replace(/&gt;/g, '>') : 'Câu hỏi đã xóa'}
+                    if ans.question && ans.question.type === 'essay'
+                      p.text-sm.text-muted-foreground.mt-2 Bài tự luận của bạn đã được nộp. Đang chờ giảng viên chấm điểm.
+                    else
+                      .flex.justify-between.mt-2
+                        span.text-sm(class=ans.isCorrect ? 'text-success' : 'text-destructive')
+                          i(class=ans.isCorrect ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle')
+                          |  #{ans.isCorrect ? 'Đúng' : 'Sai'}
+                        span.text-sm.font-medium Điểm: #{ans.pointsAchieved} / #{pointPerQuestion.toFixed(2)}
             if sub.violations && sub.violations.length > 0
               .mt-6
                 h4.text-sm.font-bold.text-destructive Nhật ký vi phạm

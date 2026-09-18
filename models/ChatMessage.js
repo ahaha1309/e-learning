@@ -16,8 +16,24 @@ const chatMessageSchema = new Schema(
     },
     content: {
       type: String,
-      required: true,
+      default: '',
       trim: true,
+    },
+    fileUrl: {
+      type: String,
+      default: null,
+    },
+    fileName: {
+      type: String,
+      default: null,
+    },
+    fileType: {
+      type: String,
+      default: null,
+    },
+    fileSize: {
+      type: Number,
+      default: 0,
     },
   },
   {

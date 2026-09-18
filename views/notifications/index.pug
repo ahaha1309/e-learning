@@ -25,26 +25,34 @@ block content
     if notifications.length > 0
       .card.overflow-hidden.animate-in.slide-in-up(style='animation-delay:100ms;')
         each notification in notifications
-          .notification-item(class=notification.isRead ? '' : 'notification-unread')
-            .flex.items-start.gap-3.flex-1.min-w-0
-              if !notification.isRead
-                .w-2.h-2.rounded-full.bg-primary.mt-2.flex-shrink-0
-              else
-                .w-2.h-2.rounded-full.bg-border.mt-2.flex-shrink-0
-              .flex-1.min-w-0
-                h3.text-sm.font-semibold(class=notification.isRead ? '' : 'text-primary')= notification.title
-                p.text-sm.text-muted-foreground.mt-1= notification.message
-                p.text-xs.text-muted-foreground.mt-2= notification.createdAt.toLocaleString()
-            .flex.items-center.gap-2.flex-shrink-0
-              if !notification.isRead
-                form(method='POST' action=`/notifications/${notification.id}/read`)
-                  input(type="hidden", name="_csrf", value=csrfToken)
-                  button.btn-ghost.btn-sm(type='submit', aria-label='Đánh dấu là đã đọc')
-                    i.ph-bold.ph-check
+          //- Each notification is a hidden form + clickable label that marks as read and redirects
+          .notification-item.relative(class=notification.isRead ? '' : 'notification-unread')
+            //- Hidden form for mark-as-read + redirect
+            form.hidden(
+              id=`notif-form-${notification.id}`,
+              method='POST',
+              action=`/notifications/${notification.id}/read`
+            )
+              input(type="hidden", name="_csrf", value=csrfToken)
+
+            //- Clickable row
+            button.flex.items-start.gap-3.w-full.text-left.transition-colors(
+              type='button',
+              onclick=`document.getElementById('notif-form-${notification.id}').submit()`,
+              style='background:none;border:none;cursor:pointer;padding:0;'
+            )
+              .flex.items-start.gap-3.flex-1.min-w-0
+                if !notification.isRead
+                  .w-2.h-2.rounded-full.bg-primary.mt-2.flex-shrink-0
+                else
+                  .w-2.h-2.rounded-full.bg-border.mt-2.flex-shrink-0
+                .flex-1.min-w-0
+                  h3.text-sm.font-semibold(class=notification.isRead ? '' : 'text-primary')= notification.title
+                  p.text-sm.text-muted-foreground.mt-1= notification.message
+                  p.text-xs.text-muted-foreground.mt-2= notification.createdAt.toLocaleString()
               if notification.link && notification.link !== '#'
-                a.btn-primary.btn-sm(href=notification.link)
-                  | Xem
-                  i.ph-bold.ph-arrow-right
+                .flex.items-center.flex-shrink-0.text-primary.opacity-50
+                  i.ph-bold.ph-arrow-right.text-sm
     else
       .empty-state.py-20
         .empty-state-icon

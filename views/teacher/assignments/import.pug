@@ -1,0 +1,163 @@
+extends ../../layouts/base
+
+block content
+  //- Hidden meta for JS
+  #import-meta(
+    data-target-id=assignment.id,
+    data-target-type="assignments",
+    data-classroom-id=classroom.id,
+    data-csrf=csrfToken,
+    hidden
+  )
+
+  .page.space-y-10
+
+    //- ── Page header ──────────────────────────────────────────────────────
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-6.animate-in.slide-in-up
+
+      div
+        nav.breadcrumb.mb-4
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/assignments') Bài tập
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id)= assignment.title
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Nhập Câu hỏi
+
+        h1.text-3xl.font-extrabold.tracking-tighter Nhập Câu hỏi
+        p.text-muted-foreground.mt-2.max-w-prose Tải lên tệp PDF hoặc DOCX và hệ thống sẽ tự động trích xuất từng câu hỏi. Xem lại và chỉnh sửa trước khi lưu.
+
+      a.btn-outline.rounded-full(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/questions')
+        i.ph-bold.ph-x(aria-hidden='true')
+        | Hủy
+
+    //- ── Step indicators ──────────────────────────────────────────────────
+    .import-steps(role='list')
+      button#step-upload-indicator.import-step(data-active='true', role='listitem', aria-current='step')
+        .import-step-num 1
+        span Tải lên Tệp
+      span.import-step-sep(aria-hidden='true')
+      button#step-preview-indicator.import-step(data-active='false', role='listitem')
+        .import-step-num 2
+        span Xem lại &amp; Chỉnh sửa
+      span.import-step-sep(aria-hidden='true')
+      button#step-confirm-indicator.import-step(data-active='false', role='listitem')
+        .import-step-num 3
+        span Tạo Câu hỏi
+
+    //- ── STEP 1: Upload ───────────────────────────────────────────────────
+    section#step-upload.glass-panel.p-8.rounded-2xl.space-y-6
+
+      h2.text-lg.font-bold Định dạng được Hỗ trợ
+      .grid.grid-cols-1.gap-3(class='sm_grid-cols-2 mb-2')
+        .flex.items-center.gap-3.p-4.rounded-xl.border.border-border.bg-muted(class='bg-opacity-40')
+          .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-destructive/10')
+            i.ph-bold.ph-file-pdf.text-xl.text-destructive(aria-hidden='true')
+          div
+            p.text-sm.font-bold PDF
+            p.text-xs.text-muted-foreground Tệp PDF xuất có cấu trúc Hỏi &amp; Đáp rõ ràng
+        .flex.items-center.gap-3.p-4.rounded-xl.border.border-border.bg-muted(class='bg-opacity-40')
+          .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-info/10')
+            i.ph-bold.ph-file-doc.text-xl.text-info(aria-hidden='true')
+          div
+            p.text-sm.font-bold DOCX
+            p.text-xs.text-muted-foreground Các tệp Microsoft Word .docx (không phải .doc cũ)
+
+      //- Drop zone
+      button#import-drop-zone.import-drop-zone(
+        type='button',
+        aria-label='Click to upload or drag and drop a PDF or DOCX file'
+      )
+        #parse-spinner.import-spinner(hidden, aria-hidden='true')
+          i.ph-bold.ph-circle-notch.text-3xl.text-primary.animate-spin(aria-hidden='true')
+        div(aria-hidden='true')
+          i.ph-bold.ph-upload-simple.text-4xl.text-muted-foreground
+        p.text-base.font-semibold.mt-3 Thả tệp của bạn vào đây
+        p.text-sm.text-muted-foreground.mt-1 hoặc nhấp để duyệt
+        p.text-xs.text-muted-foreground.mt-3 PDF · DOCX · Tối đa 50 MB
+        input#import-file-input(type='file', accept='.pdf,.docx', hidden, aria-hidden='true')
+
+      p.text-xs.text-muted-foreground.font-semibold.uppercase.tracking-widest.mt-4 Định dạng câu hỏi được hỗ trợ
+      .import-format-examples.space-y-2.text-xs.font-mono.text-muted-foreground
+        p Câu hỏi 1. HTTP là gì?
+        p.pl-4 A. Hyper Text Transfer Protocol
+        p.pl-4 B. Hyper Transfer Text Program
+        p.pl-4 C. Home Transfer Protocol
+        p.pl-4 D. Hyper Tool Protocol
+        p.mt-2 — hoặc —
+        p Câu 1. HTTP là gì?   — hoặc —   1. Nội dung câu hỏi...
+
+      p#upload-error.text-destructive.text-sm.font-medium.mt-2(hidden)
+
+    //- ── STEP 2: Preview & Edit ───────────────────────────────────────────
+    section#step-preview(hidden)
+
+      .flex.flex-col.sm_flex-row.sm_items-center.justify-between.gap-4.mb-6
+        div
+          h2.text-xl.font-bold Xem lại Câu hỏi
+          p#preview-count.text-sm.text-muted-foreground.mt-1 0 câu hỏi được phân tích
+
+
+
+      p#preview-errors.alert.alert-warning.mb-4(hidden)
+
+      #preview-list.space-y-4
+
+      .flex.justify-between.gap-3.mt-8.pt-6.border-t.border-border
+        button#back-to-upload.btn-outline.rounded-full(type='button')
+          i.ph-bold.ph-arrow-left(aria-hidden='true')
+          | Quay lại
+        button#proceed-to-confirm.btn-primary.rounded-full(type='button')
+          | Tiếp tục để Xem lại
+          i.ph-bold.ph-arrow-right(aria-hidden='true')
+
+    //- ── STEP 3: Confirm & Generate ──────────────────────────────────────
+    section#step-confirm.glass-panel.p-8.rounded-2xl.space-y-6(hidden)
+
+      .flex.flex-col.items-center.text-center.gap-4.py-6
+        .w-16.h-16.rounded-2xl.flex.items-center.justify-center(class='bg-primary/10')
+          i.ph-bold.ph-check-circle.text-4xl.text-primary(aria-hidden='true')
+        h2.text-2xl.font-bold Mọi thứ có vẻ ổn
+        p.text-muted-foreground.max-w-sm
+          | #[span#confirm-count.font-bold.text-foreground 0] câu hỏi đã sẵn sàng để thêm vào
+          span.font-bold.text-foreground  #{assignment.title}.
+        p.text-sm.text-muted-foreground Điều này không thể hoàn tác — nhưng bạn có thể xóa từng câu hỏi sau khi nhập.
+
+      p#generate-error.alert.alert-danger(hidden)
+
+      .flex.flex-col.sm_flex-row.gap-3.justify-center
+
+        button#back-to-preview.btn-outline.h-12.px-6.rounded-full(type='button')
+          i.ph-bold.ph-arrow-left(aria-hidden='true')
+          | Quay lại Xem lại
+
+        button#generate-btn.btn-primary.h-12.px-8.rounded-full(type='button')
+          span#generate-spinner(hidden)
+            i.ph-bold.ph-circle-notch.animate-spin(aria-hidden='true')
+          i.ph-bold.ph-rocket-launch(aria-hidden='true')
+          | Tạo Câu hỏi
+
+  //- ── CDN Libraries ────────────────────────────────────────────────────────
+  script(
+    src='https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js',
+    crossorigin='anonymous'
+  )
+  script(
+    src='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs',
+    type='module',
+    id='pdfjs-script'
+  )
+  script(type='module').
+    // Make pdfjsLib available globally for exam-import.js
+    import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs';
+    window.pdfjsLib = pdfjsLib;
+    // Load our import script after libraries are ready
+    var s = document.createElement('script');
+    s.src = '/js/exam-import.js';
+    document.body.appendChild(s);

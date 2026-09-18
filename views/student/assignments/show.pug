@@ -13,19 +13,50 @@ block content
         p.text-sm.text-muted-foreground.mt-3 Điểm: #{assignment.totalPoints}
 
     .card.p-6
-      p.text-lg.font-bold.mb-2 Hướng dẫn
-      p.text-muted.whitespace-pre-wrap= assignment.instructions || 'Chưa có hướng dẫn.'
+      p.text-lg.font-bold.mb-4 Hướng dẫn
+      if assignment.instructions
+        div.text-foreground.leading-relaxed.space-y-2!= assignment.instructions
+      else
+        p.text-muted-foreground Chưa có hướng dẫn.
 
-    .flex.gap-3.flex-wrap
+    if assignment.attachments && assignment.attachments.length > 0
+      .card.p-6
+        p.text-lg.font-bold.mb-4 Tệp đính kèm & File Hướng dẫn từ Giảng viên
+        .grid.grid-cols-1.sm_grid-cols-2.gap-4
+          each file in assignment.attachments
+            a.flex.items-center.justify-between.p-4.rounded-2xl.border.transition-all(href=file.fileUrl, download=true, target='_blank', class='bg-muted/40 border-border/60 hover_bg-muted/80 hover_border-primary/40')
+              .flex.items-center.gap-3.min-w-0
+                .w-10.h-10.rounded-xl.flex.items-center.justify-center.font-black.uppercase.text-xs.flex-shrink-0(class='bg-primary/10 text-primary')
+                  = file.fileType || 'FILE'
+                .min-w-0
+                  p.text-sm.font-bold.text-foreground.truncate= file.fileName
+                  p.text-xs.text-muted-foreground= Math.round((file.fileSize || 0) / 1024) + ' KB'
+              .w-8.h-8.rounded-lg.bg-background.flex.items-center.justify-center.text-muted-foreground
+                i.ph-bold.ph-download-simple.text-base
+
+    .flex.gap-3.flex-wrap.items-center
       - var isPastDue = assignment.dueDate && new Date() > new Date(assignment.dueDate)
+      - var isExpired = isPastDue && !assignment.allowLateSubmission && !submission
       if submission
         a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission') Xem bài nộp
-        if !isPastDue
-          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Chỉnh sửa bài nộp
+        if assignment.type !== 'quiz' && (!isPastDue || assignment.allowLateSubmission)
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new')
+            if isPastDue
+              | Chỉnh sửa bài nộp muộn
+            else
+              | Chỉnh sửa bài nộp
       else
-        if !isPastDue
-          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Nộp bài
+        if isExpired
+          span.px-4.py-2.rounded-full.text-rose-400.text-xs.font-extrabold.border.inline-flex.items-center.gap-2(class='bg-rose-500/10 border-rose-500/20')
+            i.ph-bold.ph-flag
+            | 🚩 Hết hạn nộp bài
         else
-          span.pill.opacity-50.cursor-not-allowed(title="Đã quá hạn nộp bài") Quá hạn nộp bài
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new')
+            if assignment.type === 'quiz'
+              | Làm bài trắc nghiệm
+            else if isPastDue
+              | Nộp bài muộn
+            else
+              | Nộp bài
       a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments') Quay lại danh sách bài tập
       a.pill(href='/student/classrooms/' + membership.classroom.id) Quay lại lớp học

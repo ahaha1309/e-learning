@@ -3,7 +3,8 @@ extends ../../layouts/base
 block content
   //- Hidden meta for JS
   #import-meta(
-    data-exam-id=exam.id,
+    data-target-id=exam.id,
+    data-target-type="exams",
     data-classroom-id=classroom.id,
     data-csrf=csrfToken,
     hidden
@@ -101,14 +102,7 @@ block content
           h2.text-xl.font-bold Xem lại Câu hỏi
           p#preview-count.text-sm.text-muted-foreground.mt-1 0 câu hỏi được phân tích
 
-        .flex.items-center.gap-3
-          label.text-sm.font-medium.text-muted-foreground(for='default-points') Điểm mỗi câu
-          input#default-points.w-20.h-10.text-center.font-bold.font-mono(
-            type='number',
-            value='1',
-            min='1',
-            max='100'
-          )
+
 
       p#preview-errors.alert.alert-warning.mb-4(hidden)
 

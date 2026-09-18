@@ -1,0 +1,1886 @@
+{
+  "Assignment": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "instructions": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "totalPoints": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "dueDate": {
+      "type": "Date",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "isPublished": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "allowLateSubmission": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "rubric": {
+      "type": "ObjectId",
+      "ref": "Rubric",
+      "required": false,
+      "index": false
+    },
+    "attachments": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "AttendanceRecord": {
+    "session": {
+      "type": "ObjectId",
+      "ref": "AttendanceSession",
+      "required": true,
+      "index": true
+    },
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "time": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "AttendanceSession": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "date": {
+      "type": "Date",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "currentCode": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "expiresAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "AuditLog": {
+    "action": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "user": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "targetModel": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "targetId": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "details": {
+      "type": "Mixed",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "ipAddress": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "userAgent": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Category": {
+    "name": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "slug": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "icon": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Certificate": {
+    "issuedTo": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "studentName": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "classroomName": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "finalPercent": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "letterGrade": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionSnapshot.isComplete": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionSnapshot.isPassing": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionSnapshot.met": {
+      "type": "[String]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionSnapshot.rules": {
+      "type": "Mixed",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "certificateNo": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "issuedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "revokedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "revokedReason": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "pdfUrl": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "ChatMessage": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "sender": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileUrl": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileName": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileType": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileSize": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Classroom": {
+    "name": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "code": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "approvalRequired": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isArchived": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": true
+    },
+    "gradeWeights": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "gradingScale": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionRules.requireAllItems": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionRules.minOverallPercent": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "completionRules.requiredItemTypes": {
+      "type": "[String]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "ClassroomMember": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "requestedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "approvedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "DirectMessage": {
+    "sender": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "recipient": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": false,
+      "index": true
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileUrl": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileName": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileType": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "fileSize": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isRead": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": true
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "DiscussionReply": {
+    "topic": {
+      "type": "ObjectId",
+      "ref": "DiscussionTopic",
+      "required": true,
+      "index": true
+    },
+    "author": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "DiscussionTopic": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "author": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": false
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "isPinned": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "replyCount": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Exam": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "duration": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "startTime": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "endTime": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "password": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "maxAttempts": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "showResult": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "strictMode": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isCoding": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "maxViolations": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "shuffle": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isPublished": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "totalPoints": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "questionCount": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "ExamSubmission": {
+    "exam": {
+      "type": "ObjectId",
+      "ref": "Exam",
+      "required": true,
+      "index": true
+    },
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "answers": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "score": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "essayScore": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "startedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "deadlineAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "attemptNumber": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "submittedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "violations": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "gradingStatus": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "FileAsset": {
+    "bucket": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "key": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "originalName": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "mimeType": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "sizeBytes": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "owner": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "scanResult": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "uploadedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Lecture": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "chapterTitle": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "summary": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "resourceUrl": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "resourceType": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "orderIndex": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isPublished": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Meeting": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "startTime": {
+      "type": "Date",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "endTime": {
+      "type": "Date",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "durationMinutes": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": true
+    },
+    "roomId": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Notification": {
+    "recipient": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "title": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "message": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "link": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isRead": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": true
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Outcome": {
+    "code": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "type": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "program": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": false,
+      "index": true
+    },
+    "mappedPLOs": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "passThreshold": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Question": {
+    "exam": {
+      "type": "ObjectId",
+      "ref": "Exam",
+      "required": true,
+      "index": true
+    },
+    "type": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "options": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "points": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "order": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "outcomeMappings": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isCoding": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "QuestionBank": {
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "subject": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "chapter": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "difficulty": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "tags": {
+      "type": "[String]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "type": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "content": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "options": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "points": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Rubric": {
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "name": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "criteria": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "maxPoints": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "StudentOutcomeResult": {
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "outcome": {
+      "type": "ObjectId",
+      "ref": "Outcome",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "achievedPercent": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "isPassed": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "lastCalculatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "StudentProgress": {
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "itemType": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "itemId": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "completedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "score": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "maxScore": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "submittedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "Submission": {
+    "assignment": {
+      "type": "ObjectId",
+      "ref": "Assignment",
+      "required": true,
+      "index": true
+    },
+    "classroom": {
+      "type": "ObjectId",
+      "ref": "Classroom",
+      "required": true,
+      "index": true
+    },
+    "teacher": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "student": {
+      "type": "ObjectId",
+      "ref": "User",
+      "required": true,
+      "index": true
+    },
+    "textAnswer": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "attachment": {
+      "type": "Embedded",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "submittedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "score": {
+      "type": "Number",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "teacherComment": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "gradedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "rubricGrades": {
+      "type": "[undefined]",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "SystemSetting": {
+    "key": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "value": {
+      "type": "Mixed",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "description": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  },
+  "User": {
+    "name": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "email": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": true
+    },
+    "passwordHash": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "role": {
+      "type": "String",
+      "ref": null,
+      "required": true,
+      "index": false
+    },
+    "status": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "provider": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "providerId": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": true
+    },
+    "phone": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "avatarUrl": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "emailNotifications": {
+      "type": "Boolean",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "refreshTokenHash": {
+      "type": "String",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "passwordChangedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "lastLoginAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "_id": {
+      "type": "ObjectId",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "createdAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    },
+    "updatedAt": {
+      "type": "Date",
+      "ref": null,
+      "required": false,
+      "index": false
+    }
+  }
+}

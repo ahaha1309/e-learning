@@ -15,6 +15,7 @@ const { renderAllStudentAssignments } = require('../controller/student/assignmen
 const { renderAllStudentExams } = require('../controller/student/exam.controller');
 const { renderAllStudentLectures } = require('../controller/student/lecture.controller');
 const { renderAllStudentDiscussions } = require('../controller/student/discussion.controller');
+const { renderStudentCalendar } = require('../controller/student/calendar.controller');
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.get('/assignments', renderAllStudentAssignments);
 router.get('/exams', renderAllStudentExams);
 router.get('/lectures', renderAllStudentLectures);
 router.get('/discussions', renderAllStudentDiscussions);
+router.get('/calendar', renderStudentCalendar);
 
 router.use('/classrooms', classroomRoutes);
 router.use('/classrooms/:classroomId/lectures', lectureRoutes);

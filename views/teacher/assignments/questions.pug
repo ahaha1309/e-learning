@@ -1,0 +1,138 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Giảng viên
+    h1.text-3xl.font-bold.tracking-tight Quản lý Câu hỏi
+    p.text-muted-foreground.mt-2 Bài tập: #{assignment.title}
+
+    .flex.gap-3.flex-wrap
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
+      a.pill.bg-primary.text-primary-foreground.border-primary(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/import', class='hover_bg-primary/90')
+        i.ph-bold.ph-upload-simple
+        | Nhập từ file DOCX/PDF
+
+    if feedback
+      .alert-success= feedback
+
+    .grid.grid-cols-1.gap-8(class='lg_grid-cols-[repeat(auto-fit,minmax(350px,1fr))] mb-8')
+      form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/questions')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        h2.text-lg.font-bold.mb-4 Thêm Câu hỏi Thủ công
+        .space-y-4
+          div
+            label.text-sm.font-medium(for='type') Loại Câu hỏi
+            select#type.mt-2(name='type', onchange='toggleOptions()')
+              option(value='multiple_choice') Trắc nghiệm (Một đáp án đúng)
+              option(value='multiple_answer') Nhiều đáp án (Nhiều đáp án đúng)
+              option(value='essay') Tự luận / Văn bản mở
+
+          div
+            label.text-sm.font-medium(for='content') Nội dung Câu hỏi
+            textarea#content.tinymce.mt-2(name='content', rows='3')
+          
+          .grid.grid-cols-1.gap-4
+            div
+              label.text-sm.font-medium(for='order') Thứ tự (Tùy chọn)
+              input#order.mt-2(type='number', name='order', value='0')
+
+          #options-container.border.border-dashed.border-border.p-4.rounded-xl
+            p.text-sm.font-medium.mb-3 Các Lựa chọn
+            #options-list.space-y-2
+              - for (var i = 1; i <= 4; i++)
+                .flex.items-center.gap-2
+                  input(type='text', name='optionText[]', placeholder='Nội dung lựa chọn ' + i, class='flex-1')
+                  label.inline-flex.items-center.gap-1.text-xs.cursor-pointer
+                    input(type='checkbox', name='optionCorrect[]', value=i - 1)
+                    | Đúng
+            p.text-xs.text-muted-foreground.mt-2 Đánh dấu vào ô bên cạnh các lựa chọn đúng.
+
+          button.btn-primary(type='submit') Thêm Câu hỏi
+
+    h2.text-lg.font-bold.mb-4 Các Câu hỏi Hiện tại (Tổng số: <span id="question-count">#{questions.length}</span>)
+    if questions.length
+      .space-y-3
+        each question, index in questions
+          article.card.p-4(id='question-' + question.id, data-question-id=question.id)
+            .flex.items-start.justify-between.gap-4
+              div
+                p.text-sm.font-medium
+                  | Câu <span class="q-index">#{index + 1}</span>. [#{question.type === 'essay' ? 'Tự luận' : 'Trắc nghiệm'}]
+                div.mt-1.text-sm !{question.content}
+                if question.type === 'multiple_choice' || question.type === 'multiple_answer'
+                  ul.text-xs.text-muted-foreground.mt-2.pl-4
+                    each opt in question.options
+                      li(class=opt.isCorrect ? 'text-success font-bold' : '') #{opt.text} #{opt.isCorrect ? '(Đúng)' : ''}
+              button.btn-ghost.btn-sm.text-destructive(type='button', onclick='deleteQuestion("' + classroom.id + '", "' + assignment.id + '", "' + question.id + '", this)')
+                i.ph-bold.ph-trash
+    else
+      p.text-sm.text-muted-foreground Chưa có câu hỏi nào được thêm.
+
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+  script(src='/js/tinymce-config.js')
+  script.
+    function toggleOptions() {
+      var type = document.getElementById('type').value;
+      document.getElementById('options-container').style.display = type === 'essay' ? 'none' : 'block';
+    }
+    toggleOptions();
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var typeSelect = document.getElementById('type');
+      var checkboxes = document.querySelectorAll('input[name="optionCorrect[]"]');
+
+      checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          if (typeSelect.value === 'multiple_choice' && this.checked) {
+            checkboxes.forEach(function(cb) {
+              if (cb !== checkbox) cb.checked = false;
+            });
+          }
+        });
+      });
+
+      typeSelect.addEventListener('change', function() {
+        if (this.value === 'multiple_choice') {
+          var checkedCount = 0;
+          checkboxes.forEach(function(cb) {
+            if (cb.checked) {
+              if (checkedCount > 0) cb.checked = false;
+              checkedCount++;
+            }
+          });
+        }
+      });
+    });
+
+    async function deleteQuestion(classroomId, assignmentId, questionId, btn) {
+      if (!confirm('Xóa câu hỏi này?')) return;
+      btn.disabled = true;
+      try {
+        const response = await fetch(`/teacher/classrooms/${classroomId}/assignments/${assignmentId}/questions/${questionId}/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+          }
+        });
+        const result = await response.json();
+        if (result.success) {
+          document.getElementById('question-' + questionId).remove();
+          // Update indices
+          const qIndices = document.querySelectorAll('.q-index');
+          qIndices.forEach((el, idx) => {
+            el.textContent = idx + 1;
+          });
+          const qCount = document.getElementById('question-count');
+          if (qCount) qCount.textContent = qIndices.length;
+          alert('Xóa câu hỏi thành công!');
+        } else {
+          alert(result.message || 'Lỗi khi xóa câu hỏi.');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Có lỗi xảy ra khi xóa câu hỏi.');
+        btn.disabled = false;
+      }
+    }

@@ -35,12 +35,28 @@
       span Lớp học
 
     a.shell-sidebar-link(
-      href='/catalog',
-      class=path && path.startsWith('/catalog') ? 'shell-sidebar-link-active' : '',
-      aria-current=path && path.startsWith('/catalog') ? 'page' : false
+      href='/student/assignments',
+      class=path && path.startsWith('/student/assignments') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/student/assignments') ? 'page' : false
     )
-      i.ph-bold.ph-compass.text-base(aria-hidden='true')
-      span Danh mục
+      i.ph-bold.ph-notebook.text-base(aria-hidden='true')
+      span Bài tập
+
+    a.shell-sidebar-link(
+      href='/student/exams',
+      class=path && path.startsWith('/student/exams') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/student/exams') ? 'page' : false
+    )
+      i.ph-bold.ph-exam.text-base(aria-hidden='true')
+      span Bài thi
+
+    a.shell-sidebar-link(
+      href='/student/calendar',
+      class=path && path.startsWith('/student/calendar') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/student/calendar') ? 'page' : false
+    )
+      i.ph-bold.ph-calendar-blank.text-base(aria-hidden='true')
+      span Lịch
 
     //- ── Progress ─────────────────────────────────────
     .section-label Tiến độ
@@ -63,6 +79,16 @@
 
     //- ── Account ──────────────────────────────────────
     .section-label Tài khoản
+
+    a.shell-sidebar-link(
+      href='/chat',
+      class=path && path.startsWith('/chat') ? 'shell-sidebar-link-active' : '',
+      aria-current=path && path.startsWith('/chat') ? 'page' : false
+    )
+      i.ph-bold.ph-chats-teardrop.text-base(aria-hidden='true')
+      .flex.items-center.justify-between.flex-1
+        span Trò chuyện
+        span.badge.badge-danger.badge-sm.sidebar-chat-badge(class=(unreadChatCount > 0 ? '' : 'hidden'))= unreadChatCount
 
     a.shell-sidebar-link(
       href='/notifications',

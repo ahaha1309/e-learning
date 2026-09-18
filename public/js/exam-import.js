@@ -7,8 +7,7 @@
   'use strict';
 
   // ── State ──────────────────────────────────────────────────────────────────
-  var parsedQuestions = []; // { id, content, type, options:[{text,isCorrect}], points, warnings:[] }
-  var defaultPoints = 1;
+  var parsedQuestions = []; // { id, content, type, options:[{text,isCorrect}], warnings:[] }
 
   // ── DOM refs ───────────────────────────────────────────────────────────────
   var dropZone       = document.getElementById('import-drop-zone');
@@ -23,12 +22,13 @@
   var previewCount   = document.getElementById('preview-count');
   var previewErrors  = document.getElementById('preview-errors');
   var parseSpinner   = document.getElementById('parse-spinner');
-  var defaultPtsInput = document.getElementById('default-points');
   var generateBtn    = document.getElementById('generate-btn');
   var generateSpinner = document.getElementById('generate-spinner');
-  var EXAM_ID        = document.getElementById('import-meta').dataset.examId;
-  var CLASSROOM_ID   = document.getElementById('import-meta').dataset.classroomId;
-  var CSRF_TOKEN     = document.getElementById('import-meta').dataset.csrf;
+  var importMeta     = document.getElementById('import-meta');
+  var TARGET_ID      = importMeta.dataset.targetId || importMeta.dataset.examId;
+  var TARGET_TYPE    = importMeta.dataset.targetType || 'exams';
+  var CLASSROOM_ID   = importMeta.dataset.classroomId;
+  var CSRF_TOKEN     = importMeta.dataset.csrf;
 
   // ── Step Navigation ────────────────────────────────────────────────────────
   function showStep(name) {
@@ -115,9 +115,16 @@
       for (var i = 1; i <= pdf.numPages; i++) {
         pagePromises.push(
           pdf.getPage(i).then(function (page) {
-            return page.getTextContent().then(function (content) {
-              return content.items.map(function (item) { return item.str; }).join(' ');
-            });
+              var lastY = null;
+              var text = '';
+              content.items.forEach(function (item) {
+                if (lastY !== null && Math.abs(item.transform[5] - lastY) > 5) {
+                  text += '\n';
+                }
+                text += item.str;
+                lastY = item.transform[5];
+              });
+              return text;
           })
         );
       }
@@ -139,8 +146,12 @@
    *   "A.", "B.", "C.", "D." (case-insensitive, followed by space or newline)
    */
   function processRawText(text) {
-    // Normalise line endings
-    var normalised = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // Normalise line endings and inject newlines for squashed text
+    var normalised = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/([^\n])([A-D][.)]\s+)/g, '$1\n$2')
+      .replace(/([^\n])((?:Câu\s+\d+|Question\s+\d+|Q\s*\d+|\d+)[.)]\s+)/gi, '$1\n$2');
 
     // Split into lines, trim
     var lines = normalised.split('\n').map(function (l) { return l.trim(); });
@@ -201,7 +212,6 @@
         content: q.content.trim(),
         type: q.options.length > 0 ? 'multiple_choice' : 'essay',
         options: q.options,
-        points: defaultPoints,
         warnings: warnings,
       };
     });
@@ -238,10 +248,11 @@
     var optionsHtml = '';
     if (hasOptions) {
       var labels = ['A', 'B', 'C', 'D'];
+      var inputType = q.type === 'multiple_choice' ? 'radio' : 'checkbox';
       optionsHtml = '<div class="import-q-opts">';
       q.options.forEach(function (opt, oi) {
         optionsHtml += '<label class="import-q-opt">'
-          + '<input type="checkbox" data-opt="' + oi + '" data-qid="' + q.id + '"' + (opt.isCorrect ? ' checked' : '') + '>'
+          + '<input type="' + inputType + '" name="correct_opt_' + q.id + '" data-opt="' + oi + '" data-qid="' + q.id + '"' + (opt.isCorrect ? ' checked' : '') + '>'
           + '<span class="import-q-opt-label">' + (labels[oi] || oi + 1) + '.</span>'
           + '<input type="text" class="import-q-opt-text" data-opt="' + oi + '" data-qid="' + q.id + '" value="' + escHtml(opt.text) + '">'
           + '</label>';
@@ -260,9 +271,9 @@
       + '<span class="import-q-num">Q' + (idx + 1) + '</span>'
       + '<div class="import-q-actions">'
       + '<select class="import-q-type" data-qid="' + q.id + '" aria-label="Question type">'
-      + '<option value="multiple_choice"' + (q.type === 'multiple_choice' ? ' selected' : '') + '>Multiple Choice</option>'
-      + '<option value="multiple_answer"' + (q.type === 'multiple_answer' ? ' selected' : '') + '>Multiple Answer</option>'
-      + '<option value="essay"' + (q.type === 'essay' ? ' selected' : '') + '>Essay</option>'
+      + '<option value="multiple_choice"' + (q.type === 'multiple_choice' ? ' selected' : '') + '>1 đáp án</option>'
+      + '<option value="multiple_answer"' + (q.type === 'multiple_answer' ? ' selected' : '') + '>Nhiều đáp án</option>'
+      + '<option value="essay"' + (q.type === 'essay' ? ' selected' : '') + '>Tự luận</option>'
       + '</select>'
       + '<button class="btn-ghost btn-sm btn-icon import-q-delete" data-qid="' + q.id + '" aria-label="Delete question">'
       + '<i class="ph-bold ph-trash" aria-hidden="true"></i>'
@@ -278,7 +289,23 @@
       updateQuestion(q.id, 'content', this.value);
     });
     card.querySelector('.import-q-type').addEventListener('change', function () {
-      updateQuestion(q.id, 'type', this.value);
+      var newType = this.value;
+      updateQuestion(q.id, 'type', newType);
+      
+      var qToUpdate = parsedQuestions.find(function(x) { return x.id === q.id; });
+      if (qToUpdate && (newType === 'multiple_choice' || newType === 'multiple_answer') && qToUpdate.options.length === 0) {
+        qToUpdate.options = [
+          { text: '', isCorrect: true },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false },
+          { text: '', isCorrect: false }
+        ];
+      } else if (qToUpdate && newType === 'essay') {
+        qToUpdate.options = [];
+      }
+      
+      var newCard = buildQuestionCard(qToUpdate, idx);
+      card.parentNode.replaceChild(newCard, card);
     });
     card.querySelector('.import-q-delete').addEventListener('click', function () {
       deleteQuestion(q.id);
@@ -292,11 +319,15 @@
       });
     });
 
-    var optChecks = card.querySelectorAll('input[type="checkbox"]');
+    var optChecks = card.querySelectorAll('input[type="checkbox"], input[type="radio"]');
     optChecks.forEach(function (chk) {
       chk.addEventListener('change', function () {
         var oi = Number(this.dataset.opt);
-        updateOption(q.id, oi, 'isCorrect', this.checked);
+        if (q.type === 'multiple_choice') {
+          q.options.forEach(function(o, i) { o.isCorrect = (i === oi); });
+        } else {
+          updateOption(q.id, oi, 'isCorrect', this.checked);
+        }
       });
     });
 
@@ -336,12 +367,6 @@
     showStep('upload');
   });
 
-  if (defaultPtsInput) {
-    defaultPtsInput.addEventListener('input', function () {
-      defaultPoints = Number(this.value) || 1;
-      parsedQuestions.forEach(function (q) { q.points = defaultPoints; });
-    });
-  }
 
   // ── Generate Exam (POST) ──────────────────────────────────────────────────
   generateBtn.addEventListener('click', function () {
@@ -355,13 +380,11 @@
           content: q.content,
           type: q.type,
           options: q.options,
-          points: q.points,
         };
       }),
-      defaultPoints: defaultPoints,
     };
 
-    fetch('/teacher/classrooms/' + CLASSROOM_ID + '/exams/' + EXAM_ID + '/import-questions', {
+    fetch('/teacher/classrooms/' + CLASSROOM_ID + '/' + TARGET_TYPE + '/' + TARGET_ID + '/import-questions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

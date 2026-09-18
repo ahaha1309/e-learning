@@ -38,13 +38,13 @@ async function bulkImportQuestionsHandler(req, res, next) {
       return res.status(404).json({ success: false, message: 'Exam not found' });
     }
 
-    const { questions, defaultPoints } = req.body;
+    const { questions } = req.body;
 
     if (!Array.isArray(questions)) {
       return res.status(422).json({ success: false, message: 'Invalid request body — questions must be an array.' });
     }
 
-    const result = await bulkImportQuestions(exam.id, req.user.id, questions, Number(defaultPoints) || 1);
+    const result = await bulkImportQuestions(exam.id, req.user.id, questions, 1);
 
     return res.json({
       success: true,

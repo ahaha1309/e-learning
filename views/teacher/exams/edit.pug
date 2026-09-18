@@ -1,0 +1,227 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        nav.breadcrumb.animate-in.fade-in.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/exams') Bài thi
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id)= exam.title
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Chỉnh sửa bài thi
+
+        .inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='py-1.5 bg-primary/5 border-primary/20') Studio Chỉnh sửa
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Chỉnh sửa & Gia hạn Bài thi
+        p.text-lg.text-muted-foreground.mt-3 Cập nhật các thông số của bài thi, gia hạn thời gian mở đề thi và cấu hình bảo mật.
+
+      .flex.items-center.gap-4
+        a.btn-outline.h-14.px-6.rounded-full(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id)
+          i.ph-bold.ph-x.text-lg
+          | Hủy
+
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/edit', enctype='multipart/form-data')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      //- Main Content Col
+      .lg_col-span-8.space-y-8
+        if errorMessage
+          .alert-danger.rounded-2xl= errorMessage
+
+        //- Step 1: Basic Info
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
+              span.font-bold.text-sm 1
+            h3.text-lg.font-bold Chi tiết Bài thi
+ 
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='title') Tiêu đề Bài thi
+            input#title.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='title', required, value=formData.title || exam.title, placeholder='ví dụ: Kiểm tra Giữa kỳ — Chương 1-4')
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='totalPoints') Tổng điểm
+            input#totalPoints.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', min='0', step='0.5', name='totalPoints', value=(formData.totalPoints !== undefined ? formData.totalPoints : exam.totalPoints), required)
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Bài thi
+            select#type.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='type')
+              - var curType = formData.type || exam.type || 'quiz'
+              option(value='quiz', selected=curType === 'quiz') Trắc nghiệm
+              option(value='upload', selected=curType === 'upload') Nộp tệp đính kèm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Hướng dẫn Ngắn gọn
+            textarea#description.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='description', rows='5', placeholder='Mô tả phạm vi bài thi, quy tắc và bất kỳ hướng dẫn nào cho học sinh của bạn...')= formData.description || exam.description || ''
+
+          .space-y-2#instructions-block(style='display: none;')
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='instructions') Nội dung Đề bài (Dành cho thi nộp tệp)
+            textarea#instructions.tinymce.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(name='instructions', rows='8')= formData.instructions !== undefined ? formData.instructions : exam.instructions || ''
+
+          .space-y-2#attachment-block(style='display: none;')
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground Bổ sung Tệp đính kèm (Tùy chọn)
+            if exam.attachments && exam.attachments.length > 0
+              .mb-3
+                p.text-xs.font-bold.text-muted-foreground.mb-2 Tệp hiện có:
+                ul.space-y-2
+                  each file in exam.attachments
+                    li.flex.items-center.gap-2.text-sm
+                      i.ph.ph-file
+                      a.text-primary.hover_underline(href=file.fileUrl, target='_blank')= file.fileName
+            input#attachmentFiles.w-full.p-3.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='file', name='attachmentFiles', multiple=true)
+            p.text-xs.text-muted-foreground Tải lên tệp mới sẽ được thêm vào danh sách đính kèm.
+
+          .space-y-2.pt-2
+            label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0
+                input#isCoding.peer.sr-only(type='checkbox', name='isCoding', value='true', checked=(formData.isCoding !== undefined ? formData.isCoding === 'true' : exam.isCoding))
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              div
+                p.text-sm.font-bold.text-foreground Đây là bài thi Lập trình
+                p.text-xs.text-muted-foreground Sử dụng trình soạn thảo code (CodeMirror) cho các câu hỏi tự luận thay vì văn bản thường.
+
+        //- Step 2: Time & Access
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-warning/10 text-warning')
+              span.font-bold.text-sm 2
+            h3.text-lg.font-bold Thời gian & Quyền truy cập
+
+          .grid.grid-cols-1.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='duration') Giới hạn Thời gian (Phút)
+              input#duration.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', name='duration', value=(formData.duration !== undefined ? formData.duration : exam.duration), required, min='0')
+              p.text-xs.text-muted-foreground Đặt bằng 0 cho thời gian không giới hạn.
+              input(type='hidden', name='maxAttempts', value='1')
+
+          .grid.grid-cols-1.md_grid-cols-2.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='startTime') Có sẵn từ (Tùy chọn)
+              input#startTime.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='datetime-local', name='startTime', value=(formData.startTime !== undefined ? formData.startTime : startTimeFormatted))
+
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-rose-400(for='endTime') Có sẵn đến / Hạn chót mới (Gia hạn)
+              input#endTime.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='datetime-local', name='endTime', value=(formData.endTime !== undefined ? formData.endTime : endTimeFormatted))
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='showResult') Công bố Kết quả
+            select#showResult.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='showResult')
+              - var curShowResult = formData.showResult !== undefined ? formData.showResult : exam.showResult
+              option(value='after_submit', selected=curShowResult === 'after_submit') Ngay sau khi nộp bài
+              option(value='after_exam_ends', selected=curShowResult === 'after_exam_ends') Sau khi cửa sổ bài thi đóng
+              option(value='none', selected=curShowResult === 'none') Công bố thủ công (không hiển thị tự động)
+
+        //- Step 3: Security
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-destructive/10 text-destructive')
+              span.font-bold.text-sm 3
+            h3.text-lg.font-bold Bảo mật & Giám sát
+
+          .space-y-4
+            label.group.flex.items-start.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0(class='mt-0.5')
+                input#strictMode.peer.sr-only(type='checkbox', name='strictMode', value='true', checked=(formData.strictMode !== undefined ? formData.strictMode === 'true' : exam.strictMode))
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              div
+                p.text-sm.font-bold.text-foreground Chế độ Giám sát Nghiêm ngặt
+                p.text-xs.text-muted-foreground Chặn thoát toàn màn hình, sao chép/dán và chuyển đổi tab trong thời gian thi.
+
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='maxViolations') Số lần vi phạm tối đa trước khi tự động nộp bài
+              input#maxViolations.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', name='maxViolations', value=(formData.maxViolations !== undefined ? formData.maxViolations : exam.maxViolations), min='0')
+              p.text-xs.text-muted-foreground Bài thi tự động nộp nếu đạt đến giới hạn này. 0 sẽ vô hiệu hóa giới hạn.
+
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='password') Mật khẩu Truy cập (Tùy chọn)
+              input#password.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='password', value=(formData.password !== undefined ? formData.password : exam.password), placeholder='Để trống cho quyền truy cập mở')
+              p.text-xs.text-muted-foreground Học sinh phải nhập mật khẩu này trước khi bắt đầu bài thi.
+
+      //- Sidebar Config Col
+      .lg_col-span-4.space-y-8
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-success/10 text-success')
+              i.ph-bold.ph-floppy-disk.text-xl
+            h3.text-lg.font-bold Lưu Thay đổi
+
+          .space-y-4
+            label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0
+                input#isPublished.peer.sr-only(type='checkbox', name='isPublished', value='true', checked=(formData.isPublished !== undefined ? formData.isPublished === 'true' : exam.isPublished))
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              span.text-sm.font-bold.text-foreground Xuất bản bài thi
+
+          button.btn-primary.w-full.h-14.rounded-xl.text-base.font-bold.shadow-diffused.active_scale-95.transition-transform(type='submit')
+            i.ph-bold.ph-check.text-lg
+            | Lưu & Cập nhật Bài thi
+
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-info/10 text-info')
+              i.ph-bold.ph-info.text-xl
+            h3.text-lg.font-bold Tóm tắt
+
+          .space-y-3.text-sm
+            .flex.items-center.justify-between
+              span.text-muted-foreground Lớp học
+              span.font-medium= classroom.name
+            .flex.items-center.justify-between
+              span.text-muted-foreground Thời lượng
+              span.font-mono.font-bold#summary-duration= (formData.duration !== undefined ? formData.duration : exam.duration) + ' phút'
+            .flex.items-center.justify-between
+              span.text-muted-foreground Bài thi lập trình
+              span.font-medium#summary-coding= (formData.isCoding === 'true' || exam.isCoding) ? 'Bật' : 'Tắt'
+            .flex.items-center.justify-between
+              span.text-muted-foreground Giám sát
+              span.font-medium#summary-proctoring= (formData.strictMode === 'true' || exam.strictMode) ? 'Bật' : 'Tắt'
+            .flex.items-center.justify-between
+              span.text-muted-foreground Đã xuất bản
+              span.font-medium#summary-publish= (formData.isPublished === 'true' || exam.isPublished) ? 'Có' : 'Không'
+
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+    script(src='/js/tinymce-config.js')
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        var typeSelect = document.getElementById('type');
+        var instructionsBlock = document.getElementById('instructions-block');
+        var attachmentBlock = document.getElementById('attachment-block');
+        var codingCheck = document.getElementById('isCoding').closest('.group');
+
+        function toggleType() {
+          var isUpload = typeSelect.value === 'upload';
+          if (instructionsBlock) instructionsBlock.style.display = isUpload ? 'block' : 'none';
+          if (attachmentBlock) attachmentBlock.style.display = isUpload ? 'block' : 'none';
+          if (codingCheck) codingCheck.style.display = isUpload ? 'none' : 'flex';
+        }
+        if (typeSelect) {
+          typeSelect.addEventListener('change', toggleType);
+          toggleType();
+        }
+
+        var durationInput = document.getElementById('duration');
+        var strictCheck = document.getElementById('strictMode');
+        var codingCheckInput = document.getElementById('isCoding');
+        var publishCheck = document.getElementById('isPublished');
+        if (durationInput) durationInput.addEventListener('input', function() {
+          document.getElementById('summary-duration').textContent = (this.value || 0) + ' phút';
+        });
+        if (strictCheck) strictCheck.addEventListener('change', function() {
+          document.getElementById('summary-proctoring').textContent = this.checked ? 'Bật' : 'Tắt';
+        });
+        if (codingCheckInput) codingCheckInput.addEventListener('change', function() {
+          document.getElementById('summary-coding').textContent = this.checked ? 'Bật' : 'Tắt';
+        });
+        if (publishCheck) publishCheck.addEventListener('change', function() {
+          document.getElementById('summary-publish').textContent = this.checked ? 'Có' : 'Không';
+        });
+      });

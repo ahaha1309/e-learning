@@ -22,7 +22,7 @@ block content
     if submission.textAnswer
       .card.p-6
         p.text-lg.font-bold.mb-2 Câu trả lời của học sinh
-        p.text-muted.whitespace-pre-wrap= submission.textAnswer
+        p.text-foreground.whitespace-pre-wrap.leading-relaxed= submission.textAnswer
 
     if submission.attachment && submission.attachment.url
       .card.p-5

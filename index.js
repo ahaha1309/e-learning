@@ -52,6 +52,8 @@ const studentSubmissionRoutes = require('./routes/student.submission.routes');
 const teacherRoutes = require('./routes/teacher.routes');
 const studentRoutes = require('./routes/student.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const meetingRoutes = require('./routes/meeting.routes');
+const chatRoutes = require('./routes/chat.routes');
 
 const app = express();
 
@@ -148,6 +150,8 @@ app.use('/student/classrooms/:classroomId/assignments/:assignmentId/submission',
 app.use('/teacher', teacherRoutes);
 app.use('/student', studentRoutes);
 app.use('/notifications', notificationRoutes);
+app.use('/', meetingRoutes);
+app.use('/', chatRoutes);
 
 // ── Admin Routes ──────────────────────────────────────────
 app.use('/admin', adminRoutes);
@@ -258,16 +262,45 @@ async function startServer() {
           token = parts[1];
         }
       }
-      if (!token) {
-        return next(new Error('Authentication error: No token provided'));
+
+      if (token) {
+        const jwt = require('jsonwebtoken');
+        const payload = jwt.verify(token, process.env.JWT_SECRET || 'test_secret');
+        socket.userId = payload.sub;
+        socket.userRole = payload.role;
+        return next();
       }
-      const jwt = require('jsonwebtoken');
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'test_secret');
-      socket.userId = payload.sub;
-      socket.userRole = payload.role;
-      next();
+
+      // Fallback 1: Check express session cookie (elearning.sid)
+      if (cookieHeader) {
+        const rawSid = parseCookie(cookieHeader, process.env.SESSION_NAME || 'elearning.sid');
+        if (rawSid) {
+          const sid = rawSid.startsWith('s:') ? rawSid.slice(2).split('.')[0] : rawSid;
+          sessionStore.get(sid, (err, sess) => {
+            if (!err && sess && sess.passport && sess.passport.user) {
+              socket.userId = sess.passport.user;
+              socket.userRole = sess.userRole || 'student';
+              return next();
+            }
+            if (socket.handshake.auth && socket.handshake.auth.userId) {
+              socket.userId = socket.handshake.auth.userId;
+              return next();
+            }
+            return next(new Error('Authentication error: Session expired'));
+          });
+          return;
+        }
+      }
+
+      // Fallback 2: Check handshake auth userId
+      if (socket.handshake.auth && socket.handshake.auth.userId) {
+        socket.userId = socket.handshake.auth.userId;
+        return next();
+      }
+
+      return next(new Error('Authentication error: No token or session provided'));
     } catch (err) {
-      next(new Error('Authentication error: Invalid token'));
+      return next(new Error('Authentication error: Invalid token'));
     }
   };
 
@@ -364,6 +397,37 @@ async function startServer() {
   chatMonitor.use(socketAuthMiddleware);
 
   chatMonitor.on('connection', (socket) => {
+    socket.on('join_user_dm_room', () => {
+      if (socket.userId) {
+        socket.join(`user:${socket.userId}`);
+        socket.emit('user_authenticated', { userId: socket.userId });
+      }
+    });
+
+    socket.on('send_direct_message', async (data) => {
+      try {
+        if (!data || !data.recipientId) return;
+        const senderId = socket.userId;
+        if (!senderId) return;
+
+        const chatService = require('./services/chat.service');
+        const dm = await chatService.saveDirectMessage({
+          senderId,
+          recipientId: data.recipientId,
+          content: data.content || '',
+          fileUrl: data.fileUrl || null,
+          fileName: data.fileName || null,
+          fileType: data.fileType || null,
+          fileSize: data.fileSize || 0,
+        });
+
+        // Send to recipient personal room & sender room
+        chatMonitor.to(`user:${data.recipientId}`).to(`user:${senderId}`).emit('receive_direct_message', dm);
+      } catch (err) {
+        console.error('Direct chat socket error:', err);
+      }
+    });
+
     socket.on('join_chat', async (data) => {
       if (!data || !data.classroomId) return;
       const senderId = socket.userId;
@@ -385,13 +449,12 @@ async function startServer() {
 
     socket.on('send_message', async (data) => {
       try {
-        if (!data || !data.classroomId || !data.content) return;
+        if (!data || !data.classroomId) return;
         const senderId = socket.userId;
         if (!senderId) return;
 
-        // Content length and sanitization
-        const content = String(data.content).trim().slice(0, 1000);
-        if (!content) return;
+        const content = String(data.content || '').trim().slice(0, 1000);
+        if (!content && !data.fileUrl) return;
 
         const ClassroomMember = require('./models/ClassroomMember');
         const isMember = await ClassroomMember.findOne({
@@ -413,11 +476,19 @@ async function startServer() {
           classroom: data.classroomId,
           sender: senderId,
           content: content,
+          fileUrl: data.fileUrl || null,
+          fileName: data.fileName || null,
+          fileType: data.fileType || null,
+          fileSize: data.fileSize || 0,
         });
         const populatedMessage = await newMessage.populate('sender', 'name avatarUrl');
         chatMonitor.to(data.classroomId).emit('receive_message', {
           id: populatedMessage._id,
           content: populatedMessage.content,
+          fileUrl: populatedMessage.fileUrl,
+          fileName: populatedMessage.fileName,
+          fileType: populatedMessage.fileType,
+          fileSize: populatedMessage.fileSize,
           sender: populatedMessage.sender,
           createdAt: populatedMessage.createdAt,
         });
@@ -426,6 +497,301 @@ async function startServer() {
       }
     });
   });
+
+  app.set('io', io);
+
+  // Meeting namespace & WebRTC signaling
+  const meetingMonitor = io.of('/meeting');
+  meetingMonitor.use(socketAuthMiddleware);
+
+  const meetingRoomsState = {}; // roomId -> { socketId: { userId, userName, userRole, audioActive, videoActive } }
+  const meetingWaitingRoomsState = {}; // roomId -> { socketId: { userId, userName, audioActive, videoActive } }
+
+  meetingMonitor.on('connection', (socket) => {
+    socket.on('join-classroom-meeting', ({ classroomId }) => {
+      if (classroomId) {
+        socket.join(`classroom:${classroomId}`);
+      }
+    });
+
+    socket.on('join-room', ({ meetingId, classroomId, userId, userName, userRole, audioActive, videoActive }) => {
+      if (!meetingId) return;
+      socket.meetingId = meetingId;
+      socket.classroomId = classroomId;
+      socket.userName = userName || 'Thành viên';
+      socket.userRole = userRole || 'student';
+      socket.userId = userId;
+
+      socket.join(meetingId);
+
+      if (!meetingRoomsState[meetingId]) {
+        meetingRoomsState[meetingId] = {};
+      }
+      if (!meetingWaitingRoomsState[meetingId]) {
+        meetingWaitingRoomsState[meetingId] = {};
+      }
+
+      // Purge any stale socket connections belonging to the same userId
+      if (userId) {
+        Object.keys(meetingRoomsState[meetingId]).forEach((oldSocketId) => {
+          if (
+            oldSocketId !== socket.id &&
+            String(meetingRoomsState[meetingId][oldSocketId].userId) === String(userId)
+          ) {
+            delete meetingRoomsState[meetingId][oldSocketId];
+            meetingMonitor.to(meetingId).emit('user_left', { socketId: oldSocketId });
+          }
+        });
+        Object.keys(meetingWaitingRoomsState[meetingId]).forEach((oldSocketId) => {
+          if (
+            oldSocketId !== socket.id &&
+            String(meetingWaitingRoomsState[meetingId][oldSocketId].userId) === String(userId)
+          ) {
+            delete meetingWaitingRoomsState[meetingId][oldSocketId];
+          }
+        });
+      }
+
+      // If user is Teacher, admit immediately
+      if (socket.userRole === 'teacher') {
+        meetingRoomsState[meetingId][socket.id] = {
+          userId,
+          userName: socket.userName,
+          userRole: socket.userRole,
+          audioActive: audioActive !== false,
+          videoActive: videoActive !== false,
+        };
+
+        // Notify active peers
+        socket.to(meetingId).emit('user_joined', {
+          socketId: socket.id,
+          user: meetingRoomsState[meetingId][socket.id],
+        });
+
+        // Send existing active room users to Teacher
+        const roomUsers = Object.entries(meetingRoomsState[meetingId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        socket.emit('room_users', roomUsers);
+
+        // Send current waiting list to Teacher
+        const waitingList = Object.entries(meetingWaitingRoomsState[meetingId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        socket.emit('waiting_students_list', waitingList);
+      } else {
+        // If user is Student, put in Waiting Room
+        meetingWaitingRoomsState[meetingId][socket.id] = {
+          userId,
+          userName: socket.userName,
+          userRole: socket.userRole,
+          audioActive: audioActive !== false,
+          videoActive: videoActive !== false,
+        };
+
+        socket.emit('waiting_for_approval');
+
+        // Notify Teacher(s) in room about new waiting student
+        const waitingList = Object.entries(meetingWaitingRoomsState[meetingId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        socket.to(meetingId).emit('waiting_students_list', waitingList);
+      }
+    });
+
+    socket.on('approve_student_join', ({ targetSocketId }) => {
+      const mId = socket.meetingId;
+      if (mId && socket.userRole === 'teacher' && meetingWaitingRoomsState[mId]?.[targetSocketId]) {
+        const studentInfo = meetingWaitingRoomsState[mId][targetSocketId];
+        delete meetingWaitingRoomsState[mId][targetSocketId];
+
+        meetingRoomsState[mId][targetSocketId] = studentInfo;
+
+        // Notify approved student socket
+        meetingMonitor.to(targetSocketId).emit('join_approved');
+
+        // Send active room users list to the newly approved student
+        const roomUsers = Object.entries(meetingRoomsState[mId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        meetingMonitor.to(targetSocketId).emit('room_users', roomUsers);
+
+        // Notify everyone in active room that student joined
+        meetingMonitor.to(mId).emit('user_joined', {
+          socketId: targetSocketId,
+          user: studentInfo,
+        });
+
+        // Send updated waiting list to Teacher
+        const waitingList = Object.entries(meetingWaitingRoomsState[mId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        meetingMonitor.to(mId).emit('waiting_students_list', waitingList);
+      }
+    });
+
+    socket.on('decline_student_join', ({ targetSocketId }) => {
+      const mId = socket.meetingId;
+      if (mId && socket.userRole === 'teacher' && meetingWaitingRoomsState[mId]?.[targetSocketId]) {
+        delete meetingWaitingRoomsState[mId][targetSocketId];
+
+        // Notify declined student socket
+        meetingMonitor.to(targetSocketId).emit('join_declined');
+
+        // Send updated waiting list to Teacher
+        const waitingList = Object.entries(meetingWaitingRoomsState[mId]).map(([sId, uInfo]) => ({
+          socketId: sId,
+          user: uInfo,
+        }));
+        meetingMonitor.to(mId).emit('waiting_students_list', waitingList);
+      }
+    });
+
+    socket.on('webrtc_offer', ({ targetSocketId, offer }) => {
+      if (targetSocketId && offer) {
+        meetingMonitor.to(targetSocketId).emit('webrtc_offer', {
+          senderSocketId: socket.id,
+          offer,
+          senderUser: meetingRoomsState[socket.meetingId]?.[socket.id],
+        });
+      }
+    });
+
+    socket.on('webrtc_answer', ({ targetSocketId, answer }) => {
+      if (targetSocketId && answer) {
+        meetingMonitor.to(targetSocketId).emit('webrtc_answer', {
+          senderSocketId: socket.id,
+          answer,
+        });
+      }
+    });
+
+    socket.on('ice_candidate', ({ targetSocketId, candidate }) => {
+      if (targetSocketId && candidate) {
+        meetingMonitor.to(targetSocketId).emit('ice_candidate', {
+          senderSocketId: socket.id,
+          candidate,
+        });
+      }
+    });
+
+    socket.on('toggle_media', ({ audioActive, videoActive }) => {
+      const mId = socket.meetingId;
+      if (mId && meetingRoomsState[mId]?.[socket.id]) {
+        meetingRoomsState[mId][socket.id].audioActive = audioActive;
+        meetingRoomsState[mId][socket.id].videoActive = videoActive;
+        socket.to(mId).emit('user_media_state', {
+          socketId: socket.id,
+          audioActive,
+          videoActive,
+        });
+      }
+    });
+
+    socket.on('send_room_message', ({ meetingId, content }) => {
+      if (meetingId && content) {
+        const cleanContent = String(content).trim().slice(0, 1000);
+        if (!cleanContent) return;
+
+        meetingMonitor.to(meetingId).emit('room_message', {
+          senderName: socket.userName,
+          senderRole: socket.userRole,
+          content: cleanContent,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        });
+      }
+    });
+
+    socket.on('toggle_raise_hand', ({ raisedHand }) => {
+      const mId = socket.meetingId;
+      if (mId && meetingRoomsState[mId]?.[socket.id]) {
+        meetingRoomsState[mId][socket.id].raisedHand = raisedHand;
+        meetingMonitor.to(mId).emit('user_raise_hand', {
+          socketId: socket.id,
+          userName: socket.userName,
+          raisedHand,
+        });
+      }
+    });
+
+    socket.on('send_reaction', ({ emoji }) => {
+      const mId = socket.meetingId;
+      if (mId && emoji) {
+        meetingMonitor.to(mId).emit('room_reaction', {
+          socketId: socket.id,
+          userName: socket.userName,
+          emoji,
+        });
+      }
+    });
+
+    socket.on('mute_all_participants', () => {
+      const mId = socket.meetingId;
+      if (mId && socket.userRole === 'teacher') {
+        socket.to(mId).emit('force_mute_mic');
+      }
+    });
+
+    socket.on('screen_share_status', ({ isSharing, streamId }) => {
+      const mId = socket.meetingId;
+      if (mId) {
+        if (meetingRoomsState[mId]?.[socket.id]) {
+          meetingRoomsState[mId][socket.id].isSharingScreen = !!isSharing;
+          meetingRoomsState[mId][socket.id].screenStreamId = isSharing ? streamId : null;
+        }
+        socket.to(mId).emit('user_screen_share', {
+          socketId: socket.id,
+          userName: socket.userName,
+          isSharing: !!isSharing,
+          streamId: isSharing ? streamId : null,
+        });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      const mId = socket.meetingId;
+      if (mId) {
+        // Remove from active room
+        if (meetingRoomsState[mId]) {
+          delete meetingRoomsState[mId][socket.id];
+          socket.to(mId).emit('user_left', { socketId: socket.id });
+
+          const remainingCount = Object.keys(meetingRoomsState[mId]).length;
+          if (remainingCount === 0) {
+            delete meetingRoomsState[mId];
+            const meetingService = require('./services/meeting.service');
+            setTimeout(async () => {
+              if (!meetingRoomsState[mId] || Object.keys(meetingRoomsState[mId]).length === 0) {
+                await meetingService.autoEndEmptyMeeting(mId, io);
+              }
+            }, 4000);
+          }
+        }
+
+        // Remove from waiting room and notify teacher
+        if (meetingWaitingRoomsState[mId] && meetingWaitingRoomsState[mId][socket.id]) {
+          delete meetingWaitingRoomsState[mId][socket.id];
+
+          const waitingList = Object.entries(meetingWaitingRoomsState[mId]).map(([sId, uInfo]) => ({
+            socketId: sId,
+            user: uInfo,
+          }));
+          meetingMonitor.to(mId).emit('waiting_students_list', waitingList);
+        }
+      }
+    });
+  });
+
+  // Background timer for automatic meeting status synchronization
+  const meetingService = require('./services/meeting.service');
+  setInterval(() => {
+    meetingService.runBackgroundStatusSync(io);
+  }, 15000);
 
   server.listen(port, () => {
     console.log(`E-Learning LMS listening on port ${port}`);

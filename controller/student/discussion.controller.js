@@ -2,6 +2,7 @@ const ClassroomMember = require('../../models/ClassroomMember');
 const DiscussionTopic = require('../../models/DiscussionTopic');
 const DiscussionReply = require('../../models/DiscussionReply');
 const { sanitizeRichHtml, sanitizePlainText } = require('../../helper/sanitize');
+const { sendNotification } = require('../../helper/notification.helper');
 
 async function renderIndex(req, res, next) {
   try {
@@ -99,7 +100,7 @@ async function createReply(req, res, next) {
     });
     if (!membership) return res.status(404).send('Not found');
 
-    const topic = await DiscussionTopic.findOne({ _id: req.params.topicId, classroom: membership.classroom });
+    const topic = await DiscussionTopic.findOne({ _id: req.params.topicId, classroom: membership.classroom }).populate('author');
     if (!topic) return res.status(404).send('Topic not found');
 
     const { content } = req.body;
@@ -110,6 +111,16 @@ async function createReply(req, res, next) {
         author: req.user.id,
         content: cleanContent
       });
+
+      if (topic.author && topic.author.id !== req.user.id) {
+        const linkPrefix = topic.author.role === 'teacher' ? 'teacher' : 'student';
+        await sendNotification(
+          topic.author.id,
+          'Phản hồi mới',
+          `${req.user.name || 'Ai đó'} đã trả lời chủ đề thảo luận của bạn: "${topic.title}"`,
+          `/${linkPrefix}/classrooms/${req.params.classroomId}/discussions/${topic.id}`
+        );
+      }
     }
 
     return res.redirect(`/student/classrooms/${req.params.classroomId}/discussions/${topic.id}`);

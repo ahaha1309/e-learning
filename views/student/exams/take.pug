@@ -123,6 +123,7 @@ block content
         input(type='hidden', id='violationsJson', name='violationsJson', value='[]')
 
         if questions && questions.length
+          - var pointPerQuestion = questions.length > 0 ? (exam.totalPoints / questions.length) : 0;
           each question, index in questions
             article.glass-panel.relative.overflow-hidden.animate-in.slide-in-up(
               class='rounded-2xl border-border/60 p-8',
@@ -146,13 +147,12 @@ block content
                   else
                     span.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tự luận
 
-                span.badge.badge-muted.flex-shrink-0(aria-label=question.points + ' điểm')
+                span.badge.badge-muted.flex-shrink-0(aria-label=pointPerQuestion.toFixed(2) + ' điểm')
                   i.ph-bold.ph-star.text-xs(aria-hidden='true')
-                  | #{question.points} điểm
+                  | #{pointPerQuestion.toFixed(2)} điểm
 
               //- Question content
-              .text-base.font-medium.leading-relaxed.mb-6
-                != question.content
+              .text-base.font-medium.leading-relaxed.mb-6 !{question.content ? question.content.replace(/&lt;/g, '<').replace(/&gt;/g, '>') : ''}
 
               //- Answer inputs
               if question.type === 'multiple_choice'
@@ -193,7 +193,7 @@ block content
               else if question.type === 'essay'
                 label.sr-only(for='essay-' + question.id) Essay answer for question #{index + 1}
                 textarea.w-full.p-4.rounded-xl.border.bg-background.text-foreground.text-sm.resize-y.transition-all(
-                  class='border-border/60 min-h-[140px] focus_outline-none focus_ring-2 focus_ring-primary focus_border-transparent',
+                  class=`border-border/60 min-h-[140px] focus_outline-none focus_ring-2 focus_ring-primary focus_border-transparent ${question.isCoding ? 'code-editor' : ''}`,
                   name='q_' + question.id,
                   id='essay-' + question.id,
                   placeholder='Viết câu trả lời của bạn ở đây...',
@@ -293,3 +293,20 @@ block content
     script(src='/js/anti-cheat.js')
 
 block scripts
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css")
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js")
+  script.
+    document.addEventListener("DOMContentLoaded", function() {
+      document.querySelectorAll('.code-editor').forEach(function(el) {
+        CodeMirror.fromTextArea(el, {
+          lineNumbers: true,
+          mode: "javascript",
+          theme: "dracula",
+          viewportMargin: Infinity
+        });
+      });
+    });

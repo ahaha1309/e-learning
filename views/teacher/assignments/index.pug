@@ -49,9 +49,12 @@ block content
             .flex.flex-wrap.gap-4.text-sm.text-muted-foreground.mt-3
               span Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
               span Đã xuất bản #{assignment.isPublished ? 'Có' : 'Không'}
-            .mt-3
+            .flex.gap-2.flex-wrap.mt-3
               a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id)
                 i.ph-bold.ph-arrow-right
                 | Mở bài tập
+              a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/edit')
+                i.ph-bold.ph-pencil-simple
+                | Chỉnh sửa / Gia hạn
     else
       +emptyState({ icon: 'ph-fill ph-file-code', title: 'Chưa có bài tập nào', desc: 'Tạo bài tập đầu tiên để chia sẻ với học sinh của bạn.' })

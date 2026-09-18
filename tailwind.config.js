@@ -2,6 +2,7 @@ module.exports = {
   darkMode: 'class',
   separator: '_',
   content: ['./views/**/*.pug', './public/js/**/*.js'],
+  safelist: ['heat-l1', 'heat-l2', 'heat-l3', 'heat-l4'],
   theme: {
     extend: {
       colors: {

@@ -144,6 +144,79 @@ block content
                   i.ph-bold(class=action[1] + ' text-base')
                 span.text-sm.font-bold.text-foreground= action[0]
                 i.ph-bold.ph-arrow-right.text-xs.text-muted-foreground.group-hover_text-primary.transition-colors.mt-auto
+        //- ── ANALYTICS ROW: PROGRESS + RADAR + HEATMAP ───────────────
+        .grid.grid-cols-1.gap-8.md_grid-cols-2.mt-10.animate-in(style='animation-delay: 400ms;')
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Phân tích Học tập
+            p.text-xs.text-muted-foreground.mb-4 Hoạt động học tập hàng tuần
+            div.relative.w-full(class='h-[180px]')
+              canvas#weeklyChart(aria-label='Hoạt động hàng tuần', role='img')
+            .mt-4.flex.items-center.justify-between.text-xs
+              span.text-muted-foreground Tuần này
+              span.font-mono.font-bold.text-primary= (weekly && weekly.total) || 0
+              span.text-muted-foreground sự kiện
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Biểu đồ Kỹ năng
+            p.text-xs.text-muted-foreground.mb-4 Các khía cạnh học tập của bạn
+            div.relative.w-full(class='h-[200px]')
+              canvas#radarChart(aria-label='Biểu đồ kỹ năng', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Bản đồ Hoạt động
+            p.text-xs.text-muted-foreground.mb-4 17 tuần qua
+            #heatmap.heatmap-grid(aria-label='Bản đồ hoạt động', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Báo cáo Hàng tháng
+            p.text-xs.text-muted-foreground.mb-4 Điểm TB theo tháng (6 tháng)
+            div.relative.w-full(class='h-[200px]')
+              canvas#monthlyChart(aria-label='Điểm trung bình hàng tháng', role='img')
+
+          .glass-panel.p-6(class='rounded-2xl border-border/60')
+            .flex.items-center.justify-between.mb-4
+              h2.text-base.font-extrabold.tracking-tight Lịch
+              span.text-xs.font-bold.text-muted-foreground= calendarMonth
+            .calendar-grid
+              each d in ['C','H','B','T','N','S','B']
+                .cal-dow= d
+              - var lead = calendarStartWeekday;
+              - var total = lead + calendarDaysInMonth;
+              each _, i in new Array(total)
+                if i < lead
+                  .cal-day.cal-empty
+                else
+                  - var dayNum = i - lead + 1;
+                  - var isToday = dayNum === todayDate;
+                  - var events = (calendarEvents || []).filter(function(e){ return e.day === dayNum; });
+                  .cal-day(class=(isToday ? 'cal-today' : '') + (events.length ? ' cal-has' : ''))
+                    span.cal-num= dayNum
+                    if events.length
+                      .cal-dots
+                        each e in events.slice(0, 3)
+                          span.cal-dot(class='cal-dot-' + e.type, title=e.title)
+
+          .glass-panel.p-6.flex.flex-col(class='rounded-2xl border-border/60')
+            h2.text-base.font-extrabold.tracking-tight.mb-1 Điểm danh
+            p.text-xs.text-muted-foreground.mb-4 Trên các lớp đã tham gia
+            .flex.items-end.gap-2.mb-4
+              p.text-4xl.font-mono.font-bold.tracking-tighter(class=(attendanceRate === null ? 'text-muted-foreground' : 'text-success'))
+                if attendanceRate === null
+                  | —
+                else
+                  | #{attendanceRate}%
+              p.text-xs.text-muted-foreground(class='mb-1.5')= attendanceRate === null ? 'chưa có buổi học' : 'tỷ lệ điểm danh'
+            .progress.mb-5
+              .progress-bar(style='width: ' + (attendanceRate || 0) + '%', class='bg-success')
+            .space-y-2.text-xs
+              .flex.items-center.justify-between
+                span.text-muted-foreground Số buổi đã học
+                span.font-mono.font-bold= attendanceRate === null ? 0 : (attendanceRate || 0)
+              a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors.mt-2(class='hover_text-primary/80', href='/student/classrooms')
+                | Điểm danh các buổi học
+                i.ph-bold.ph-arrow-right.text-xs
+
+
 
       //- ── RIGHT: SIDEBAR ──────────────────────────────────────
       .space-y-6
@@ -244,80 +317,6 @@ block content
                       p.text-xs.text-muted-foreground.truncate(class='mt-0.5')= n.message
             else
               p.text-xs.text-muted-foreground.text-center.py-4 Chưa có thông báo nào
-
-  //- ── ANALYTICS ROW: PROGRESS + RADAR + HEATMAP ───────────────
-  .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-10.animate-in(style='animation-delay: 400ms;')
-    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-      h2.text-base.font-extrabold.tracking-tight.mb-1 Phân tích Học tập
-      p.text-xs.text-muted-foreground.mb-4 Hoạt động học tập hàng tuần
-      div.relative.w-full(class='h-[180px]')
-        canvas#weeklyChart(aria-label='Hoạt động hàng tuần', role='img')
-      .mt-4.flex.items-center.justify-between.text-xs
-        span.text-muted-foreground Tuần này
-        span.font-mono.font-bold.text-primary= (weekly && weekly.total) || 0
-        span.text-muted-foreground sự kiện
-
-    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-      h2.text-base.font-extrabold.tracking-tight.mb-1 Biểu đồ Kỹ năng
-      p.text-xs.text-muted-foreground.mb-4 Các khía cạnh học tập của bạn
-      div.relative.w-full(class='h-[200px]')
-        canvas#radarChart(aria-label='Biểu đồ kỹ năng', role='img')
-
-    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-      h2.text-base.font-extrabold.tracking-tight.mb-1 Bản đồ Hoạt động
-      p.text-xs.text-muted-foreground.mb-4 17 tuần qua
-      #heatmap.heatmap-grid(aria-label='Bản đồ hoạt động', role='img')
-
-  //- ── REPORTS ROW: MONTHLY + CALENDAR + ATTENDANCE ────────────
-  .grid.grid-cols-1.gap-8.lg_grid-cols-3.mt-8.animate-in(style='animation-delay: 500ms;')
-    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-      h2.text-base.font-extrabold.tracking-tight.mb-1 Báo cáo Hàng tháng
-      p.text-xs.text-muted-foreground.mb-4 Điểm TB theo tháng (6 tháng)
-      div.relative.w-full(class='h-[200px]')
-        canvas#monthlyChart(aria-label='Điểm trung bình hàng tháng', role='img')
-
-    .lg_col-span-1.glass-panel.p-6(class='rounded-2xl border-border/60')
-      .flex.items-center.justify-between.mb-4
-        h2.text-base.font-extrabold.tracking-tight Lịch
-        span.text-xs.font-bold.text-muted-foreground= calendarMonth
-      .calendar-grid
-        each d in ['C','H','B','T','N','S','B']
-          .cal-dow= d
-        - var lead = calendarStartWeekday;
-        - var total = lead + calendarDaysInMonth;
-        each _, i in new Array(total)
-          if i < lead
-            .cal-day.cal-empty
-          else
-            - var dayNum = i - lead + 1;
-            - var isToday = dayNum === todayDate;
-            - var events = (calendarEvents || []).filter(function(e){ return e.day === dayNum; });
-            .cal-day(class=(isToday ? 'cal-today' : '') + (events.length ? ' cal-has' : ''))
-              span.cal-num= dayNum
-              if events.length
-                .cal-dots
-                  each e in events.slice(0, 3)
-                    span.cal-dot(class='cal-dot-' + e.type, title=e.title)
-
-    .lg_col-span-1.glass-panel.p-6.flex.flex-col(class='rounded-2xl border-border/60')
-      h2.text-base.font-extrabold.tracking-tight.mb-1 Điểm danh
-      p.text-xs.text-muted-foreground.mb-4 Trên các lớp đã tham gia
-      .flex.items-end.gap-2.mb-4
-        p.text-4xl.font-mono.font-bold.tracking-tighter(class=(attendanceRate === null ? 'text-muted-foreground' : 'text-success'))
-          if attendanceRate === null
-            | —
-          else
-            | #{attendanceRate}%
-        p.text-xs.text-muted-foreground(class='mb-1.5')= attendanceRate === null ? 'chưa có buổi học' : 'tỷ lệ điểm danh'
-      .progress.mb-5
-        .progress-bar(style='width: ' + (attendanceRate || 0) + '%', class='bg-success')
-      .space-y-2.text-xs
-        .flex.items-center.justify-between
-          span.text-muted-foreground Số buổi đã học
-          span.font-mono.font-bold= attendanceRate === null ? 0 : (attendanceRate || 0)
-        a.inline-flex.items-center.gap-2.text-xs.font-bold.text-primary.transition-colors.mt-2(class='hover_text-primary/80', href='/student/classrooms')
-          | Điểm danh các buổi học
-          i.ph-bold.ph-arrow-right.text-xs
 
   //- ── AI ASSISTANT FLOATING BUTTON ────────────────────────────────
   //- §AI: Fixed position, spring-animated panel, persistent session

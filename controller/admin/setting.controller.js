@@ -1,5 +1,6 @@
 const SystemSetting = require('../../models/SystemSetting');
 const { uploadImageBuffer } = require('../../middleware/imageUpload');
+const courseRegistrationService = require('../../services/courseRegistration.service');
 
 // Resolve a settings-level image field: if a new image file was uploaded,
 // send it to Cloudinary and return ONLY the secure_url; otherwise keep the
@@ -81,6 +82,8 @@ async function renderSettings(req, res, next) {
       backupFrequency: 'daily',
       apiRateLimit: 300,
       apiRateLimitWindow: 15,
+      courseRegistrationStart: null,
+      courseRegistrationEnd: null,
     };
     for (const [key, val] of Object.entries(defaults)) {
       if (config[key] === undefined || config[key] === null) {
@@ -88,10 +91,14 @@ async function renderSettings(req, res, next) {
       }
     }
 
+    config.courseRegistrationStart = courseRegistrationService.toLocalISOString(config.courseRegistrationStart);
+    config.courseRegistrationEnd = courseRegistrationService.toLocalISOString(config.courseRegistrationEnd);
+
     return res.render('admin/settings', {
       title: 'System Settings',
       config,
       feedback: req.query.feedback || null,
+      errorMessage: null,
     });
   } catch (error) {
     return next(error);
@@ -110,7 +117,43 @@ async function updateSettingsHandler(req, res, next) {
     const logoUrlValue = await resolveSettingImage(req, 'logo', 'branding/logo', payload.logoUrl);
     const faviconUrlValue = await resolveSettingImage(req, 'favicon', 'branding/favicon', payload.faviconUrl);
 
+    let startVal = null;
+    let endVal = null;
+
+    if (payload.courseRegistrationStart || payload.courseRegistrationEnd) {
+      if (!payload.courseRegistrationStart || !payload.courseRegistrationEnd) {
+        return res.status(422).render('admin/settings', {
+          title: 'System Settings',
+          config: {
+            ...payload,
+            logoUrl: logoUrlValue,
+            faviconUrl: faviconUrlValue,
+          },
+          feedback: null,
+          errorMessage: 'Vui lòng nhập đầy đủ cả thời gian bắt đầu và kết thúc đăng ký học phần.',
+        });
+      }
+
+      startVal = courseRegistrationService.parseLocalTime(payload.courseRegistrationStart);
+      endVal = courseRegistrationService.parseLocalTime(payload.courseRegistrationEnd);
+
+      if (startVal.getTime() >= endVal.getTime()) {
+        return res.status(422).render('admin/settings', {
+          title: 'System Settings',
+          config: {
+            ...payload,
+            logoUrl: logoUrlValue,
+            faviconUrl: faviconUrlValue,
+          },
+          feedback: null,
+          errorMessage: 'Thời gian bắt đầu đăng ký phải nhỏ hơn thời gian kết thúc.',
+        });
+      }
+    }
+
     const settingsMap = {
+      courseRegistrationStart: { value: startVal, description: 'Thời gian bắt đầu đăng ký học phần' },
+      courseRegistrationEnd: { value: endVal, description: 'Thời gian kết thúc đăng ký học phần' },
       siteName: { value: payload.siteName || 'E-Learning LMS', description: 'Global Site Name' },
       siteDescription: { value: payload.siteDescription || '', description: 'Site tagline / meta description' },
       supportEmail: { value: payload.supportEmail || '', description: 'Support email address' },

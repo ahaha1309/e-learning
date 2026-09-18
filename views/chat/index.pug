@@ -1,0 +1,185 @@
+extends ../layouts/base
+
+block content
+  style.
+    .shell-main {
+      padding: 0 !important;
+      overflow: hidden !important;
+      height: calc(100vh - 4rem) !important;
+    }
+
+  //- Teams Main Split-Pane Workspace Container (Full Bleed Edge to Edge)
+  .w-full.h-full.flex.overflow-hidden.bg-background
+    //- Left Sidebar: Conversations & Contacts
+    aside.w-80.border-r.border-border.flex.flex-col.flex-shrink-0(
+      class='md_w-96 bg-muted/20'
+    )
+      //- Sidebar Top Header
+      .p-4.border-b.border-border.space-y-3
+        .flex.items-center.justify-between
+          .flex.items-center.gap-2.text-foreground
+            i.ph-bold.ph-chats-teardrop.text-2xl.text-primary
+            h1.text-xl.font-extrabold.tracking-tight Trò chuyện
+          button#btn-new-chat.btn-primary.h-9.rounded-full.text-xs.font-bold.shadow-sm.flex.items-center(
+            type='button',
+            class='px-3.5 gap-1.5',
+            onclick="document.getElementById('new-chat-modal').classList.remove('hidden')"
+          )
+            i.ph-bold.ph-note-pencil.text-sm
+            span Chat mới
+
+        //- Filter / Search Conversations Input
+        .relative
+          i.ph-bold.ph-magnifying-glass.absolute.left-3.text-muted-foreground.text-sm(class='top-2.5')
+          input#conv-search-input.w-full.bg-muted.border.border-border.rounded-xl.pl-9.pr-4.py-2.text-xs.focus_outline-none.focus_border-primary(
+            type='text',
+            placeholder='Tìm cuộc trò chuyện...'
+          )
+
+      //- Recent Conversations List
+      #conversations-list.flex-1.overflow-y-auto.divide-y(
+        class='divide-border/40'
+      )
+        if conversations && conversations.length
+          each conv in conversations
+            div.conv-item.p-4.flex.items-center.gap-3.cursor-pointer.transition-colors(
+              class='hover_bg-muted/50',
+              data-id=conv.id,
+              data-type='direct',
+              data-target-user-id=conv.targetUser ? conv.targetUser._id : '',
+              data-target-user-name=conv.targetUser ? conv.targetUser.name : '',
+              data-target-user-role=conv.targetUser ? conv.targetUser.role : '',
+              data-target-user-avatar=conv.targetUser ? (conv.targetUser.avatarUrl || '') : ''
+            )
+              .relative.flex-shrink-0
+                if conv.targetUser && conv.targetUser.avatarUrl
+                  img.w-12.h-12.rounded-full.object-cover.border.border-border(
+                    src=conv.targetUser.avatarUrl,
+                    alt=conv.targetUser.name
+                  )
+                else
+                  .w-12.h-12.rounded-full.text-primary.font-extrabold.flex.items-center.justify-center.text-lg(
+                    class='bg-primary/10 border border-primary/20'
+                  )
+                    = (conv.targetUser.name || 'U').charAt(0).toUpperCase()
+                span.absolute.bottom-0.right-0.rounded-full.bg-emerald-500.border-2.border-background(class='w-3.5 h-3.5')
+
+              .flex-1.min-w-0
+                .flex.items-center.justify-between.mb-1
+                  h3.text-sm.font-bold.text-foreground.truncate= conv.targetUser ? conv.targetUser.name : 'Người dùng'
+                  if conv.lastMessageTime && conv.lastMessageTime !== '1970-01-01T00:00:00.000Z'
+                    span.font-mono.text-muted-foreground(class='text-[10px]')
+                      = new Date(conv.lastMessageTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                
+                .flex.items-center.justify-between.gap-2
+                  p.text-xs.text-muted-foreground.truncate.font-medium= conv.lastMessage || 'Chưa có tin nhắn'
+                  if conv.unreadCount > 0
+                    span.badge-destructive.px-2.rounded-full.font-black(class='text-[10px] py-0.5')= conv.unreadCount
+        else
+          .p-8.text-center.text-muted-foreground.space-y-2
+            i.ph-bold.ph-chats-teardrop.text-4xl.opacity-40
+            p.text-xs.font-medium Chưa có cuộc trò chuyện nào. Hãy bấm "Chat mới" để bắt đầu!
+
+    //- Right Panel: Active Conversation View
+    main.flex-1.flex.flex-col.bg-background.relative.overflow-hidden
+      //- Active Chat Header
+      header#chat-header.h-16.px-6.border-b.border-border.flex.items-center.justify-between.flex-shrink-0(
+        class='bg-card/50'
+      )
+        .flex.items-center.gap-3
+          #chat-header-avatar.w-10.h-10.rounded-full.text-primary.font-extrabold.flex.items-center.justify-center.text-base(
+            class='bg-primary/10 border border-primary/20'
+          )
+            | 💬
+          div
+            h2#chat-header-name.text-base.font-extrabold.text-foreground Chọn cuộc trò chuyện
+            p#chat-header-sub.text-xs.text-muted-foreground Chọn người dùng bên trái hoặc bấm "Chat mới" để trò chuyện
+
+      //- Messages Feed Area
+      #teams-chat-messages.flex-1.p-6.overflow-y-auto.space-y-4(
+        class='bg-muted/10',
+        data-current-user-id=currentUser.id,
+        data-current-user-avatar=currentUser.avatarUrl || '',
+        data-csrf-token=csrfToken
+      )
+        .h-full.flex.flex-col.items-center.justify-center.text-center.text-muted-foreground.space-y-3
+          .w-16.h-16.rounded-full.text-primary.flex.items-center.justify-center(
+            class='bg-primary/10'
+          )
+            i.ph-bold.ph-chat-circle-dots.text-3xl
+          div
+            h3.text-lg.font-bold.text-foreground Microsoft Teams Style Chat
+            p.text-sm Chọn một cuộc trò chuyện từ danh sách bên trái hoặc bấm "Chat mới" để nhắn tin 1-1.
+
+      //- Message Input Toolbar (Visible when chat active)
+      #chat-input-bar.p-4.border-t.border-border.bg-card.space-y-3.hidden
+        //- Attachment Preview Chip
+        #attachment-preview-bar.hidden.p-2.px-3.bg-muted.rounded-xl.flex.items-center.justify-between.gap-3.border.border-border
+          .flex.items-center.gap-2.min-w-0
+            i#attachment-icon.ph-bold.ph-paperclip.text-primary.text-base
+            span#attachment-name.text-xs.font-bold.text-foreground.truncate File
+            span#attachment-size.font-mono.text-muted-foreground(class='text-[10px]') (0 KB)
+          button#btn-remove-attachment.text-muted-foreground.hover_text-destructive(type='button')
+            i.ph-bold.ph-x.text-sm
+
+        //- Quick Emoji & Attachment Action Bar
+        .flex.items-center.justify-between.gap-2.pb-1
+          .flex.items-center.gap-2.overflow-x-auto
+            span.text-xs.font-bold.text-muted-foreground Cảm xúc:
+            each emoji in ['👍', '❤️', '😀', '🎉', '🚀', '💡', '❓']
+              button.emoji-btn.w-8.h-8.rounded-full.bg-muted.text-base.flex.items-center.justify-center.transition-transform(
+                type='button',
+                data-emoji=emoji,
+                class='hover_bg-muted/80 hover_scale-110'
+              )= emoji
+
+          button#btn-attach-file.w-8.h-8.rounded-full.text-primary.flex.items-center.justify-center.transition-all(
+            type='button',
+            title='Đính kèm tệp',
+            class='bg-primary/10 hover_bg-primary/20'
+          )
+            i.ph-bold.ph-paperclip.text-lg
+
+          input#chat-file-input.hidden(type='file')
+
+        form#teams-chat-form.flex.gap-3.m-0
+          input#teams-chat-input.flex-1.bg-muted.border.border-border.rounded-2xl.px-5.py-3.text-sm.focus_outline-none.focus_border-primary(
+            type='text',
+            placeholder='Nhập tin nhắn hoặc đính kèm tệp...',
+            autocomplete='off'
+          )
+          button.btn-primary.px-6.rounded-2xl.font-bold.flex.items-center.gap-2.shadow-md(type='submit')
+            i.ph-bold.ph-paper-plane-tilt.text-base
+            span Gửi
+
+  //- Modal: New Chat (✏️)
+  #new-chat-modal.hidden.fixed.inset-0.z-50.flex.items-center.justify-center.p-4.animate-in.fade-in(
+    class='bg-black/60 backdrop-blur-sm'
+  )
+    .glass-panel.w-full.max-w-md.p-6.rounded-3xl.shadow-2xl.border.border-border.bg-background.relative
+      .flex.items-center.justify-between.mb-4
+        .flex.items-center.gap-2.text-primary
+          i.ph-bold.ph-note-pencil.text-xl
+          h3.text-lg.font-bold.text-foreground Cuộc trò chuyện mới
+        button.text-muted-foreground.hover_text-foreground(
+          type='button',
+          onclick="document.getElementById('new-chat-modal').classList.add('hidden')"
+        )
+          i.ph-bold.ph-x.text-lg
+
+      div.space-y-4
+        .relative
+          i.ph-bold.ph-magnifying-glass.absolute.left-3.top-3.text-muted-foreground.text-sm
+          input#new-chat-search-input.w-full.bg-muted.border.border-border.rounded-xl.pl-9.pr-4.text-sm.focus_outline-none.focus_border-primary(
+            class='py-2.5',
+            type='text',
+            placeholder='Nhập tên hoặc email người dùng...'
+          )
+
+        #new-chat-results.max-h-64.overflow-y-auto.divide-y(
+          class='divide-border/50'
+        )
+          p.text-xs.text-center.text-muted-foreground.py-6 Nhập từ khóa để tìm kiếm Giáo viên hoặc Học sinh.
+
+  script(src='/socket.io/socket.io.js')
+  script(src='/js/teams-chat.js')

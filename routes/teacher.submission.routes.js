@@ -8,6 +8,7 @@ const {
   gradeSubmissionHandler,
   renderRubricGrade,
   rubricGradeHandler,
+  deleteSubmissionHandler,
 } = require('../controller/teacher/submission.controller');
 
 const router = express.Router({ mergeParams: true });
@@ -18,5 +19,6 @@ router.get('/:submissionId', classroomIdRules.concat(assignmentIdRules).concat(s
 router.get('/:submissionId/grade-rubric', classroomIdRules.concat(assignmentIdRules).concat(submissionIdRules), renderRubricGrade);
 router.post('/:submissionId/grade', classroomIdRules.concat(assignmentIdRules).concat(submissionIdRules), gradeRules, gradeSubmissionHandler);
 router.post('/:submissionId/grade-rubric', classroomIdRules.concat(assignmentIdRules).concat(submissionIdRules), rubricGradeHandler);
+router.post('/:submissionId/delete', classroomIdRules.concat(assignmentIdRules).concat(submissionIdRules), deleteSubmissionHandler);
 
 module.exports = router;

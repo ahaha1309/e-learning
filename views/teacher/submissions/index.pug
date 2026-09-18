@@ -31,8 +31,13 @@ block content
             .flex.gap-4.flex-wrap.text-sm.text-muted-foreground.mt-3
               span Đã nộp #{submission.submittedAt.toLocaleString('en-GB')}
               span Điểm #{submission.score === null ? 'Chưa chấm điểm' : submission.score}
-            .mt-3
+            .mt-3.flex.items-center.gap-3.flex-wrap
               a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id) Mở bài nộp
+              form(method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id + '/delete', onsubmit='return confirm("Xóa bài nộp này? Học sinh sẽ có thể nộp lại.");')
+                input(type='hidden', name='_csrf', value=csrfToken)
+                button.pill.text-destructive.border-destructive(type='submit', class='hover_bg-destructive/10')
+                  i.ph-bold.ph-trash
+                  | Xóa bài nộp
     else
       .empty-state
         .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4

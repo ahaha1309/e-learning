@@ -10,8 +10,10 @@ block content
       .alert-success= feedback
 
     .flex.gap-3.flex-wrap
-      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions') Quản lý Câu hỏi
+      if exam.type !== 'upload'
+        a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions') Quản lý Câu hỏi
       a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/submissions') Xem Bài nộp
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/edit') Chỉnh sửa / Gia hạn
       a.pill(href='/teacher/classrooms/' + classroom.id + '/exams') Quay lại các bài thi
 
     article.card.p-6.space-y-4
@@ -22,7 +24,6 @@ block content
         p.font-medium Cài đặt
         ul.text-sm.text-muted-foreground.mt-1.pl-5.space-y-1
           li Thời lượng: #{exam.duration} phút
-          li Số lần thử tối đa: #{exam.maxAttempts === 0 ? 'Không giới hạn' : exam.maxAttempts}
           li Bắt đầu: #{exam.startTime ? exam.startTime.toLocaleString('en-GB') : 'N/A'}
           li Kết thúc: #{exam.endTime ? exam.endTime.toLocaleString('en-GB') : 'N/A'}
           li Yêu cầu mật khẩu: #{exam.password ? 'Có' : 'Không'}
@@ -36,16 +37,32 @@ block content
         p.font-medium Tổng Điểm:
         span.text-sm #{exam.totalPoints}
 
-    .pt-4
-      h2.text-lg.font-bold.mb-4 Tổng quan Câu hỏi
-      if questions.length
-        .space-y-2
-          each question, index in questions
-            .card.p-4
-              p.text-sm.font-medium Câu hỏi #{index + 1} (#{question.points} điểm, #{question.type})
-              .mt-2.text-sm !{question.content}
-      else
-        p.text-sm.text-muted-foreground Chưa có câu hỏi nào. Sử dụng "Quản lý Câu hỏi" để thêm.
+    if exam.type === 'upload'
+      .pt-4
+        h2.text-lg.font-bold.mb-4 Đề bài & Tệp đính kèm
+        if exam.instructions
+          .card.p-4.mb-4
+            .prose.prose-sm.max-w-none !{exam.instructions}
+        if exam.attachments && exam.attachments.length > 0
+          .card.p-4
+            p.text-sm.font-medium.mb-3 Tệp đính kèm:
+            ul.space-y-2
+              each file in exam.attachments
+                li.flex.items-center.gap-2.text-sm
+                  i.ph.ph-file
+                  a.text-primary.hover_underline(href=file.fileUrl, target='_blank')= file.fileName
+    else
+      .pt-4
+        h2.text-lg.font-bold.mb-4 Tổng quan Câu hỏi
+        if questions.length
+          - var pointPerQuestion = questions.length > 0 ? (exam.totalPoints / questions.length) : 0;
+          .space-y-2
+            each question, index in questions
+              .card.p-4
+                p.text-sm.font-medium Câu hỏi #{index + 1} (#{pointPerQuestion.toFixed(2)} điểm, #{question.type === 'multiple_choice' ? '1 đáp án' : (question.type === 'multiple_answer' ? 'Nhiều đáp án' : 'Tự luận')})
+                .mt-2.text-sm !{question.content}
+        else
+          p.text-sm.text-muted-foreground Chưa có câu hỏi nào. Sử dụng "Quản lý Câu hỏi" để thêm.
 
   if exam.strictMode
     style.

@@ -1,0 +1,179 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-4xl.space-y-12.pt-8.pb-32.mx-auto
+    //- Header
+    header.flex.flex-col.gap-4.mb-8
+      nav.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.flex.items-center.gap-2(aria-label='Breadcrumbs')
+        a.hover_text-primary.transition-colors(href='/teacher/classrooms') Lớp học giảng dạy
+        span(class="text-muted-foreground/40") /
+        a.hover_text-primary.transition-colors(href='/teacher/classrooms/' + classroom._id)= classroom.name
+        span(class="text-muted-foreground/40") /
+        a.hover_text-primary.transition-colors(href='/teacher/classrooms/' + classroom._id + '/obe-manage') Quản lý OBE
+        span(class="text-muted-foreground/40") /
+        span.text-foreground Cấu hình OBE
+      
+      div.flex.flex-col.md_flex-row.md_items-center.justify-between.gap-6
+        div
+          h1.font-extrabold.tracking-tighter(style='font-size:clamp(1.5rem,4vw,2rem);line-height:1.1;')
+            | Cấu hình OBE - #{exam.title}
+          p.text-muted-foreground.mt-2(style='font-size:0.9375rem;') Thiết lập ánh xạ từ Câu hỏi bài thi tới Chuẩn đầu ra môn học (CLO).
+
+        div.flex.items-center.gap-3
+          span#save-status.text-xs.font-bold.text-muted-foreground.transition-all
+            //- "⚠ Có thay đổi chưa lưu" or "✓ Đã lưu"
+          button#save-all-btn.btn-primary.h-10.px-4.rounded-xl.inline-flex.items-center.gap-2.font-bold(type='button', disabled)
+            i.ph-bold.ph-floppy-disk
+            | Lưu tất cả
+          a.btn-outline.h-10.px-4.rounded-xl.inline-flex.items-center.gap-2(href='/teacher/classrooms/' + classroom._id + '/obe-manage')
+            i.ph-bold.ph-arrow-left
+            | Quay lại
+
+    //- Exam Questions Mapping Matrix
+    .space-y-6
+      if questions.length === 0
+        .text-center.py-12.glass-panel.p-6.rounded-2xl.border.border-border_60
+          .w-12.h-12.rounded-xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-4
+            i.ph-fill.ph-questions.text-2xl.text-muted-foreground/40
+          p.text-sm.font-bold.text-muted-foreground Chưa có câu hỏi kiểm tra nào
+      else
+        .space-y-4
+          each q, index in questions
+            div(class="glass-panel p-5 rounded-2xl border border-border/60 bg-muted/10 space-y-4 question-box", data-question-id=q._id)
+              div
+                div(class="flex items-center justify-between gap-4 mb-2")
+                  span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wide
+                    | Câu #{index + 1}
+                  span(class="px-2 py-0.5 rounded-full bg-muted text-foreground font-mono font-bold text-xs")
+                    - var pPerQ = (exam.totalPoints && questions.length > 0) ? (exam.totalPoints / questions.length) : (q.points || 0);
+                    - var pPerQStr = Number.isInteger(pPerQ) ? pPerQ : pPerQ.toFixed(2);
+                    | Điểm: #{pPerQStr}
+                p.text-sm.font-medium.text-foreground.markdown-content= q.content
+              
+              //- Selection of CLOs for this question
+              div(class="border-t border-border/40 pt-3 space-y-2")
+                p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-wider.mb-2 Gán chuẩn đầu ra (CLOs):
+                .grid.grid-cols-2.sm_grid-cols-3.gap-3
+                  each clo in clos
+                    - var existingMapping = q.outcomeMappings?.find(m => String(m.clo) === String(clo._id))
+                    - var isChecked = !!existingMapping
+                    - var mapWeight = existingMapping ? existingMapping.weight : 1.0
+                    
+                    div(class="flex items-center justify-between gap-2 p-2 rounded-lg bg-background border border-border/60 clo-row transition-colors hover_bg-muted/50")
+                      label.flex.items-center.gap-2.cursor-pointer.text-xs.font-bold.text-foreground
+                        input.clo-checkbox-q(type='checkbox', value=clo._id, checked=isChecked)
+                        span= clo.code
+                      input(class="clo-weight-q w-12 bg-muted border border-border rounded-md px-1 py-0.5 text-center text-xs focus_border-primary focus_outline-none", type='number', min=0, step=0.1, value=mapWeight, disabled=!isChecked)
+                      
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      const csrfToken = '#{csrfToken}';
+      const saveBtn = document.getElementById('save-all-btn');
+      const saveStatus = document.getElementById('save-status');
+      let hasChanges = false;
+      
+      // Render KaTeX formulas
+      if (window.renderMathInElement) {
+        document.querySelectorAll('.markdown-content, .markdown-content p').forEach(el => {
+          try {
+            window.renderMathInElement(el, {
+              delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+              ],
+              throwOnError: false
+            });
+          } catch (e) {}
+        });
+      }
+
+      function markChanged() {
+        hasChanges = true;
+        saveBtn.disabled = false;
+        saveStatus.innerHTML = '<span class="text-warning"><i class="ph-fill ph-warning-circle mr-1"></i> Có thay đổi chưa lưu</span>';
+      }
+
+      function markSaved() {
+        hasChanges = false;
+        saveBtn.disabled = true;
+        saveStatus.innerHTML = '<span class="text-success"><i class="ph-fill ph-check-circle mr-1"></i> Đã lưu</span>';
+      }
+
+      // Track changes in checkboxes
+      document.addEventListener('change', (e) => {
+        if (e.target.classList.contains('clo-checkbox-q')) {
+          const row = e.target.closest('.clo-row');
+          const weightInput = row ? row.querySelector('.clo-weight-q') : null;
+          if (weightInput) {
+            weightInput.disabled = !e.target.checked;
+          }
+          markChanged();
+        }
+      });
+      
+      // Track changes in weights
+      document.addEventListener('input', (e) => {
+        if (e.target.classList.contains('clo-weight-q')) {
+          markChanged();
+        }
+      });
+
+      // Save all handler
+      saveBtn.addEventListener('click', async () => {
+        if (!hasChanges) return;
+        
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Đang lưu...';
+        
+        const mappingsList = [];
+        
+        document.querySelectorAll('.question-box').forEach(qBox => {
+          const questionId = qBox.getAttribute('data-question-id');
+          const mappings = [];
+          
+          qBox.querySelectorAll('.clo-checkbox-q:checked').forEach(cb => {
+            const row = cb.closest('.clo-row');
+            const weightInput = row ? row.querySelector('.clo-weight-q') : null;
+            const weight = weightInput ? weightInput.value : 1.0;
+            mappings.push({
+              clo: cb.value,
+              weight: parseFloat(weight) || 1.0
+            });
+          });
+          
+          mappingsList.push({ questionId, mappings });
+        });
+
+        try {
+          const res = await fetch(window.location.pathname + '/bulk-mappings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': csrfToken,
+              'CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ _csrf: csrfToken, mappingsList })
+          });
+          
+          const data = await res.json();
+
+          if (data.success) {
+            showToast(data.message, 'success');
+            markSaved();
+          } else {
+            showToast(data.error || 'Lỗi lưu dữ liệu', 'error');
+            saveBtn.disabled = false;
+            saveStatus.innerHTML = '<span class="text-destructive"><i class="ph-fill ph-x-circle mr-1"></i> Lưu thất bại</span>';
+          }
+        } catch (err) {
+          showToast('Lỗi kết nối máy chủ.', 'error');
+          saveBtn.disabled = false;
+          saveStatus.innerHTML = '<span class="text-destructive"><i class="ph-fill ph-x-circle mr-1"></i> Lỗi kết nối</span>';
+        } finally {
+          saveBtn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Lưu tất cả';
+        }
+      });
+    });

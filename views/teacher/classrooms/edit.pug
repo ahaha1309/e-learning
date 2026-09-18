@@ -1,8 +1,10 @@
 extends ../../layouts/base
 
 block content
-  .page-narrow.max-w-7xl.pt-8.pb-32.space-y-10
-    nav.breadcrumb.mb-6
+  .page-narrow(style='max-width:36rem; padding-top:3rem; padding-bottom:5rem;')
+
+    //- Breadcrumb
+    nav.breadcrumb.mb-8.animate-in.fade-in(style='animation-delay: 50ms;')
       a(href='/teacher') Bảng điều khiển
       span.breadcrumb-sep /
       a(href='/teacher/classrooms') Lớp học
@@ -11,50 +13,84 @@ block content
       span.breadcrumb-sep /
       span.text-foreground.font-bold Cài đặt
 
-    .max-w-2xl
-      h1.text-3xl.font-extrabold.tracking-tight Cài đặt Lớp học
-      p.text-muted-foreground.mt-2 Quản lý cấu hình lớp học của bạn.
+    //- Header
+    .mb-8.animate-in.slide-in-up(style='animation-delay: 100ms;')
+      h1.text-3xl.font-extrabold.tracking-tight(style='letter-spacing: -0.02em;') Cài đặt Lớp học
+      p.text-muted-foreground.mt-2(style='line-height: 1.6; max-width: 90%;')
+        | Chỉnh sửa thông tin cơ bản và các thiết lập cho lớp học của bạn.
+
+    //- Main Panel
+    .glass-panel.p-8.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 150ms;')
 
       if errorMessage
-        .alert-danger.mt-6
-          i.ph-bold.ph-warning-circle.text-lg.flex-shrink-0
+        .alert.alert-danger.mb-6.rounded-xl(role='alert')
+          i.ph-bold.ph-warning-circle(aria-hidden='true')
           span= errorMessage
 
-      form.card.p-8.mt-8(method='POST', action='/teacher/classrooms/' + classroom.id + '/edit')
+      form#edit-classroom-form(method='POST', action='/teacher/classrooms/' + classroom.id + '/edit')
         input(type='hidden', name='_csrf', value=csrfToken)
 
         .space-y-6
+          //- Tên lớp học
           .field
-            label.field-label(for='name') Tên lớp học
-            input#name(type='text', name='name', value=formData.name, required, maxlength='160', placeholder='Nhập tên lớp học')
+            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2(for='name')
+              | Tên lớp học 
+              span.text-destructive *
+            input#name.w-full.h-12.px-4.rounded-xl.border.bg-background.text-foreground.font-semibold.transition-all(
+              class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary',
+              type='text',
+              name='name',
+              value=formData.name || '',
+              required,
+              maxlength='160',
+              autocomplete='off',
+              aria-required='true')
+            p.text-xs.text-muted-foreground.mt-2 Tên sẽ hiển thị cho tất cả học sinh khi tham gia lớp.
 
+          //- Mô tả
           .field
-            label.field-label(for='description') Mô tả
-            textarea#description(name='description', rows='4', placeholder='Mô tả lớp học của bạn...')= formData.description
+            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2(for='description')
+              | Mô tả lớp học 
+              span.text-muted-foreground.font-normal.lowercase (tùy chọn)
+            textarea#description.w-full.p-4.rounded-xl.border.bg-background.text-foreground.transition-all(
+              class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary',
+              name='description',
+              placeholder='Giới thiệu ngắn gọn về mục tiêu và nội dung của lớp học này...',
+              rows='4',
+              maxlength='1000',
+              style='resize:none;'
+            )= formData.description || ''
 
-          .field
-            label.field-label(for='approvalRequired') Phê duyệt ghi danh
-            select#approvalRequired(name='approvalRequired')
-              option(value='true', selected=formData.approvalRequired === 'true') Bắt buộc — học sinh cần phê duyệt để tham gia
-              option(value='false', selected=formData.approvalRequired === 'false') Mở — học sinh có thể tự do tham gia
+          //- Cài đặt phê duyệt
+          .field.p-5.rounded-xl.border(class='border-border/60 bg-muted/30')
+            .flex.items-start.justify-between.gap-4
+              div
+                p.text-sm.font-semibold.text-foreground Phê duyệt học sinh
+                p.text-xs.text-muted-foreground.mt-1 Kiểm duyệt yêu cầu tham gia lớp học của học sinh.
+              .relative.flex-shrink-0
+                select#approvalRequired.h-9.pl-3.pr-8.rounded-lg.border.bg-background.text-sm.font-medium.appearance-none.cursor-pointer.transition-all(
+                  class='border-border/60 focus:outline-none focus:ring-2 focus:ring-primary',
+                  name='approvalRequired',
+                  style="background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%236b7280' d='M213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32z'/%3E%3C/svg%3E\"); background-repeat: no-repeat; background-position: right 0.75rem center;"
+                )
+                  option(value='true', selected=(formData.approvalRequired !== 'false')) Bật
+                  option(value='false', selected=(formData.approvalRequired === 'false')) Tắt
 
-          .grid.grid-cols-1.gap-6(class='md_grid-cols-2')
-            .field
-              label.field-label(for='category') Danh mục
-              select#category(name='category')
-                option(value='') — Chưa phân loại —
-                each cat in categories
-                  option(value=cat._id, selected=formData.category && formData.category.toString() === cat._id.toString())= cat.name
+        //- Action bar
+        .flex.items-center.justify-end.gap-3.mt-8.pt-6.border-t(class='border-border/60')
+          a.btn.btn-ghost.rounded-full(href='/teacher/classrooms/' + classroom.id) Hủy bỏ
+          button.btn.btn-primary.rounded-full.px-6.shadow-sm(type='submit')
+            i.ph-bold.ph-check.mr-2
+            | Lưu Thay Đổi
 
-            .field
-              label.field-label(for='level') Mức độ
-              select#level(name='level')
-                option(value='Beginner', selected=formData.level === 'Beginner') Beginner (Cơ bản)
-                option(value='Intermediate', selected=formData.level === 'Intermediate') Intermediate (Trung cấp)
-                option(value='Advanced', selected=formData.level === 'Advanced') Advanced (Nâng cao)
-
-          .flex.gap-3.pt-4
-            button.btn-primary(type='submit')
-              i.ph-bold.ph-check
-              | Lưu Thay đổi
-            a.btn-outline(href='/teacher/classrooms/' + classroom.id) Hủy
+    //- ── Danger Zone ──────────────────────────────────────────────────
+    .glass-panel.p-8.mt-8.animate-in.slide-in-up(class='rounded-[2rem] border-red-500/20 bg-red-50/50', style='animation-delay: 200ms;')
+      .flex.flex-col.sm_flex-row.items-start.justify-between.gap-4
+        div
+          h3.text-lg.font-bold.text-red-600 Xóa Lớp học
+          p.text-sm.mt-1(class='text-red-600/80') Hành động này sẽ đưa lớp học vào trạng thái lưu trữ và học sinh sẽ không thể truy cập được nữa.
+        form(method='POST', action=`/teacher/classrooms/${classroom.id}/delete`)
+          input(type='hidden', name='_csrf', value=csrfToken)
+          button.btn.rounded-full.px-6.bg-red-600.text-white.shadow-sm.transition-colors(type='submit', class='hover:bg-red-700', onclick="return confirm('Bạn có chắc chắn muốn xóa lớp học này không? Hành động này không thể hoàn tác.');")
+            i.ph-bold.ph-trash.mr-2
+            | Xóa Lớp Học

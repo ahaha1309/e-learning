@@ -1,0 +1,131 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        nav.breadcrumb.animate-in.fade-in.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/assignments') Bài tập
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Chỉnh sửa & Gia hạn
+
+        .inline-flex.items-center.gap-2.rounded-full.border.text-warning.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='py-1.5 bg-warning/5 border-warning/20') Chỉnh sửa & Gia hạn
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Chỉnh sửa Bài tập
+        p.text-lg.text-muted-foreground.mt-3 Gia hạn thêm thời gian nộp bài, thay đổi yêu cầu hoặc bổ sung tệp đính kèm.
+
+      .flex.items-center.gap-4
+        a.btn-outline.h-14.px-6.rounded-full(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id + '/assignments')
+          i.ph-bold.ph-x.text-lg
+          | Hủy
+
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/edit', enctype='multipart/form-data')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      //- Main Content Col
+      .lg_col-span-8.space-y-8
+        if errorMessage
+          .alert-danger.rounded-2xl= errorMessage
+
+        //- Step 1: Basic Info
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
+              span.font-bold.text-sm 1
+            h3.text-lg.font-bold Thông tin cơ bản & Đính kèm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='title') Tiêu đề Bài tập
+            input#title.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='title', value=formData.title || assignment.title, required)
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Bài tập
+            select#type.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='type')
+              option(value='upload', selected=(formData.type || assignment.type) !== 'quiz') Nộp tệp đính kèm
+              option(value='quiz', selected=(formData.type || assignment.type) === 'quiz') Trắc nghiệm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Mô tả Ngắn
+            input#description.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='text', name='description', value=formData.description || assignment.description || '', placeholder='Tóm tắt ngắn gọn hiển thị trong danh sách bài tập')
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='instructions') Hướng dẫn Chi tiết
+            textarea#instructions.tinymce.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='instructions', rows='8')= formData.instructions || assignment.instructions || ''
+
+          #attachment-block.space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground Bổ sung Tệp đính kèm / File Hướng dẫn (Tùy chọn)
+            input#attachmentFiles.w-full.p-3.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='file', name='attachmentFiles', multiple=true)
+            p.text-xs.text-muted-foreground Thêm tệp mới vào danh sách bài tập (PDF, Word, Excel, PowerPoint, ZIP...).
+            if assignment.attachments && assignment.attachments.length > 0
+              .mt-3.space-y-2
+                p.text-xs.font-bold.text-muted-foreground Tệp hiện tại:
+                .flex.flex-wrap.gap-2
+                  each f in assignment.attachments
+                    span.inline-flex.items-center.px-3.py-1.rounded-lg.bg-muted.text-xs.font-bold(class='gap-1.5')
+                      i.ph-bold.ph-file
+                      span= f.fileName
+
+        //- Step 2: Extension & Timeline
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-warning/10 text-warning')
+              span.font-bold.text-sm 2
+            h3.text-lg.font-bold Gia hạn Thời gian & Điểm số
+
+          .grid.grid-cols-1.md_grid-cols-2.gap-6
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='totalPoints') Tổng điểm
+              input#totalPoints.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', min='0', step='0.5', name='totalPoints', value=formData.totalPoints || assignment.totalPoints, required)
+
+            .space-y-2
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='dueDate') Ngày & Giờ Hạn chót mới (Gia hạn)
+              input#dueDate.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='datetime-local', name='dueDate', value=formData.dueDate || dueDateFormatted, required)
+              p.text-xs.text-warning Thay đổi thời gian tại đây để gia hạn bài tập cho học sinh.
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='allowLateSubmission') Chính sách Nộp muộn
+            select#allowLateSubmission.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='allowLateSubmission')
+              option(value='false', selected=String(formData.allowLateSubmission) === 'false') Không cho phép nộp muộn (Tự động ẩn nút nộp khi hết hạn)
+              option(value='true', selected=String(formData.allowLateSubmission) === 'true') Cho phép nộp muộn
+
+      //- Sidebar Config Col
+      .lg_col-span-4.space-y-8
+        .glass-panel.p-8.space-y-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-success/10 text-success')
+              i.ph-bold.ph-floppy-disk.text-xl
+            h3.text-lg.font-bold Lưu thay đổi
+
+          .space-y-4
+            label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(class='border-border/60 hover_border-primary hover_bg-primary/5')
+              .relative.flex-shrink-0
+                input#isPublished.peer.sr-only(type='checkbox', name='isPublished', value='true', checked=String(formData.isPublished) !== 'false')
+                .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+              div
+                p.text-sm.font-bold.text-foreground Đang xuất bản
+                p.text-xs.text-muted-foreground Hiển thị cho học sinh trong lớp.
+
+          button.btn-primary.w-full.h-14.rounded-xl.text-base.font-bold.shadow-diffused.active_scale-95.transition-transform(type='submit')
+            i.ph-bold.ph-check-circle.text-lg
+            | Lưu & Gia hạn Bài tập
+
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
+    script(src='/js/tinymce-config.js')
+    script.
+      document.addEventListener('DOMContentLoaded', function() {
+        var typeSelect = document.getElementById('type');
+        var attachmentBlock = document.getElementById('attachment-block');
+        if (typeSelect && attachmentBlock) {
+          const toggleAttachment = () => {
+            attachmentBlock.style.display = typeSelect.value === 'quiz' ? 'none' : 'block';
+          };
+          typeSelect.addEventListener('change', toggleAttachment);
+          toggleAttachment();
+        }
+      });

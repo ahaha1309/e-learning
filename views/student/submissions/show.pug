@@ -17,14 +17,23 @@ block content
 
     if submission
       .card.p-6
-        p.text-lg.font-bold.mb-2 Câu trả lời của bạn
-        p.text-muted.whitespace-pre-wrap= submission.textAnswer || 'Chưa có câu trả lời viết.'
-      if submission.attachment && submission.attachment.url
+        if assignment.type === 'quiz'
+          p.text-lg.font-bold.mb-2 Kết quả bài trắc nghiệm
+          if submission.status === 'graded'
+            p.text-3xl.font-black.text-primary #{submission.score} 
+              span.text-sm.font-normal.text-muted-foreground / #{assignment.totalPoints} điểm
+          else
+            p.text-sm.text-muted-foreground Chưa có điểm.
+        else
+          p.text-lg.font-bold.mb-2 Câu trả lời của bạn
+          p.text-foreground.whitespace-pre-wrap.leading-relaxed= submission.textAnswer || 'Chưa có câu trả lời viết.'
+      if submission.attachment && submission.attachment.url && assignment.type !== 'quiz'
         .card.p-5
           p.text-sm.font-medium.mb-2 Tệp đính kèm
           a.pill(href=submission.attachment.url, target='_blank', rel='noreferrer') Mở tệp
       .flex.gap-3.flex-wrap
-        a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Sửa bài nộp
+        if assignment.type !== 'quiz'
+          a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission/new') Sửa bài nộp
         a.pill(href='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id) Quay lại bài tập
     else
       .empty-state

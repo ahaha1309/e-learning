@@ -94,4 +94,7 @@ server_err.txt
 *.xlsx
 *.xls
 *.pptx
+*.pdf
+*.py
+*.txt
 *.ppt

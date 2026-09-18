@@ -67,17 +67,23 @@ async function gradeSubmission(submissionId, examId, teacherId, answersData) {
 
   let totalScore = 0;
 
-  for (let ans of submission.answers) {
-    if (ans.question && ans.question.type === 'essay') {
-      const points = Number(answersData[`points_${ans._id}`] || 0);
-      const comment = answersData[`comment_${ans._id}`] || '';
-      ans.pointsAchieved = Math.min(points, ans.question.points);
-      ans.teacherComment = comment;
+  if (exam.type === 'upload') {
+    totalScore = Number(answersData.uploadScore || 0);
+    submission.teacherComment = answersData.uploadComment || '';
+  } else {
+    const pointPerQuestion = submission.answers.length > 0 ? (exam.totalPoints / submission.answers.length) : 0;
+    for (let ans of submission.answers) {
+      if (ans.question && ans.question.type === 'essay') {
+        const points = Number(answersData[`points_${ans._id}`] || 0);
+        const comment = answersData[`comment_${ans._id}`] || '';
+        ans.pointsAchieved = Math.min(points, pointPerQuestion);
+        ans.teacherComment = comment;
+      }
+      totalScore += ans.pointsAchieved;
     }
-    totalScore += ans.pointsAchieved;
   }
 
-  submission.score = totalScore;
+  submission.score = Math.min(totalScore, exam.totalPoints);
   submission.status = 'graded';
   submission.gradingStatus = GRADING_STATUS.FULLY_GRADED;
   await submission.save();

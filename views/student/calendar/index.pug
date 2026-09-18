@@ -1,0 +1,94 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow(style='max-width: 80rem; padding-top:2rem; padding-bottom:5rem;')
+    h1.text-2xl.font-bold.mb-8 Lịch học tập
+
+    .glass-panel.p-6.rounded-2xl.border.border-border
+      #calendar
+
+  script(src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js')
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+      var eventsData = !{eventsJson}; 
+      
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'timeGridWeek',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        slotMinTime: '06:00:00', // Typically meetings start after 6 AM
+        slotMaxTime: '22:00:00', // Typically end before 10 PM
+        allDaySlot: false,
+        themeSystem: 'standard',
+        events: eventsData,
+        eventContent: function(arg) {
+          let wrapEl = document.createElement('div');
+          wrapEl.style.overflow = 'hidden';
+          wrapEl.style.textOverflow = 'ellipsis';
+          wrapEl.style.display = '-webkit-box';
+          wrapEl.style.WebkitLineClamp = '3'; // Limit to 3 lines
+          wrapEl.style.WebkitBoxOrient = 'vertical';
+          wrapEl.style.whiteSpace = 'normal';
+          
+          let titleStr = '<b>' + arg.event.title + '</b>';
+          let classStr = '<br><span style="font-size:0.85em; opacity:0.9;">' + arg.event.extendedProps.classroomName + '</span>';
+          
+          wrapEl.innerHTML = titleStr + classStr;
+
+          return { domNodes: [ wrapEl ] }
+        },
+        eventClick: function(info) {
+          if (info.event.url && info.event.url !== '#') {
+            window.location.href = info.event.url;
+            info.jsEvent.preventDefault();
+          }
+        }
+      });
+      calendar.render();
+    });
+
+  style.
+    .fc-theme-standard .fc-scrollgrid {
+      border-color: var(--border);
+    }
+    .fc-theme-standard th {
+      border-color: var(--border);
+      padding: 10px 0;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .fc-theme-standard td {
+      border-color: var(--border);
+    }
+    .fc-event {
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      border-width: 1px 1px 1px 4px !important;
+      overflow: hidden;
+    }
+    .fc-event-main {
+      color: inherit !important;
+    }
+    .fc-toolbar-title {
+      font-size: 1.25rem !important;
+      font-weight: 700 !important;
+      color: var(--foreground);
+    }
+    .fc-col-header-cell-cushion {
+      color: var(--foreground) !important;
+      text-decoration: none !important;
+    }
+    .fc-daygrid-day-number {
+      color: var(--foreground) !important;
+      text-decoration: none !important;
+      font-weight: 500;
+    }
+    .fc-timegrid-slot-label-cushion {
+      color: var(--muted-foreground) !important;
+    }

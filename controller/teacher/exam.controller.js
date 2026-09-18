@@ -5,6 +5,7 @@ const Question = require('../../models/Question');
 const ExamSubmission = require('../../models/ExamSubmission');
 const { Parser } = require('json2csv');
 const { sendNotification } = require('../../helper/notification.helper');
+const path = require('path');
 
 function formatValidationErrors(req) {
   const result = validationResult(req);
@@ -66,19 +67,38 @@ async function createExamHandler(req, res, next) {
       });
     }
 
+    const attachments = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((f) => {
+        const ext = path.extname(f.originalname).replace('.', '').toLowerCase();
+        attachments.push({
+          fileName: f.originalname,
+          fileUrl: `/uploads/exams/${f.filename}`,
+          fileType: ext || 'file',
+          fileSize: f.size,
+          uploadedAt: new Date(),
+        });
+      });
+    }
+
     const exam = new Exam({
       classroom: classroom.id,
       teacher: req.user.id,
       title: req.body.title,
       description: req.body.description || '',
+      type: req.body.type === 'upload' ? 'upload' : 'quiz',
+      instructions: req.body.instructions || '',
       duration: Number(req.body.duration || 60),
       password: req.body.password || '',
       maxAttempts: Number(req.body.maxAttempts || 1),
       showResult: req.body.showResult || 'after_submit',
       isPublished: req.body.isPublished === 'true',
       strictMode: req.body.strictMode === 'true',
+      isCoding: req.body.isCoding === 'true',
       maxViolations: Number(req.body.maxViolations || 0),
       shuffle: req.body.shuffle === 'true',
+      attachments,
+      totalPoints: Number(req.body.totalPoints || 10),
     });
 
     if (req.body.startTime) exam.startTime = new Date(req.body.startTime);
@@ -127,6 +147,10 @@ async function renderManageQuestions(req, res, next) {
     const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
     if (!exam) return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
 
+    if (exam.type === 'upload') {
+      return res.redirect(`/teacher/classrooms/${classroom.id}/exams/${exam.id}?feedback=${encodeURIComponent('Upload exams do not have questions.')}`);
+    }
+
     const questions = await Question.find({ exam: exam.id }).sort({ order: 1, createdAt: 1 });
 
     return res.render('teacher/exams/questions', {
@@ -149,7 +173,12 @@ async function addQuestionHandler(req, res, next) {
     const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
     if (!exam) return res.status(404).send('Exam not found');
 
-    const { type, content, points, order } = req.body;
+    const submissionCount = await ExamSubmission.countDocuments({ exam: exam.id });
+    if (submissionCount > 0) {
+      return res.redirect(`/teacher/classrooms/${classroom.id}/exams/${exam.id}/questions?error=Cannot+modify+questions+after+students+have+submitted`);
+    }
+
+    const { type, content, order, isCoding } = req.body;
     
     if (!content || !content.trim()) {
       const questions = await Question.find({ exam: exam.id }).sort({ order: 1, createdAt: 1 });
@@ -194,8 +223,8 @@ async function addQuestionHandler(req, res, next) {
       type: type || 'multiple_choice',
       content: content.trim(),
       options,
-      points: Number(points || 1),
       order: Number(order || 0),
+      isCoding: type === 'essay' && isCoding === 'true',
     });
 
     await question.save();
@@ -208,18 +237,21 @@ async function addQuestionHandler(req, res, next) {
 async function deleteQuestionHandler(req, res, next) {
   try {
     const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
-    if (!classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    if (!classroom) return res.status(404).json({ success: false, message: 'Classroom not found' });
     const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
-    if (!exam) return res.status(404).send('Not found');
+    if (!exam) return res.status(404).json({ success: false, message: 'Exam not found' });
 
-    const question = await Question.findOneAndDelete({ _id: req.params.questionId, exam: exam.id });
-    if (question) {
-      exam.totalPoints = Math.max(0, exam.totalPoints - question.points);
-      exam.questionCount = Math.max(0, exam.questionCount - 1);
-      await exam.save();
+    const submissionCount = await ExamSubmission.countDocuments({ exam: exam.id });
+    if (submissionCount > 0) {
+      return res.status(400).json({ success: false, message: 'Không thể xóa câu hỏi vì đã có học sinh nộp bài.' });
     }
 
-    return res.redirect(`/teacher/classrooms/${classroom.id}/exams/${exam.id}/questions?feedback=Question+deleted`);
+    const question = await Question.findOneAndDelete({ _id: req.params.questionId, exam: exam.id });
+    if (!question) {
+      return res.status(404).json({ success: false, message: 'Question not found' });
+    }
+
+    return res.json({ success: true, message: 'Xóa câu hỏi thành công' });
   } catch (error) {
     return next(error);
   }
@@ -343,11 +375,113 @@ async function exportGradesCSVHandler(req, res, next) {
   }
 }
 
+async function renderEditExam(req, res, next) {
+  try {
+    const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
+    if (!classroom) {
+      return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    }
+
+    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
+    if (!exam) {
+      return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
+    }
+
+    const startTimeFormatted = exam.startTime ? exam.startTime.toISOString().slice(0, 16) : '';
+    const endTimeFormatted = exam.endTime ? exam.endTime.toISOString().slice(0, 16) : '';
+
+    return res.render('teacher/exams/edit', {
+      title: 'Edit Exam',
+      classroom,
+      exam,
+      formData: {},
+      startTimeFormatted,
+      endTimeFormatted,
+      errorMessage: null,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function updateExamHandler(req, res, next) {
+  try {
+    const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
+    if (!classroom) {
+      return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
+    }
+
+    const exam = await Exam.findOne({ _id: req.params.examId, classroom: classroom.id, teacher: req.user.id });
+    if (!exam) {
+      return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
+    }
+
+    const validationMessage = formatValidationErrors(req);
+    if (validationMessage) {
+      const startTimeFormatted = exam.startTime ? exam.startTime.toISOString().slice(0, 16) : '';
+      const endTimeFormatted = exam.endTime ? exam.endTime.toISOString().slice(0, 16) : '';
+      return res.status(422).render('teacher/exams/edit', {
+        title: 'Edit Exam',
+        classroom,
+        exam,
+        formData: req.body,
+        startTimeFormatted,
+        endTimeFormatted,
+        errorMessage: validationMessage,
+      });
+    }
+
+    exam.title = req.body.title;
+    exam.description = req.body.description || '';
+    if (req.body.type) exam.type = req.body.type === 'upload' ? 'upload' : 'quiz';
+    exam.instructions = req.body.instructions || '';
+    exam.duration = Number(req.body.duration || 60);
+    exam.password = req.body.password || '';
+    exam.showResult = req.body.showResult || 'after_submit';
+    exam.isPublished = req.body.isPublished === 'true';
+    exam.strictMode = req.body.strictMode === 'true';
+    exam.isCoding = req.body.isCoding === 'true';
+    exam.maxViolations = Number(req.body.maxViolations || 0);
+    exam.totalPoints = Number(req.body.totalPoints || 10);
+
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((f) => {
+        const ext = path.extname(f.originalname).replace('.', '').toLowerCase();
+        exam.attachments.push({
+          fileName: f.originalname,
+          fileUrl: `/uploads/exams/${f.filename}`,
+          fileType: ext || 'file',
+          fileSize: f.size,
+          uploadedAt: new Date(),
+        });
+      });
+    }
+
+    if (req.body.startTime) {
+      exam.startTime = new Date(req.body.startTime);
+    } else {
+      exam.startTime = null;
+    }
+    if (req.body.endTime) {
+      exam.endTime = new Date(req.body.endTime);
+    } else {
+      exam.endTime = null;
+    }
+
+    await exam.save();
+    return res.redirect(`/teacher/classrooms/${classroom.id}/exams/${exam.id}?feedback=${encodeURIComponent('Exam updated successfully.')}`);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   renderExamIndex,
   renderCreateExam,
   createExamHandler,
   renderExamDetail,
+  renderEditExam,
+  updateExamHandler,
   renderManageQuestions,
   addQuestionHandler,
   deleteQuestionHandler,

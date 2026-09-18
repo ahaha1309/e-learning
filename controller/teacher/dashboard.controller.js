@@ -7,6 +7,7 @@ const Assignment = require('../../models/Assignment');
 const AttendanceSession = require('../../models/AttendanceSession');
 const AttendanceRecord = require('../../models/AttendanceRecord');
 const Notification = require('../../models/Notification');
+const SystemSetting = require('../../models/SystemSetting');
 
 const DAY = 86400000;
 const HOUR = 3600000;
@@ -184,8 +185,8 @@ async function renderTeacherDashboard(req, res, next) {
       ...monthAssign.map(a => ({ day: new Date(a.dueDate).getDate(), type: 'assignment', title: a.title, classroom: a.classroom ? a.classroom.name : '' }))
     ];
 
-    // ── AI recommendations: rules-based on real signals ──
-    const recommendations = buildTeacherRecommendations({
+    // ── AI recommendations: dynamic via Gemini API ──
+    const recommendations = await getTeacherRecommendations({
       submissionCount, pendingStudents, avgScore, attendanceRate, upcoming, classrooms, totalStudents
     });
 
@@ -195,10 +196,10 @@ async function renderTeacherDashboard(req, res, next) {
 
     // ── Quick actions ──
     const quickActions = [
-      { label: 'Create Classroom', icon: 'ph-plus', href: '/teacher/classrooms/new', tone: 'primary' },
-      { label: 'Question Bank', icon: 'ph-bank', href: '/teacher/question-banks', tone: 'info' },
-      { label: 'Analytics', icon: 'ph-chart-bar', href: '/teacher/analytics', tone: 'warning' },
-      { label: 'My Classrooms', icon: 'ph-chalkboard', href: '/teacher/classrooms', tone: 'success' }
+      { label: 'Tạo lớp học', icon: 'ph-plus', href: '/teacher/classrooms/new', tone: 'primary' },
+      { label: 'Ngân hàng CH', icon: 'ph-bank', href: '/teacher/question-banks', tone: 'info' },
+      { label: 'Phân tích', icon: 'ph-chart-bar', href: '/teacher/analytics', tone: 'warning' },
+      { label: 'Lớp học của tôi', icon: 'ph-chalkboard', href: '/teacher/classrooms', tone: 'success' }
     ];
 
     res.render('teacher/dashboard', {
@@ -244,28 +245,73 @@ function relabelRelative(date) {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+async function getTeacherRecommendations(contextData) {
+  try {
+    const dbSetting = await SystemSetting.findOne({ key: 'geminiApiKey' });
+    const apiKey = (dbSetting ? dbSetting.value : null) || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return buildTeacherRecommendations(contextData);
+    }
+
+    const prompt = `Bạn là một AI phân tích dữ liệu lớp học cho giáo viên. Hãy đưa ra 4 lời khuyên hữu ích, thực tế và mang tính hành động dựa trên số liệu sau:
+- Tổng số học sinh: ${contextData.totalStudents}
+- Số bài chưa chấm: ${contextData.submissionCount}
+- Số học sinh chờ duyệt: ${contextData.pendingStudents}
+- Điểm trung bình các lớp: ${contextData.avgScore !== null ? contextData.avgScore + '%' : 'Chưa có'}
+- Tỷ lệ chuyên cần: ${contextData.attendanceRate !== null ? contextData.attendanceRate + '%' : 'Chưa có'}
+- Lớp học đang hoạt động: ${contextData.classrooms.length}
+
+Trả về một mảng JSON (chỉ mảng, không markdown, không backtick) chứa tối đa 4 object, mỗi object có cấu trúc:
+{ "icon": "ph-xxx", "tone": "primary|info|warning|destructive|success", "title": "Tiêu đề ngắn", "text": "Mô tả chi tiết lời khuyên" }
+Icon phải bắt đầu bằng "ph-" (ví dụ ph-tray, ph-chart-line, ph-user-plus, ph-warning-circle, ph-sparkle, vv).
+Chú ý: Chỉ trả về mảng JSON hợp lệ, có thể parse bằng JSON.parse().`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, topK: 40, topP: 0.95 }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    let text = data.candidates[0].content.parts[0].text;
+    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error('Gemini API Error in Teacher Dashboard:', err);
+    return buildTeacherRecommendations(contextData);
+  }
+}
+
 function buildTeacherRecommendations({ submissionCount, pendingStudents, avgScore, attendanceRate, upcoming, classrooms, totalStudents }) {
   const recs = [];
   if (submissionCount > 0) {
-    recs.push({ icon: 'ph-tray', tone: 'warning', title: 'Grade pending work', text: `${submissionCount} submission(s) await grading. Clearing these keeps students motivated and your dashboard accurate.` });
+    recs.push({ icon: 'ph-tray', tone: 'warning', title: 'Cần chấm điểm', text: `Có ${submissionCount} bài nộp đang chờ chấm điểm. Hãy chấm sớm để giúp học sinh có động lực và bảng điều khiển của bạn luôn chính xác.` });
   }
   if (pendingStudents > 0) {
-    recs.push({ icon: 'ph-user-plus', tone: 'info', title: 'Review enrollments', text: `${pendingStudents} student(s) are waiting for classroom approval. Approve or reject to manage your roster.` });
+    recs.push({ icon: 'ph-user-plus', tone: 'info', title: 'Kiểm duyệt học sinh', text: `Có ${pendingStudents} học sinh đang chờ được duyệt vào lớp. Xem xét và phê duyệt để bắt đầu quản lý danh sách lớp.` });
   }
   if (avgScore !== null && avgScore < 60) {
-    recs.push({ icon: 'ph-trend-down', tone: 'destructive', title: 'Scores trending low', text: `Class average is ${avgScore}%. Consider a review session or scaffolding before the next assessment.` });
+    recs.push({ icon: 'ph-trend-down', tone: 'destructive', title: 'Điểm trung bình đang giảm', text: `Điểm trung bình của lớp là ${avgScore}%. Hãy cân nhắc tổ chức một buổi ôn tập trước kỳ kiểm tra tiếp theo.` });
   }
   if (attendanceRate !== null && attendanceRate < 70) {
-    recs.push({ icon: 'ph-calendar-x', tone: 'warning', title: 'Attendance slipping', text: `Attendance is ${attendanceRate}%. Schedule a live session and share the PIN early.` });
+    recs.push({ icon: 'ph-calendar-x', tone: 'warning', title: 'Tỷ lệ chuyên cần thấp', text: `Tỷ lệ điểm danh hiện là ${attendanceRate}%. Hãy cân nhắc việc tổ chức buổi học trực tiếp và chia sẻ mã PIN sớm.` });
   }
   if (upcoming.length && upcoming.some(u => u.isUrgent)) {
-    recs.push({ icon: 'ph-fire', tone: 'info', title: 'Deadlines ahead', text: `${upcoming.filter(u => u.isUrgent).length} deadline(s) within 2 days. Post a reminder to your classes.` });
+    recs.push({ icon: 'ph-fire', tone: 'info', title: 'Sắp tới hạn chót', text: `Có ${upcoming.filter(u => u.isUrgent).length} hạn chót trong vòng 2 ngày tới. Đừng quên gửi nhắc nhở cho học sinh.` });
   }
   if (classrooms.length === 0) {
-    recs.push({ icon: 'ph-plus-circle', tone: 'primary', title: 'Create a classroom', text: 'You have no active classrooms. Create one to start adding lectures and assessments.' });
+    recs.push({ icon: 'ph-plus-circle', tone: 'primary', title: 'Tạo lớp học', text: 'Bạn chưa có lớp học nào. Hãy tạo một lớp học để bắt đầu thêm bài giảng và bài tập.' });
   }
   if (recs.length === 0) {
-    recs.push({ icon: 'ph-sparkle', tone: 'success', title: 'Everything in balance', text: 'No critical signals detected. Keep posting fresh content to drive engagement.' });
+    recs.push({ icon: 'ph-sparkle', tone: 'success', title: 'Mọi thứ đều hoàn hảo', text: 'Không phát hiện vấn đề nào cần chú ý. Hãy tiếp tục chia sẻ nội dung mới để duy trì sự tham gia.' });
   }
   return recs.slice(0, 4);
 }

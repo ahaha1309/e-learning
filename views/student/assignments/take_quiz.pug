@@ -1,0 +1,81 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    p.eyebrow Học sinh
+    h1.text-3xl.font-bold.tracking-tight= assignment.title
+    p.text-muted-foreground.mt-2 Hãy hoàn thành các câu hỏi trắc nghiệm dưới đây. Bài tập này chỉ cho phép làm 1 lần duy nhất.
+
+    form#exam-form.max-w-3xl.mx-auto.space-y-8(
+      method='POST',
+      action='/student/classrooms/' + membership.classroom.id + '/assignments/' + assignment.id + '/submission'
+    )
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      if questions && questions.length
+        - var pointPerQuestion = questions.length > 0 ? (assignment.totalPoints / questions.length) : 0;
+        each question, index in questions
+          article.glass-panel.relative.overflow-hidden.animate-in.slide-in-up(
+            class='rounded-2xl border-border/60 p-8',
+            style='animation-delay: ' + (index * 60) + 'ms'
+          )
+            .absolute.top-0.left-0.w-1.h-full.bg-primary(aria-hidden='true')
+
+            .flex.items-start.justify-between.mb-6(class='gap-4')
+              .flex.items-center(class='gap-3')
+                span.flex-shrink-0.w-9.h-9.rounded-xl.flex.items-center.justify-center.text-sm.font-bold.text-primary(
+                  class='bg-primary/10 border border-primary/20'
+                )= index + 1
+                if question.type === 'multiple_choice'
+                  span.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Trắc nghiệm
+                else if question.type === 'multiple_answer'
+                  span.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Chọn nhiều đáp án
+                else
+                  span.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tự luận
+
+              span.badge.badge-muted.flex-shrink-0
+                i.ph-bold.ph-star.text-xs(aria-hidden='true')
+                | #{pointPerQuestion.toFixed(2)} điểm
+
+            .text-base.font-medium.leading-relaxed.mb-6 !{question.content}
+
+            if question.type === 'multiple_choice'
+              fieldset.grid.gap-3
+                legend.sr-only Chọn một đáp án
+                each opt in question.options
+                  label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(
+                    class='border-border/60 hover_border-primary hover_bg-primary/5'
+                  )
+                    .relative.flex-shrink-0
+                      input.peer.sr-only(type='radio', name='q_' + question.id, value=opt.id, required)
+                      .w-5.h-5.rounded-full.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                      i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+                    span.text-sm.text-foreground.font-medium.transition-colors(class='group-hover_text-primary')= opt.text
+
+            else if question.type === 'multiple_answer'
+              fieldset.grid.gap-3
+                legend.sr-only Chọn nhiều đáp án
+                each opt in question.options
+                  label.group.flex.items-center.gap-4.p-4.rounded-xl.border.cursor-pointer.transition-all.duration-150(
+                    class='border-border/60 hover_border-primary hover_bg-primary/5'
+                  )
+                    .relative.flex-shrink-0
+                      input.peer.sr-only(type='checkbox', name='q_' + question.id, value=opt.id)
+                      .w-5.h-5.rounded-md.border-2.transition-all(class='border-muted-foreground peer-checked_border-primary peer-checked_bg-primary')
+                      i.ph-bold.ph-check.absolute.inset-0.flex.items-center.justify-center.text-white.text-xs.opacity-0.scale-50.transition-all(class='peer-checked_opacity-100 peer-checked_scale-100', aria-hidden='true')
+                    span.text-sm.text-foreground.font-medium.transition-colors(class='group-hover_text-primary')= opt.text
+
+      else
+        .empty-state.mx-4
+          i.ph-bold.ph-question.text-4xl.text-muted-foreground.mb-3(aria-hidden='true')
+          h3.text-lg.font-bold Chưa có câu hỏi nào được tải
+
+      if questions && questions.length
+        .sticky.bottom-6.flex.justify-end.pt-6(style='z-index: 50;')
+          button.btn-primary.h-12.px-8.rounded-full.font-bold.shadow-diffused.active_scale-95.transition-transform(
+            type='submit',
+            id='submit-exam-btn',
+            onclick='return confirm("Bạn chắc chắn muốn nộp bài? Bài tập này chỉ cho phép làm một lần.");'
+          )
+            i.ph-bold.ph-paper-plane-tilt
+            | Nộp bài trắc nghiệm

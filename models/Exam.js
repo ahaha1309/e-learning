@@ -27,6 +27,24 @@ const examSchema = new Schema(
       trim: true,
       default: '',
     },
+    type: {
+      type: String,
+      enum: ['quiz', 'upload'],
+      default: 'quiz',
+    },
+    instructions: {
+      type: String,
+      default: '',
+    },
+    attachments: [
+      {
+        fileName: String,
+        fileUrl: String,
+        fileType: String,
+        fileSize: Number,
+        uploadedAt: Date,
+      },
+    ],
     duration: {
       type: Number,
       default: 60, // in minutes, 0 means unlimited
@@ -55,6 +73,10 @@ const examSchema = new Schema(
       default: 'after_submit',
     },
     strictMode: {
+      type: Boolean,
+      default: false,
+    },
+    isCoding: {
       type: Boolean,
       default: false,
     },

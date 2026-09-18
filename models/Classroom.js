@@ -15,6 +15,7 @@ const classroomSchema = new Schema(
       trim: true,
       maxlength: 160,
     },
+
     description: {
       type: String,
       trim: true,
@@ -41,16 +42,7 @@ const classroomSchema = new Schema(
       default: false,
       index: true,
     },
-    category: {
-      type: Schema.Types.ObjectId,
-      ref: 'Category',
-      default: null,
-    },
-    level: {
-      type: String,
-      enum: ['Beginner', 'Intermediate', 'Advanced'],
-      default: 'Beginner',
-    },
+
     // Gradebook weighting. null = unweighted simple average across all scored
     // items. When present, each {itemType, weight} contributes that item type's
     // average % times weight to the overall (weights need not sum to 1; they are

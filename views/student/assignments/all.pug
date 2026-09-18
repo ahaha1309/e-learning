@@ -1,46 +1,103 @@
 extends ../../layouts/base
 
-include ../../layouts/mixins
-
 block content
-  .page.space-y-8.pt-8
-    +pgHeader({ eyebrow: 'Học sinh', icon: 'ph-bold ph-file-text', h1: 'Tất cả bài tập', subtitle: 'Mọi bài tập trên các lớp học của bạn, sắp xếp theo từng lớp. Mở và nộp bài chỉ trong một cú nhấp chuột.' })
-      .glass-panel.rounded-2xl.p-4.flex.items-center.gap-4(class='border-border/60')
-        .w-10.h-10.rounded-xl.flex.items-center.justify-center.text-primary(class='bg-primary/10')
-          i.ph-bold.ph-stack.text-lg
-        div
-          p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Bài tập
-          p.font-mono.text-2xl.font-bold.tracking-tighter= groups.reduce((n, g) => n + g.items.length, 0)
+  .page-narrow(style='max-width: 64rem; padding-top:2rem; padding-bottom:5rem;')
+    h1.text-2xl.font-bold.mb-8 Bài tập
 
-    if groups && groups.length
-      .space-y-10.animate-in.slide-in-up(style='animation-delay:100ms;')
-        each group in groups
-          section.space-y-4
-            .flex.items-center.gap-2
-              i.ph-bold.ph-chalkboard.text-base.text-muted-foreground
-              h2.text-lg.font-extrabold.tracking-tight= group.classroom.name
-              if group.classroom.code
-                span.text-xs.font-mono.text-muted-foreground · #{group.classroom.code}
-            .space-y-4
-              each assignment in group.items
-                article.card.p-5.transition-colors(class='hover_border-primary/50')
-                  .flex.flex-col.md_flex-row.md_items-start.justify-between.gap-4
-                    .flex-1
-                      h3.text-lg.font-bold= assignment.title
-                      p.text-sm.text-muted-foreground.mt-1= assignment.description || 'Chưa có mô tả.'
-                      .flex.flex-wrap.items-center.gap-3.mt-3
-                        span.badge-warning= (assignment.totalPoints || 0) + ' điểm'
-                        if assignment.dueDate
-                          span.text-xs.text-muted-foreground Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
-                        if assignment.mySubmission
-                          span.badge.badge-success.badge-sm Đã nộp
-                  .flex.flex-wrap.gap-2.mt-4.pt-4.border-t.border-border
-                    a.btn-secondary.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}`) Mở bài tập
-                    if assignment.mySubmission
-                      a.btn-outline.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}/submissions/${assignment.mySubmission._id}`) Xem bài nộp
-                    else
-                      a.btn-primary.btn-sm(href=`/student/classrooms/${group.classroom._id}/assignments/${assignment._id}/submission/new`)
-                        i.ph-bold.ph-upload-simple
-                        | Nộp bài
-    else
-      +emptyState({ icon: 'ph-fill ph-file-text', title: 'Chưa có bài tập nào', desc: 'Khi giảng viên xuất bản bài tập trên lớp học bạn đã tham gia, chúng sẽ xuất hiện tại đây. Hãy tham gia một lớp học để bắt đầu.', ctaText: 'Tìm lớp học', ctaHref: '/catalog' })
+    //- Tabs Navigation
+    .flex.items-center.border-b.border-border.mb-6.gap-6
+      button.pb-3.text-sm.font-bold.border-b-2.border-primary.text-foreground(id="tab-upcoming", onclick="switchTab('upcoming')") Sắp tới
+      button.pb-3.text-sm.font-bold.text-muted-foreground.border-b-2.border-transparent.transition-colors(id="tab-pastdue", class='hover_text-foreground', onclick="switchTab('pastdue')") 
+        | Quá hạn
+        if pastDue.length
+          span.rounded-full.bg-destructive.inline-block.ml-1.mb-1(class='w-1.5 h-1.5')
+      button.pb-3.text-sm.font-bold.text-muted-foreground.border-b-2.border-transparent.transition-colors(id="tab-completed", class='hover_text-foreground', onclick="switchTab('completed')") Hoàn thành
+
+    //- UPCOMING TAB
+    #content-upcoming.tab-content
+      if upcoming.length === 0
+        .flex.flex-col.items-center.justify-center.py-20.text-center
+          i.ph-fill.ph-notebook.text-6xl.text-muted-foreground.opacity-50.mb-4
+          h3.text-lg.font-bold.text-foreground Không có bài tập sắp tới
+          p.text-sm.text-muted-foreground.mt-2 Bạn có thể kiểm tra từng lớp học để xem thêm kết quả.
+      else
+        .space-y-4
+          each item in upcoming
+            a.block.bg-card.border.border-border.rounded-xl.p-5.transition-all(class='hover_shadow-md', href='/student/classrooms/' + item.classroom._id + '/assignments/' + item._id)
+              .flex.gap-4.items-center
+                .w-12.h-12.rounded-lg.bg-primary.text-white.flex.items-center.justify-center.font-bold.flex-shrink-0
+                  = item.classroom.name.charAt(0).toUpperCase()
+                .flex-1.min-w-0
+                  h4.text-base.font-bold.text-foreground.truncate= item.title
+                  if item.dueDate
+                    p.text-xs.mt-1.text-muted-foreground
+                      | Đến hạn lúc 
+                      = new Date(item.dueDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+                  p.text-xs.mt-1.text-muted-foreground.truncate= item.classroom.code + ' ' + item.classroom.name
+
+    //- PAST DUE TAB
+    #content-pastdue.tab-content.hidden
+      if pastDue.length === 0
+        .flex.flex-col.items-center.justify-center.py-20.text-center
+          h3.text-lg.font-bold.text-foreground Không có bài tập quá hạn
+      else
+        .space-y-4
+          each item in pastDue
+            a.block.bg-card.border.border-border.rounded-xl.p-5.transition-all(class='hover_shadow-md', href='/student/classrooms/' + item.classroom._id + '/assignments/' + item._id)
+              .flex.gap-4.items-center
+                .w-12.h-12.rounded-lg.bg-destructive.text-white.flex.items-center.justify-center.font-bold.flex-shrink-0
+                  = item.classroom.name.charAt(0).toUpperCase()
+                .flex-1.min-w-0
+                  h4.text-base.font-bold.text-foreground.truncate= item.title
+                  if item.dueDate
+                    p.text-xs.mt-1.text-destructive.font-medium
+                      | Quá hạn từ 
+                      = new Date(item.dueDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+                  p.text-xs.mt-1.text-muted-foreground.truncate= item.classroom.code + ' ' + item.classroom.name
+
+    //- COMPLETED TAB
+    #content-completed.tab-content.hidden
+      if completed.length === 0
+        .flex.flex-col.items-center.justify-center.py-20.text-center
+          h3.text-lg.font-bold.text-foreground Không có bài tập nào đã hoàn thành
+      else
+        .space-y-4
+          each item in completed
+            a.block.bg-card.border.border-border.rounded-xl.p-5.transition-all(class='hover_shadow-md', href='/student/classrooms/' + item.classroom._id + '/assignments/' + item._id)
+              .flex.gap-4.items-center
+                .w-12.h-12.rounded-lg.bg-muted.text-muted-foreground.flex.items-center.justify-center.font-bold.flex-shrink-0
+                  = item.classroom.name.charAt(0).toUpperCase()
+                .flex-1.min-w-0
+                  h4.text-base.font-bold.text-foreground.truncate= item.title
+                  if item.mySubmission
+                    p.text-xs.mt-1.text-muted-foreground
+                      | Đã nộp lúc 
+                      = new Date(item.mySubmission.submittedAt || item.mySubmission.updatedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
+                  p.text-xs.mt-1.text-muted-foreground.truncate= item.classroom.code + ' ' + item.classroom.name
+                .flex-shrink-0.ml-4
+                  if item.mySubmission
+                    span.inline-flex.items-center.gap-1.text-xs.font-bold.text-success(class='bg-success/10 px-2 py-1 rounded-md')
+                      i.ph-bold.ph-check
+                      | Đã nộp
+                  else
+                    span.inline-flex.items-center.gap-1.text-xs.font-bold.text-muted-foreground(class='bg-muted px-2 py-1 rounded-md')
+                      i.ph-bold.ph-prohibit
+                      | Không nộp
+
+  script.
+    function switchTab(tabId) {
+      // Hide all contents
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      // Show selected content
+      document.getElementById('content-' + tabId).classList.remove('hidden');
+      
+      // Reset all tabs styling
+      document.querySelectorAll('[id^="tab-"]').forEach(el => {
+        el.classList.remove('text-foreground', 'border-primary');
+        el.classList.add('text-muted-foreground', 'border-transparent');
+      });
+      // Active tab styling
+      const activeTab = document.getElementById('tab-' + tabId);
+      activeTab.classList.remove('text-muted-foreground', 'border-transparent');
+      activeTab.classList.add('text-foreground', 'border-primary');
+    }

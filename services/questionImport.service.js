@@ -29,17 +29,24 @@ function validateQuestion(q, index) {
 }
 
 /**
- * Bulk-import questions into an exam.
+ * Bulk-import questions into an exam or assignment.
  *
- * @param {string}   examId      - Mongoose ObjectId string
+ * @param {string}   targetId    - Mongoose ObjectId string for Exam or Assignment
  * @param {string}   teacherId   - Mongoose ObjectId string
  * @param {object[]} rawQuestions - Array from the client preview/edit step
- * @param {number}   defaultPoints - Score per question (default 1)
+ * @param {string}   targetType  - 'exam' or 'assignment'
  * @returns {{ inserted: number, errors: string[] }}
  */
-async function bulkImportQuestions(examId, teacherId, rawQuestions, defaultPoints = 1) {
-  const exam = await Exam.findOne({ _id: examId, teacher: teacherId });
-  if (!exam) throw new AppError('Exam not found', 404);
+async function bulkImportQuestions(targetId, teacherId, rawQuestions, targetType = 'exam') {
+  let target;
+  if (targetType === 'assignment') {
+    const Assignment = require('../models/Assignment');
+    target = await Assignment.findOne({ _id: targetId, teacher: teacherId });
+  } else {
+    target = await Exam.findOne({ _id: targetId, teacher: teacherId });
+  }
+  
+  if (!target) throw new AppError(`${targetType === 'exam' ? 'Exam' : 'Assignment'} not found`, 404);
 
   if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
     throw new AppError('No questions provided.', 422);
@@ -53,7 +60,13 @@ async function bulkImportQuestions(examId, teacherId, rawQuestions, defaultPoint
   const validDocs = [];
 
   // Determine starting order so imported questions append after existing ones
-  const lastQuestion = await Question.findOne({ exam: examId }).sort({ order: -1 });
+  const query = {};
+  if (targetType === 'assignment') {
+    query.assignment = targetId;
+  } else {
+    query.exam = targetId;
+  }
+  const lastQuestion = await Question.findOne(query).sort({ order: -1 });
   let currentOrder = lastQuestion ? lastQuestion.order : 0;
 
   for (let i = 0; i < rawQuestions.length; i++) {
@@ -64,7 +77,7 @@ async function bulkImportQuestions(examId, teacherId, rawQuestions, defaultPoint
       continue;
     }
 
-    const points = Number(raw.points) > 0 ? Number(raw.points) : defaultPoints;
+    const points = Number(raw.points) > 0 ? Number(raw.points) : 1;
     currentOrder++;
 
     const options = (raw.type !== 'essay' && Array.isArray(raw.options))
@@ -74,14 +87,19 @@ async function bulkImportQuestions(examId, teacherId, rawQuestions, defaultPoint
         }))
       : [];
 
-    validDocs.push({
-      exam: examId,
+    const doc = {
       type: raw.type || 'multiple_choice',
       content: String(raw.content).trim(),
       options,
-      points,
+      points, // default 1, though deprecated, kept for schema compat
       order: currentOrder,
-    });
+    };
+    if (targetType === 'assignment') {
+      doc.assignment = targetId;
+    } else {
+      doc.exam = targetId;
+    }
+    validDocs.push(doc);
   }
 
   let inserted = 0;
@@ -90,11 +108,17 @@ async function bulkImportQuestions(examId, teacherId, rawQuestions, defaultPoint
     const result = await Question.insertMany(validDocs, { ordered: false });
     inserted = result.length;
 
-    // Update exam counters
-    const totalPoints = validDocs.reduce((sum, q) => sum + q.points, 0);
-    await Exam.findByIdAndUpdate(examId, {
-      $inc: { questionCount: inserted, totalPoints },
-    });
+    // Update counters
+    if (targetType === 'assignment') {
+      const Assignment = require('../models/Assignment');
+      await Assignment.findByIdAndUpdate(targetId, {
+        $inc: { questionCount: inserted },
+      });
+    } else {
+      await Exam.findByIdAndUpdate(targetId, {
+        $inc: { questionCount: inserted },
+      });
+    }
   }
 
   return { inserted, errors };

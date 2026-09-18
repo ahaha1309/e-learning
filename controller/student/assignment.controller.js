@@ -13,26 +13,40 @@ async function renderAllStudentAssignments(req, res, next) {
     const valid = memberships.filter(m => m.classroom);
     const classroomIds = valid.map(m => m.classroom._id);
 
-    let groups = [];
+    let upcoming = [];
+    let pastDue = [];
+    let completed = [];
+
     if (classroomIds.length) {
       const assignments = await Assignment.find({ classroom: { $in: classroomIds }, isPublished: true })
         .populate('classroom', 'name code').sort({ dueDate: 1, createdAt: -1 }).lean();
       const submissions = await Submission.find({ student: req.user.id, assignment: { $in: assignments.map(a => a._id) } }).lean();
       const subByAssignment = {};
       submissions.forEach(s => { subByAssignment[String(s.assignment)] = s; });
-      // Group by classroom for a scannable cross-classroom list
-      const byClass = {};
+
+      const now = new Date();
       assignments.forEach(a => {
-        const key = String(a.classroom._id);
-        if (!byClass[key]) byClass[key] = { classroom: a.classroom, items: [] };
-        byClass[key].items.push(Object.assign(a, { mySubmission: subByAssignment[String(a._id)] || null }));
+        const sub = subByAssignment[String(a._id)] || null;
+        const isPast = a.dueDate && now > new Date(a.dueDate);
+        const isExpired = isPast && !a.allowLateSubmission;
+
+        const enriched = Object.assign(a, { mySubmission: sub, isPastDue: isPast, isExpired });
+
+        if (sub || isExpired) {
+          completed.push(enriched);
+        } else if (isPast) {
+          pastDue.push(enriched);
+        } else {
+          upcoming.push(enriched);
+        }
       });
-      groups = Object.values(byClass);
     }
 
     return res.render('student/assignments/all', {
       title: 'Tất cả bài tập',
-      groups,
+      upcoming,
+      pastDue,
+      completed,
     });
   } catch (error) {
     return next(error);
@@ -50,12 +64,28 @@ async function renderStudentAssignments(req, res, next) {
       });
     }
 
-    const assignments = await Assignment.find({ classroom: membership.classroom.id, isPublished: true }).sort({ dueDate: 1, createdAt: -1 });
+    const assignments = await Assignment.find({ classroom: membership.classroom.id, isPublished: true }).sort({ dueDate: 1, createdAt: -1 }).lean();
+    const assignmentIds = assignments.map(a => a._id);
+    const submissions = await Submission.find({ student: req.user.id, assignment: { $in: assignmentIds } }).lean();
+    const subMap = {};
+    submissions.forEach(s => { subMap[String(s.assignment)] = s; });
+
+    const enrichedAssignments = assignments.map(a => {
+      const sub = subMap[String(a._id)] || null;
+      const isPastDue = a.dueDate && new Date() > new Date(a.dueDate);
+      const isExpired = isPastDue && !a.allowLateSubmission && !sub;
+      return {
+        ...a,
+        mySubmission: sub,
+        isPastDue,
+        isExpired,
+      };
+    });
 
     return res.render('student/assignments/index', {
       title: `${membership.classroom.name} assignments`,
       membership,
-      assignments,
+      assignments: enrichedAssignments,
     });
   } catch (error) {
     return next(error);

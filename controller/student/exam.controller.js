@@ -6,6 +6,7 @@ const ClassroomMember = require('../../models/ClassroomMember');
 const { markComplete, CONTENT_TYPES } = require('../../helper/progress');
 const { computeDeadline, evaluateDeadline, canStartAttempt } = require('../../services/examIntegrity.service');
 const { checkItemAccess } = require('../../services/completion.service');
+const { resolveSubmissionAttachment } = require('../../middleware/submissionUpload');
 
 // Terminal statuses that already count as a consumed attempt.
 const ATTEMPT_STATUSES = ['submitted', 'graded', 'late', 'auto_submitted'];
@@ -21,34 +22,69 @@ async function renderAllStudentExams(req, res, next) {
     const valid = memberships.filter(m => m.classroom);
     const classroomIds = valid.map(m => m.classroom._id);
 
-    let groups = [];
+    let upcoming = [];
+    let pastDue = [];
+    let completed = [];
+
     if (classroomIds.length) {
       const exams = await Exam.find({ classroom: { $in: classroomIds }, isPublished: true })
         .populate('classroom', 'name code').sort({ createdAt: -1 }).lean();
+      
       if (exams.length) {
         const inProgress = await ExamSubmission.find({
           exam: { $in: exams.map(e => e._id) }, student: req.user.id, status: 'in_progress'
         }).lean();
         const ipByExam = {};
         inProgress.forEach(s => { ipByExam[String(s.exam)] = s; });
-        const byClass = {};
+
+        const terminalSubmissions = await ExamSubmission.find({
+          exam: { $in: exams.map(e => e._id) }, student: req.user.id, status: { $in: ATTEMPT_STATUSES }
+        }).lean();
+        
+        // Count terminal attempts per exam
+        const attemptsByExam = {};
+        const lastSubmissionByExam = {};
+        terminalSubmissions.forEach(s => {
+           const eId = String(s.exam);
+           attemptsByExam[eId] = (attemptsByExam[eId] || 0) + 1;
+           // Keep track of latest submission for display
+           if (!lastSubmissionByExam[eId] || s.submittedAt > lastSubmissionByExam[eId].submittedAt) {
+               lastSubmissionByExam[eId] = s;
+           }
+        });
+
+        const now = new Date();
         for (const exam of exams) {
-          const key = String(exam.classroom._id);
-          if (!byClass[key]) byClass[key] = { classroom: exam.classroom, items: [] };
-          const usedAttempts = await ExamSubmission.countDocuments({
-            exam: exam._id, student: req.user.id, status: { $in: ATTEMPT_STATUSES }
-          });
-          byClass[key].items.push(Object.assign(exam, {
+          const usedAttempts = attemptsByExam[String(exam._id)] || 0;
+          const canStart = canStartAttempt(usedAttempts, exam.maxAttempts);
+          const hasInProgress = Boolean(ipByExam[String(exam._id)]);
+          const lastSubmission = lastSubmissionByExam[String(exam._id)] || null;
+          
+          const isPastDue = exam.endTime && now > new Date(exam.endTime);
+          // For exams, if you can't start anymore (max attempts reached) or if time window is closed (isPastDue), it's completed.
+          const isCompleted = !canStart || isPastDue;
+
+          const enriched = Object.assign(exam, {
             usedAttempts,
-            canStart: canStartAttempt(usedAttempts, exam.maxAttempts),
-            hasInProgress: Boolean(ipByExam[String(exam._id)]),
-          }));
+            canStart,
+            hasInProgress,
+            mySubmission: lastSubmission,
+            isPastDue,
+            isExpired: isCompleted
+          });
+
+          if (isCompleted) {
+            completed.push(enriched);
+          } else {
+            // Exams usually don't have "Past due" that you can still take late unless there's a specific logic.
+            // Since isCompleted covers isPastDue for exams, pastDue will mostly be empty.
+            upcoming.push(enriched);
+          }
         }
-        groups = Object.values(byClass);
       }
     }
 
-    return res.render('student/exams/all', { title: 'Tất cả bài thi', groups });
+    return res.render('student/exams/all', { title: 'Tất cả bài thi', upcoming, pastDue, completed });
   } catch (error) {
     return next(error);
   }
@@ -60,12 +96,27 @@ async function renderStudentExams(req, res, next) {
     if (!membership || !membership.classroom) return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
     const classroom = membership.classroom;
     
-    const exams = await Exam.find({ classroom: classroom.id, isPublished: true }).sort({ createdAt: -1 });
+    const exams = await Exam.find({ classroom: classroom.id, isPublished: true }).sort({ createdAt: -1 }).lean();
+    const examIds = exams.map(e => e._id);
+
+    const terminalSubmissions = await ExamSubmission.find({
+      exam: { $in: examIds },
+      student: req.user.id,
+      status: { $in: ATTEMPT_STATUSES }
+    }).lean();
+
+    const takenExamIds = new Set(terminalSubmissions.map(s => String(s.exam)));
+
+    const enrichedExams = exams.map(exam => ({
+      ...exam,
+      id: exam._id,
+      hasTaken: takenExamIds.has(String(exam._id))
+    }));
 
     return res.render('student/exams/index', {
       title: `${classroom.name} Exams`,
       classroom,
-      exams,
+      exams: enrichedExams,
     });
   } catch (error) {
     return next(error);
@@ -83,23 +134,7 @@ async function renderTakeExam(req, res, next) {
       return res.status(404).render('errors/404', { title: 'Exam not found', path: req.originalUrl });
     }
 
-    // Server-side prerequisite gate (Track 3). Deny — without opening an attempt
-    // — if the exam is locked behind an unfinished prerequisite. This keeps the
-    // exam's answers invisible until prerequisites are met and prevents creating
-    // a dead in_progress row the student can't access.
-    const access = await checkItemAccess({
-      classroom,
-      studentId: req.user.id,
-      itemType: CONTENT_TYPES.EXAM,
-      itemId: exam._id,
-    });
-    if (!access.allowed) {
-      return res.status(403).render('errors/403', {
-        title: 'Exam locked',
-        message: 'Complete the previous item in this module before taking this exam.',
-        path: req.originalUrl,
-      });
-    }
+    // Requirement removed: allow taking exams even if previous items are not complete
 
     // Atomically enforce maxAttempts. Count consumed (terminal) attempts; if the
     // limit is reached, the student is blocked from starting another — closes
@@ -159,6 +194,15 @@ async function renderTakeExam(req, res, next) {
       });
     }
 
+    if (exam.type === 'upload') {
+      return res.render('student/exams/take_upload', {
+        title: `Taking ${exam.title}`,
+        classroom,
+        exam,
+        submission,
+      });
+    }
+
     return res.render('student/exams/take', {
       title: `Taking ${exam.title}`,
       classroom,
@@ -183,6 +227,7 @@ async function submitExamHandler(req, res, next) {
     if (!submission) return res.status(400).send('No active submission');
 
     const questions = await Question.find({ exam: exam.id });
+    const pointPerQuestion = questions.length > 0 ? (exam.totalPoints / questions.length) : 0;
     
     let totalScore = 0;
     const answers = [];
@@ -206,7 +251,7 @@ async function submitExamHandler(req, res, next) {
              // simple exact match
              if (correctOptionIds.length === ansArray.length && correctOptionIds.every(id => ansArray.includes(id))) {
                  isCorrect = true;
-                 pointsAchieved = q.points;
+                 pointsAchieved = pointPerQuestion;
              }
          }
       } else if (q.type === 'essay') {
@@ -225,18 +270,22 @@ async function submitExamHandler(req, res, next) {
     }
 
     const submittedAt = new Date();
-
-    // Server-side deadline enforcement (Track 8). The decision is made on the
-    // SERVER clock, not the client timer, and is independent of whatever the
-    // browser thought the remaining time was. A past-deadline submit is still
-    // scored (so answers aren't lost) but recorded as 'late'.
     const { isLate } = evaluateDeadline(submission.deadlineAt, submittedAt);
 
-    submission.answers = answers;
-    submission.score = totalScore;
+    if (exam.type === 'upload') {
+      if (req.file) {
+        submission.attachment = resolveSubmissionAttachment(req.file);
+      }
+      submission.score = 0;
+      submission.gradingStatus = 'pending_manual_grade';
+    } else {
+      submission.answers = answers;
+      submission.score = totalScore;
+      submission.gradingStatus = hasEssay ? 'pending_manual_grade' : 'auto_graded';
+    }
+
     submission.submittedAt = submittedAt;
     submission.status = isLate ? 'late' : 'submitted';
-    submission.gradingStatus = hasEssay ? 'pending_manual_grade' : 'auto_graded';
 
     // Client-reported violations are intentionally NOT persisted. Proctoring
     // signals must originate from authenticated socket events on /exam-monitor,
@@ -250,7 +299,7 @@ async function submitExamHandler(req, res, next) {
     // complete now; essay exams become complete when fully graded in
     // services/exam.service.js gradeSubmission (which re-writes this row with
     // the final score). maxScore is the exam's totalPoints snapshot.
-    if (!hasEssay) {
+    if (exam.type !== 'upload' && !hasEssay) {
       await markComplete({
         student: req.user.id,
         classroom: String(classroom.id),

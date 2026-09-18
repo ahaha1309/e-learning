@@ -1,0 +1,64 @@
+extends ../layouts/admin
+
+block admin-content
+  .max-w-7xl.mx-auto.space-y-8.animate-in.fade-in
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-4
+      div
+        p.eyebrow Admin - Quản lý Bài tập
+        h1.text-3xl.font-extrabold.tracking-tight Chỉnh sửa & Gia hạn Bài tập
+        p.text-muted-foreground.mt-2 Lớp: #{assignment.classroom ? assignment.classroom.name : ''} • Giảng viên: #{assignment.teacher ? assignment.teacher.name : ''}
+      a.btn-outline.h-10.px-4.rounded-lg(href='/admin/assignments/' + assignment.id)
+        i.ph-bold.ph-arrow-left
+        | Quay lại
+
+    if errorMessage
+      .alert-danger.rounded-2xl= errorMessage
+
+    form.grid.grid-cols-1.lg_grid-cols-12.gap-8(method='POST', action='/admin/assignments/' + assignment.id + '/edit', enctype='multipart/form-data')
+      input(type='hidden', name='_csrf', value=csrfToken)
+
+      .lg_col-span-8.space-y-6
+        .bento-card.p-6.space-y-6
+          h2.text-lg.font-bold Thông tin bài tập
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tiêu đề Bài tập
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='text', name='title', value=formData.title || assignment.title, required)
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Mô tả Ngắn
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='text', name='description', value=formData.description || assignment.description || '')
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Hướng dẫn Chi tiết
+            textarea.w-full.p-4.rounded-xl.bg-background.border(name='instructions', rows='6')= formData.instructions || assignment.instructions || ''
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Bổ sung Tệp đính kèm
+            input.w-full.p-3.rounded-xl.bg-background.border(type='file', name='attachmentFiles', multiple=true)
+
+      .lg_col-span-4.space-y-6
+        .bento-card.p-6.space-y-6
+          h2.text-lg.font-bold Thiết lập Hạn chót & Điểm
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tổng điểm
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='number', name='totalPoints', value=formData.totalPoints || assignment.totalPoints, required)
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-rose-400 Hạn chót mới (Gia hạn)
+            input.w-full.h-12.px-4.rounded-xl.bg-background.border(type='datetime-local', name='dueDate', value=formData.dueDate || dueDateFormatted, required)
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Nộp muộn
+            select.w-full.h-12.px-4.rounded-xl.bg-background.border(name='allowLateSubmission')
+              option(value='false', selected=String(formData.allowLateSubmission) === 'false') Không cho phép
+              option(value='true', selected=String(formData.allowLateSubmission) === 'true') Cho phép nộp muộn
+
+          .space-y-2
+            label.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Trạng thái Xuất bản
+            select.w-full.h-12.px-4.rounded-xl.bg-background.border(name='isPublished')
+              option(value='true', selected=String(formData.isPublished) !== 'false') Xuất bản
+              option(value='false', selected=String(formData.isPublished) === 'false') Ẩn / Nháp
+
+          button.btn-primary.w-full.h-12.rounded-xl.font-bold(type='submit')
+            i.ph-bold.ph-floppy-disk
+            | Lưu & Gia hạn
