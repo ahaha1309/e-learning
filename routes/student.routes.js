@@ -1,5 +1,5 @@
 const express = require('express');
-const { renderStudentDashboard, renderStudentCertificates, askGlobalAiAssistantHandler } = require('../controller/student/dashboard.controller');
+const { renderStudentDashboard, askGlobalAiAssistantHandler } = require('../controller/student/dashboard.controller');
 const { requireAuth, requireRole } = require('../middleware/rbac');
 
 const classroomRoutes = require('./student.classroom.routes');
@@ -24,7 +24,7 @@ router.get('/', renderStudentDashboard);
 router.get('/dashboard', renderStudentDashboard);
 router.post('/ai-assistant', askGlobalAiAssistantHandler);
 router.get('/analytics', renderStudentAnalytics);
-router.get('/certificates', renderStudentCertificates);
+router.get('/certificates', (req, res) => res.redirect('/student'));
 router.get('/assignments', renderAllStudentAssignments);
 router.get('/exams', renderAllStudentExams);
 router.get('/lectures', renderAllStudentLectures);

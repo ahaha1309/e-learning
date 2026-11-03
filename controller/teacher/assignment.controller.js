@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const Classroom = require('../../models/Classroom');
 const Assignment = require('../../models/Assignment');
+const Rubric = require('../../models/Rubric');
 const ClassroomMember = require('../../models/ClassroomMember');
 const { sendNotification } = require('../../helper/notification.helper');
 const Question = require('../../models/Question');
@@ -63,7 +64,7 @@ async function renderAssignmentIndex(req, res, next) {
       filter.title = { $regex: query, $options: 'i' };
     }
 
-    const assignments = await Assignment.find(filter).sort({ dueDate: 1, createdAt: -1 });
+    const assignments = await Assignment.find(filter).populate('rubric', 'name maxPoints criteria').sort({ dueDate: 1, createdAt: -1 });
 
     return res.render('teacher/assignments/index', {
       title: `${classroom.name} assignments`,
@@ -87,10 +88,15 @@ async function renderCreateAssignment(req, res, next) {
       });
     }
 
+    const rubrics = await Rubric.find({ classroom: classroom.id, teacher: req.user.id }).sort({ name: 1 }).lean();
+
     return res.render('teacher/assignments/new', {
       title: 'Create assignment',
       classroom,
-      formData: {},
+      rubrics,
+      formData: {
+        rubric: req.query.rubricId || '',
+      },
       errorMessage: null,
     });
   } catch (error) {
@@ -111,10 +117,12 @@ async function createAssignmentHandler(req, res, next) {
     }
 
     const validationMessage = formatValidationErrors(req);
+    const rubrics = await Rubric.find({ classroom: classroom.id, teacher: req.user.id }).sort({ name: 1 }).lean();
     if (validationMessage) {
       return res.status(422).render('teacher/assignments/new', {
         title: 'Create assignment',
         classroom,
+        rubrics,
         formData: req.body,
         errorMessage: validationMessage,
       });
@@ -187,7 +195,7 @@ async function renderAssignmentDetail(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',
@@ -223,12 +231,14 @@ async function renderEditAssignment(req, res, next) {
       });
     }
 
+    const rubrics = await Rubric.find({ classroom: classroom.id, teacher: req.user.id }).sort({ name: 1 }).lean();
     const dueDateFormatted = assignment.dueDate ? new Date(assignment.dueDate.getTime() - (assignment.dueDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '';
 
     return res.render('teacher/assignments/edit', {
       title: `Chỉnh sửa: ${assignment.title}`,
       classroom,
       assignment,
+      rubrics,
       dueDateFormatted,
       formData: {
         title: assignment.title,
@@ -238,6 +248,7 @@ async function renderEditAssignment(req, res, next) {
         dueDate: dueDateFormatted,
         isPublished: String(assignment.isPublished),
         allowLateSubmission: String(assignment.allowLateSubmission),
+        rubric: assignment.rubric ? String(assignment.rubric) : '',
       },
       errorMessage: null,
     });
@@ -265,12 +276,14 @@ async function updateAssignmentHandler(req, res, next) {
     }
 
     const validationMessage = formatValidationErrors(req);
+    const rubrics = await Rubric.find({ classroom: classroom.id, teacher: req.user.id }).sort({ name: 1 }).lean();
     if (validationMessage) {
       const dueDateFormatted = assignment.dueDate ? new Date(assignment.dueDate.getTime() - (assignment.dueDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : '';
       return res.status(422).render('teacher/assignments/edit', {
         title: `Chỉnh sửa: ${assignment.title}`,
         classroom,
         assignment,
+        rubrics,
         dueDateFormatted,
         formData: req.body,
         errorMessage: validationMessage,

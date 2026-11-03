@@ -77,6 +77,19 @@ block content
               span.font-bold.text-sm 2
             h3.text-lg.font-bold Gia hạn Thời gian & Điểm số
 
+          .space-y-2
+            .flex.items-center.justify-between
+              label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='rubric') Tiêu chí chấm điểm (Rubric)
+              a.text-xs.text-primary.font-bold.inline-flex.items-center.gap-1(href='/teacher/classrooms/' + classroom.id + '/rubrics/new', target='_blank')
+                i.ph-bold.ph-plus-circle
+                | Tạo Rubric mới
+            select#rubric.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='rubric')
+              option(value='', data-points='') -- Không sử dụng Rubric (Chấm điểm tự do) --
+              each r in (rubrics || [])
+                - var isSelected = String(formData.rubric || (assignment && assignment.rubric && (assignment.rubric._id || assignment.rubric)) || '') === String(r._id)
+                option(value=r._id, data-points=r.maxPoints, selected=isSelected)= r.name + ' (' + (r.criteria ? r.criteria.length : 0) + ' tiêu chí, ' + r.maxPoints + ' điểm)'
+            p.text-xs.text-muted-foreground Khi chọn Rubric, tổng điểm bài tập sẽ tự động đồng bộ theo tổng điểm của các tiêu chí Rubric.
+
           .grid.grid-cols-1.md_grid-cols-2.gap-6
             .space-y-2
               label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='totalPoints') Tổng điểm
@@ -127,5 +140,17 @@ block content
           };
           typeSelect.addEventListener('change', toggleAttachment);
           toggleAttachment();
+        }
+
+        var rubricSelect = document.getElementById('rubric');
+        var totalPointsInput = document.getElementById('totalPoints');
+        if (rubricSelect && totalPointsInput) {
+          rubricSelect.addEventListener('change', function() {
+            var selectedOpt = rubricSelect.options[rubricSelect.selectedIndex];
+            var points = selectedOpt ? selectedOpt.getAttribute('data-points') : null;
+            if (points && points !== '') {
+              totalPointsInput.value = points;
+            }
+          });
         }
       });

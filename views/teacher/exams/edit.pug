@@ -50,11 +50,19 @@ block content
             input#totalPoints.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', type='number', min='0', step='0.5', name='totalPoints', value=(formData.totalPoints !== undefined ? formData.totalPoints : exam.totalPoints), required)
 
           .space-y-2
-            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Bài thi
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='type') Loại Câu Hỏi
             select#type.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='type')
               - var curType = formData.type || exam.type || 'quiz'
               option(value='quiz', selected=curType === 'quiz') Trắc nghiệm
               option(value='upload', selected=curType === 'upload') Nộp tệp đính kèm
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='examCategory') Phân loại Bài thi (Sổ điểm)
+            select#examCategory.w-full.h-14.px-5.rounded-xl.bg-background.border.font-medium.appearance-none(class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent', name='examCategory')
+              - var curCat = formData.examCategory || exam.examCategory || 'NORMAL'
+              option(value='NORMAL', selected=curCat === 'NORMAL') Bài thi Thông thường (NORMAL)
+              option(value='MIDTERM', selected=curCat === 'MIDTERM') Bài thi Giữa kỳ (MIDTERM)
+              option(value='FINAL', selected=curCat === 'FINAL') Bài thi Kết thúc môn (FINAL)
 
           .space-y-2
             label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Hướng dẫn Ngắn gọn

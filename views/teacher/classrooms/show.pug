@@ -14,9 +14,9 @@ block content
 
         .flex.items-center.justify-between.gap-4.mb-3
           p.text-xs.font-bold.uppercase.tracking-widest.text-primary Trung tâm Giảng dạy
-          button.btn-primary.h-10.px-5.rounded-full.text-sm.font-bold.shadow-md.flex.items-center.gap-2(
+          button.btn-primary.btn-glow.h-10.px-5.rounded-full.text-sm.font-bold.shadow-md.flex.items-center.gap-2(
             type='button',
-            onclick="document.getElementById('meeting-modal').classList.remove('hidden')"
+            onclick="openMeetingModal()"
           )
             i.ph-bold.ph-video-camera.text-lg
             span Tạo cuộc họp
@@ -24,7 +24,7 @@ block content
         h1.text-4xl.md_text-6xl.font-extrabold.tracking-tighter.text-foreground= classroom.name
         p.text-xl.text-muted-foreground.max-w-prose.mt-5.leading-relaxed= classroom.description || 'Chưa có mô tả.'
       
-      aside.glass-panel.p-8.border.shadow-sm.text-center(class='rounded-[2rem] border-border/60')
+      aside.beam-border.deep-glass.p-8.border.shadow-sm.text-center(class='rounded-[2rem] border-border/60')
         p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.mb-4 Mã tham gia
         div.inline-flex.items-center.justify-center.w-full.bg-muted.rounded-xl.p-4.mb-4(class='border border-border/50')
           strong.text-5xl.tracking-widest.font-mono.text-foreground= classroom.code
@@ -40,7 +40,7 @@ block content
       data-csrf-token=csrfToken
     )
       if activeMeeting && activeMeeting.status === 'LIVE'
-        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-md.animate-in.slide-in-up(
+        .deep-glass.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-md.animate-in.slide-in-up(
           class='md_px-5 rounded-2xl border border-destructive/40 bg-destructive/5 sm_flex-row'
         )
           .flex.items-center.min-w-0(class='gap-3.5')
@@ -57,7 +57,7 @@ block content
                 span.text-xs.text-muted-foreground.truncate.font-medium • Bạn đang tổ chức
               h3.text-sm.font-extrabold.text-foreground.truncate= activeMeeting.title
           .flex.items-center.gap-2.w-full.flex-shrink-0.justify-end(class='sm_w-auto')
-            a.btn-primary.h-9.px-5.rounded-xl.text-xs.font-extrabold.shadow.bg-destructive.text-white.flex.items-center.justify-center.transition-transform(
+            a.btn-primary.btn-glow.h-9.px-5.rounded-xl.text-xs.font-extrabold.shadow.bg-destructive.text-white.flex.items-center.justify-center.transition-transform(
               class='gap-1.5 hover_bg-destructive/90 hover_scale-105',
               href='/classrooms/' + classroom.id + '/meetings/' + activeMeeting.id + '/room'
             )
@@ -76,7 +76,7 @@ block content
               )
                 | Kết thúc
       else if activeMeeting && activeMeeting.status === 'SCHEDULED'
-        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-sm.animate-in.slide-in-up(
+        .deep-glass.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-sm.animate-in.slide-in-up(
           class='md_px-5 rounded-2xl border border-primary/30 bg-primary/5 sm_flex-row'
         )
           .flex.items-center.min-w-0(class='gap-3.5')
@@ -97,7 +97,7 @@ block content
               action='/classrooms/' + classroom.id + '/meetings/' + activeMeeting.id + '/start'
             )
               input(type='hidden', name='_csrf', value=csrfToken)
-              button.btn-primary.h-9.px-4.rounded-xl.text-xs.font-bold.shadow.flex.items-center(class='gap-1.5', type='submit')
+              button.btn-primary.btn-glow.h-9.px-4.rounded-xl.text-xs.font-bold.shadow.flex.items-center(class='gap-1.5', type='submit')
                 i.ph-bold.ph-play.text-xs
                 | Start Now
             form.m-0(
@@ -118,6 +118,7 @@ block content
         a.pb-5.text-sm.font-bold.border-b-2.border-primary.text-foreground(href='/teacher/classrooms/' + classroom.id) Tổng quan
         a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/lectures') Bài giảng
         a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/assignments') Bài tập
+        a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/rubrics') Rubric
         a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/exams') Bài thi
         a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/gradebook') Sổ điểm
         a.pb-5.text-sm.font-bold.text-muted-foreground.transition-colors(class='hover_text-foreground', href='/teacher/classrooms/' + classroom.id + '/attendance') Điểm danh
@@ -129,10 +130,14 @@ block content
     section.animate-in.slide-in-up(style='animation-delay: 300ms;')
       .flex.items-center.justify-between.mb-8
         h2.text-3xl.font-extrabold.tracking-tight Danh sách Học sinh
-        a.btn-outline.h-12.px-6.rounded-full.text-sm.font-bold(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id) Quản lý Danh sách
+        .flex.items-center.gap-3
+          button.btn-primary.btn-glow.h-12.px-6.rounded-full.text-sm.font-bold.shadow-sm(type='button', onclick="openAddStudentsModal()")
+            i.ph-bold.ph-user-plus.mr-2
+            | Thêm học sinh
+          a.btn-outline.h-12.px-6.rounded-full.text-sm.font-bold(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id) Quản lý Danh sách
 
       if members.length
-        .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+        .deep-glass.overflow-hidden(class='rounded-[2rem] border-border/60')
           .table-wrap
             table.w-full.text-left.border-collapse
               thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
@@ -175,81 +180,361 @@ block content
                             button.w-10.h-10.rounded-full.flex.items-center.justify-center.text-muted-foreground.transition-colors(class='hover_text-destructive hover_bg-destructive/10', type='submit', title='Xóa Học sinh')
                               i.ph-bold.ph-user-minus.text-sm
       else
-        .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2.5rem] border-border/60', style='animation-delay: 400ms;')
+        .deep-glass.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2.5rem] border-border/60', style='animation-delay: 400ms;')
           .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
             i.ph-fill.ph-users.text-5xl(class='text-muted-foreground/30')
           h2.text-3xl.font-extrabold.text-foreground Chưa có học sinh nào
           p.text-lg.text-muted-foreground.mt-3 Chia sẻ mã tham gia để bắt đầu.
 
-    //- Schedule / Start Meeting Modal
-    #meeting-modal.hidden.fixed.inset-0.z-50.flex.items-center.justify-center.p-4.animate-in.fade-in(
-      class='bg-black/60 backdrop-blur-sm'
+  //- Schedule / Start Meeting Modal
+  #meeting-modal.fixed.inset-0.hidden.items-center.justify-center.p-4(
+    style='position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);'
+    onclick="if (event.target === this) closeMeetingModal()"
+  )
+    .w-full.max-w-md.p-6.sm_p-8.rounded-3xl.shadow-2xl.border.border-border.bg-card.text-card-foreground.relative.m-auto(
+      style='max-height: 90vh; overflow-y: auto;'
+      onclick="event.stopPropagation()"
     )
-      .glass-panel.w-full.max-w-md.p-8.rounded-3xl.shadow-2xl.border.border-border.bg-background.relative
-        .flex.items-center.justify-between.mb-6
-          .flex.items-center.gap-3.text-primary
-            i.ph-bold.ph-video-camera.text-2xl
-            h3.text-xl.font-extrabold.text-foreground Tạo Cuộc họp Online
-          button.text-muted-foreground.hover_text-foreground(type='button', onclick="document.getElementById('meeting-modal').classList.add('hidden')")
-            i.ph-bold.ph-x.text-xl
+      .flex.items-center.justify-between.mb-6
+        .flex.items-center.gap-3.text-primary
+          .w-10.h-10.rounded-xl.bg-primary.bg-opacity-10.flex.items-center.justify-center
+            i.ph-bold.ph-video-camera.text-xl.text-primary
+          h3.text-xl.font-extrabold.text-foreground Tạo Cuộc họp Online
+        button.w-9.h-9.rounded-full.flex.items-center.justify-center.text-muted-foreground.hover_text-foreground.hover_bg-muted.transition-colors(type='button', onclick="closeMeetingModal()", aria-label='Đóng')
+          i.ph-bold.ph-x.text-lg
 
-        form.space-y-5(method='POST', action='/classrooms/' + classroom.id + '/meetings')
-          input(type='hidden', name='_csrf', value=csrfToken)
-          
+      form.space-y-5(method='POST', action='/classrooms/' + classroom.id + '/meetings')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        
+        div
+          label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Tiêu đề buổi học
+          input.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.font-bold.focus_outline-none.focus_border-primary(
+            type='text',
+            name='title',
+            value='Buổi học ' + classroom.name,
+            required=true
+          )
+
+        //- Quick Choice: Start Now vs Schedule
+        div
+          label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Hình thức
+          .grid.grid-cols-2.gap-3
+            label.border.border-border.rounded-xl.p-3.flex.items-center.gap-2.cursor-pointer(class='hover_bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5')
+              input(type='radio', name='startNow', value='true', checked=true, onclick="document.getElementById('schedule-time-group').classList.add('hidden')")
+              span.text-sm.font-bold ⚡ Bắt đầu ngay
+            label.border.border-border.rounded-xl.p-3.flex.items-center.gap-2.cursor-pointer(class='hover_bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5')
+              input(type='radio', name='startNow', value='false', onclick="document.getElementById('schedule-time-group').classList.remove('hidden')")
+              span.text-sm.font-bold 📅 Lên lịch sau
+
+        #schedule-time-group.hidden.space-y-4
           div
-            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Tiêu đề buổi học
-            input.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.font-bold.focus_outline-none.focus_border-primary(
-              type='text',
-              name='title',
-              value='Buổi học ' + classroom.name,
-              required=true
-            )
-
-          //- Quick Choice: Start Now vs Schedule
-          div
-            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Hình thức
-            .grid.grid-cols-2.gap-3
-              label.border.border-border.rounded-xl.p-3.flex.items-center.gap-2.cursor-pointer(class='hover_bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5')
-                input(type='radio', name='startNow', value='true', checked=true, onclick="document.getElementById('schedule-time-group').classList.add('hidden')")
-                span.text-sm.font-bold ⚡ Bắt đầu ngay
-              label.border.border-border.rounded-xl.p-3.flex.items-center.gap-2.cursor-pointer(class='hover_bg-muted/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5')
-                input(type='radio', name='startNow', value='false', onclick="document.getElementById('schedule-time-group').classList.remove('hidden')")
-                span.text-sm.font-bold 📅 Lên lịch sau
-
-          #schedule-time-group.hidden.space-y-4
-            div
-              label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Ngày & Thời gian bắt đầu
-              input.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.focus_outline-none.focus_border-primary(
-                type='datetime-local',
-                name='startTime'
-              )
-
-          div
-            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Thời lượng (Phút)
+            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Ngày & Thời gian bắt đầu
             input.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.focus_outline-none.focus_border-primary(
-              type='number',
-              name='durationMinutes',
-              value='60',
-              min='15',
-              max='480'
+              type='datetime-local',
+              name='startTime'
             )
 
+        div
+          label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Thời lượng (Phút)
+          input.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.focus_outline-none.focus_border-primary(
+            type='number',
+            name='durationMinutes',
+            value='60',
+            min='15',
+            max='480'
+          )
+
+        div
+          label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Mô tả (không bắt buộc)
+          textarea.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.focus_outline-none.focus_border-primary(
+            name='description',
+            rows='3',
+            placeholder='Nội dung buổi học...'
+          )
+
+        .flex.items-center.justify-end.gap-3.pt-2
+          button.btn-outline.h-11.px-5.rounded-xl.text-sm.font-bold(
+            type='button',
+            onclick="closeMeetingModal()"
+          )
+            | Hủy
+          button.btn-primary.btn-glow.h-11.px-6.rounded-xl.text-sm.font-bold.shadow-md(type='submit')
+            | Xác nhận
+
+  //- Add Students Modal
+  #add-students-modal.fixed.inset-0.hidden.items-center.justify-center.p-4(
+    style='position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);'
+    onclick="if (event.target === this) closeAddStudentsModal()"
+  )
+    .w-full.max-w-xl.p-6.sm_p-8.rounded-3xl.shadow-2xl.border.border-border.bg-card.text-card-foreground.relative.flex.flex-col.m-auto(
+      style='max-height: 85vh; overflow: hidden;'
+      onclick="event.stopPropagation()"
+    )
+      .flex.items-center.justify-between.mb-5.flex-shrink-0
+        .flex.items-center.gap-3.text-primary
+          .w-10.h-10.rounded-xl.bg-primary.bg-opacity-10.flex.items-center.justify-center
+            i.ph-bold.ph-user-plus.text-xl.text-primary
           div
-            label.block.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Mô tả (không bắt buộc)
-            textarea.w-full.bg-muted.border.border-border.rounded-xl.px-4.py-3.text-sm.focus_outline-none.focus_border-primary(
-              name='description',
-              rows='3',
-              placeholder='Nội dung buổi học...'
-            )
+            h3.text-xl.font-extrabold.text-foreground Thêm Học Sinh
+            p.text-xs.text-muted-foreground Tìm kiếm học sinh để thêm vào lớp học
+        button.w-9.h-9.rounded-full.flex.items-center.justify-center.text-muted-foreground.hover_text-foreground.hover_bg-muted.transition-colors(
+          type='button',
+          onclick="closeAddStudentsModal()",
+          aria-label='Đóng'
+        )
+          i.ph-bold.ph-x.text-lg
 
-          .flex.items-center.justify-end.gap-3.pt-2
-            button.btn-outline.h-11.px-5.rounded-xl.text-sm.font-bold(
-              type='button',
-              onclick="document.getElementById('meeting-modal').classList.add('hidden')"
-            )
-              | Hủy
-            button.btn-primary.h-11.px-6.rounded-xl.text-sm.font-bold.shadow-md(type='submit')
-              | Xác nhận
+      .flex-1.overflow-hidden.flex.flex-col.min-h-0
+        .relative.mb-4.flex-shrink-0
+          .absolute.inset-y-0.left-0.flex.items-center.pointer-events-none(class='pl-3.5')
+            i.ph-bold.ph-magnifying-glass.text-muted-foreground.text-base
+          input#student-search-input.w-full.bg-muted.border.border-border.rounded-xl.pr-4.py-3.text-sm.font-medium.focus_outline-none.focus_border-primary(
+            type='text',
+            placeholder='Nhập tên hoặc email học sinh...',
+            style='padding-left: 2.5rem;'
+          )
+
+        .flex-1.overflow-y-auto.border.border-border.rounded-xl.bg-muted.p-2.min-h-0(style='max-height: 320px;')
+          #search-results.hidden.space-y-1
+            //- Results injected here
+          #search-empty-state.flex.flex-col.items-center.justify-center.h-48.text-center.p-4(class='text-muted-foreground/50')
+            i.ph-fill.ph-magnifying-glass.text-3xl.mb-2
+            p.text-sm.font-medium Bắt đầu gõ để tìm kiếm
+          
+          #selected-students-list.hidden.border-t.border-border.mt-3.pt-3
+            p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2.px-2 Đã chọn
+            .space-y-1#selected-items-container
+              //- Selected injected here
+
+      .flex.items-center.justify-end.gap-3.pt-4.mt-4.border-t.border-border.flex-shrink-0
+        button.btn-outline.h-10.px-5.rounded-xl.text-sm.font-bold(
+          type='button',
+          onclick="closeAddStudentsModal()"
+        )
+          | Hủy
+        button#btn-add-selected-students.btn-primary.btn-glow.h-10.px-6.rounded-xl.text-sm.font-bold.shadow-md(type='button', disabled=true)
+          | Thêm vào lớp
 
   script(src='/socket.io/socket.io.js')
   script(src='/js/classroom-meeting-banner.js')
+  script.
+    window.openMeetingModal = function() {
+      const modal = document.getElementById('meeting-modal');
+      if (!modal) return;
+      if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeMeetingModal = function() {
+      const modal = document.getElementById('meeting-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    window.openAddStudentsModal = function() {
+      const modal = document.getElementById('add-students-modal');
+      if (!modal) return;
+      if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        const input = document.getElementById('student-search-input');
+        if (input) input.focus();
+      }, 50);
+    };
+
+    window.closeAddStudentsModal = function() {
+      const modal = document.getElementById('add-students-modal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeAddStudentsModal();
+        closeMeetingModal();
+      }
+    });
+
+    if (#{showAddStudents ? 'true' : 'false'}) {
+      document.addEventListener('DOMContentLoaded', () => {
+        openAddStudentsModal();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('student-search-input');
+      const resultsContainer = document.getElementById('search-results');
+      const emptyState = document.getElementById('search-empty-state');
+      const selectedContainer = document.getElementById('selected-students-list');
+      const selectedItemsContainer = document.getElementById('selected-items-container');
+      const btnAdd = document.getElementById('btn-add-selected-students');
+      
+      const classroomId = '#{classroom.id}';
+      const csrfToken = '#{csrfToken}';
+      
+      let debounceTimeout;
+      let selectedStudents = new Map(); // id -> student obj
+
+      function renderSelected() {
+        if (selectedStudents.size === 0) {
+          selectedContainer.classList.add('hidden');
+          btnAdd.disabled = true;
+          btnAdd.textContent = 'Thêm vào lớp';
+          return;
+        }
+        
+        selectedContainer.classList.remove('hidden');
+        btnAdd.disabled = false;
+        btnAdd.textContent = `Thêm ${selectedStudents.size} học sinh`;
+        
+        selectedItemsContainer.innerHTML = '';
+        selectedStudents.forEach((student, id) => {
+          const div = document.createElement('div');
+          div.className = 'flex items-center justify-between p-2 rounded-lg bg-background border border-border/50 shadow-sm';
+          div.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary/10 text-primary border-primary/20 flex items-center justify-center font-bold text-sm">
+                ${student.name.charAt(0).toUpperCase()}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-foreground truncate">${student.name}</p>
+                <p class="text-xs text-muted-foreground truncate">${student.email}</p>
+              </div>
+            </div>
+            <button type="button" class="text-muted-foreground hover:text-destructive p-1 rounded-md hover:bg-destructive/10 transition-colors btn-remove-selected" data-id="${id}">
+              <i class="ph-bold ph-x"></i>
+            </button>
+          `;
+          selectedItemsContainer.appendChild(div);
+        });
+
+        // Attach remove events
+        selectedItemsContainer.querySelectorAll('.btn-remove-selected').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            selectedStudents.delete(id);
+            renderSelected();
+            renderResults(lastResults); // Refresh checkmarks
+          });
+        });
+      }
+
+      let lastResults = [];
+      function renderResults(results) {
+        lastResults = results;
+        if (results.length === 0) {
+          resultsContainer.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          emptyState.innerHTML = '<i class="ph-fill ph-user-minus text-4xl mb-2"></i><p class="text-sm font-medium">Không tìm thấy kết quả</p>';
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.innerHTML = '';
+
+        results.forEach(student => {
+          const isSelected = selectedStudents.has(student._id);
+          const div = document.createElement('div');
+          div.className = `flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors border border-transparent hover:bg-background hover:border-border/60 hover:shadow-sm ${isSelected ? 'bg-background border-border/60' : ''}`;
+          div.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-primary/10 text-primary border-primary/20 flex items-center justify-center font-bold text-base">
+                ${student.name.charAt(0).toUpperCase()}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-foreground truncate">${student.name}</p>
+                <p class="text-xs text-muted-foreground truncate">${student.email}</p>
+              </div>
+            </div>
+            <div class="text-primary ${isSelected ? '' : 'hidden'}">
+              <i class="ph-fill ph-check-circle text-xl"></i>
+            </div>
+          `;
+          
+          div.addEventListener('click', () => {
+            if (isSelected) {
+              selectedStudents.delete(student._id);
+            } else {
+              selectedStudents.set(student._id, student);
+            }
+            renderSelected();
+            renderResults(lastResults); // Re-render to update checkmarks
+          });
+
+          resultsContainer.appendChild(div);
+        });
+      }
+
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        clearTimeout(debounceTimeout);
+        
+        if (!query) {
+          resultsContainer.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+          emptyState.innerHTML = '<i class="ph-fill ph-magnifying-glass text-4xl mb-2"></i><p class="text-sm font-medium">Bắt đầu gõ để tìm kiếm</p>';
+          return;
+        }
+
+        debounceTimeout = setTimeout(async () => {
+          try {
+            emptyState.classList.remove('hidden');
+            emptyState.innerHTML = '<i class="ph-bold ph-spinner animate-spin text-2xl mb-2 text-primary"></i><p class="text-sm font-medium">Đang tìm kiếm...</p>';
+            resultsContainer.classList.add('hidden');
+
+            const response = await fetch(`/teacher/classrooms/${classroomId}/search-students?q=${encodeURIComponent(query)}`);
+            if (response.ok) {
+              const data = await response.json();
+              renderResults(data);
+            }
+          } catch (error) {
+            console.error('Error searching students:', error);
+          }
+        }, 300);
+      });
+
+      btnAdd.addEventListener('click', async () => {
+        if (selectedStudents.size === 0) return;
+        
+        const studentIds = Array.from(selectedStudents.keys());
+        btnAdd.disabled = true;
+        btnAdd.innerHTML = '<i class="ph-bold ph-spinner animate-spin mr-2"></i> Đang thêm...';
+        
+        try {
+          const response = await fetch(`/teacher/classrooms/${classroomId}/members/add-manual`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'CSRF-Token': csrfToken
+            },
+            body: JSON.stringify({ studentIds })
+          });
+          
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert('Có lỗi xảy ra khi thêm học sinh.');
+            btnAdd.disabled = false;
+            btnAdd.textContent = `Thêm ${selectedStudents.size} học sinh`;
+          }
+        } catch (error) {
+          console.error(error);
+          alert('Có lỗi xảy ra khi thêm học sinh.');
+          btnAdd.disabled = false;
+          btnAdd.textContent = `Thêm ${selectedStudents.size} học sinh`;
+        }
+      });
+    });

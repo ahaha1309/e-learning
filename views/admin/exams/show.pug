@@ -29,7 +29,7 @@ block admin-content
                         span.text-xs.font-bold.text-muted-foreground Q#{idx + 1}
                         span.badge-muted.badge-sm= q.type === 'multiple_choice' ? 'Trắc nghiệm một lựa chọn' : q.type === 'multiple_answer' ? 'Trắc nghiệm nhiều lựa chọn' : 'Tự luận'
                         span.text-xs.text-muted-foreground #{q.points} điểm
-                      p.font-medium= q.content
+                      div.font-medium !{q.content}
                       if q.options && q.options.length
                         .mt-2.space-y-1
                           each opt in q.options

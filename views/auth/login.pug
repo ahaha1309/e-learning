@@ -6,11 +6,9 @@ block content
   .min-h-screen.flex
 
     //- ── LEFT BRAND PANEL (desktop only) ─────────────────────────────────
-    .hidden.lg_flex.flex-col.justify-between.p-12.relative.overflow-hidden.flex-shrink-0(class='w-[480px] bg-primary/5 border-r border-border/60')
+    .hidden.lg_flex.flex-col.justify-between.p-12.relative.overflow-hidden.flex-shrink-0.noise-overlay(class='w-[480px] bg-primary/5 border-r border-border/60', data-constellation)
       //- Ambient glow
-      .absolute.inset-0.pointer-events-none(aria-hidden='true')
-        div.absolute.top-0.left-0.w-80.h-80.rounded-full.bg-primary.opacity-10(style='filter:blur(100px);')
-        div.absolute.bottom-0.right-0.w-64.h-64.rounded-full.bg-info.opacity-10(style='filter:blur(80px);')
+      .hero-ambient(aria-hidden='true')
 
       //- Brand logo
       a.inline-flex.items-center.gap-3.relative.z-10(href='/', aria-label='EduSpace home')
@@ -97,7 +95,7 @@ block content
                 i.ph-bold.ph-eye.text-lg(data-toggle-password-icon='password', aria-hidden='true')
 
           //- Submit
-          button.btn-primary.w-full.h-12.text-base.rounded-xl.shadow-sm.active_scale-95.transition-transform.mt-2(type='submit')
+          button.btn-primary.btn-glow.w-full.h-12.text-base.rounded-xl.shadow-sm.active_scale-95.transition-transform.mt-2(type='submit')
             | Đăng nhập
             i.ph-bold.ph-arrow-right(aria-hidden='true')
 

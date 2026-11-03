@@ -1,4 +1,6 @@
+const { body, validationResult } = require('express-validator');
 const QuestionBank = require('../../models/QuestionBank');
+const { sanitizeRichHtml } = require('../../helper/sanitize');
 
 async function renderQuestionBankIndex(req, res, next) {
   try {
@@ -19,6 +21,22 @@ async function renderQuestionBankIndex(req, res, next) {
     });
   } catch (error) {
     return next(error);
+  }
+}
+
+async function searchQuestionsApi(req, res, next) {
+  try {
+    const { subject, chapter, difficulty } = req.query;
+    const filter = { teacher: req.user.id };
+    
+    if (subject) filter.subject = { $regex: new RegExp(`^${subject.trim()}$`, 'i') };
+    if (chapter) filter.chapter = { $regex: new RegExp(`^${chapter.trim()}$`, 'i') };
+    if (difficulty) filter.difficulty = difficulty;
+
+    const questions = await QuestionBank.find(filter).sort({ createdAt: -1 }).lean();
+    return res.json({ success: true, questions });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tìm kiếm câu hỏi' });
   }
 }
 
@@ -46,10 +64,20 @@ async function createQuestionHandler(req, res, next) {
       const texts = Array.isArray(optionTexts) ? optionTexts : [optionTexts];
       const corrects = Array.isArray(optionCorrects) ? optionCorrects : [optionCorrects];
       
-      options = texts.map((text, idx) => ({
-        text,
-        isCorrect: corrects.includes(idx.toString()) || corrects.includes(text),
-      }));
+      options = texts
+        .map((text, idx) => ({
+          text: text.trim(),
+          isCorrect: corrects.includes(idx.toString()) || corrects.includes(text),
+        }))
+        .filter(opt => opt.text.length > 0);
+
+      if (options.length === 0) {
+        return res.render('teacher/questionBank/new', {
+          title: 'Add to Question Bank',
+          formData: req.body,
+          errorMessage: 'Multiple-choice questions need at least one option with text.',
+        });
+      }
     }
 
     const qb = new QuestionBank({
@@ -58,7 +86,7 @@ async function createQuestionHandler(req, res, next) {
       chapter,
       difficulty,
       type: type || 'multiple_choice',
-      content,
+      content: sanitizeRichHtml(content),
       options,
     });
 
@@ -81,6 +109,7 @@ async function deleteQuestionHandler(req, res, next) {
 
 module.exports = {
   renderQuestionBankIndex,
+  searchQuestionsApi,
   renderCreateQuestion,
   createQuestionHandler,
   deleteQuestionHandler,

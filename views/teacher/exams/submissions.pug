@@ -47,7 +47,7 @@ block content
                   else
                     span.badge-success.badge-sm Đã chấm
                 td.text-right
-                  if sub.status === 'submitted'
+                  if sub.status !== 'in_progress'
                     a.pill(href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/submissions/' + sub.id + '/grade') Xem & Chấm
     else
       .empty-state

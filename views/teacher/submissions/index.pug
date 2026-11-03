@@ -33,6 +33,10 @@ block content
               span Điểm #{submission.score === null ? 'Chưa chấm điểm' : submission.score}
             .mt-3.flex.items-center.gap-3.flex-wrap
               a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id) Mở bài nộp
+              if assignment.rubric
+                a.pill(class='bg-primary/10 text-primary border-primary/20 hover_bg-primary hover_text-white', href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id + '/grade-rubric')
+                  i.ph-bold.ph-check-square-offset
+                  | Chấm Rubric
               form(method='POST', action='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id + '/delete', onsubmit='return confirm("Xóa bài nộp này? Học sinh sẽ có thể nộp lại.");')
                 input(type='hidden', name='_csrf', value=csrfToken)
                 button.pill.text-destructive.border-destructive(type='submit', class='hover_bg-destructive/10')

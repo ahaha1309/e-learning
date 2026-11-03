@@ -23,6 +23,9 @@ block content
       a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/new')
         i.ph-bold.ph-plus
         | Tạo bài tập
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/rubrics')
+        i.ph-bold.ph-list-checks
+        | Quản lý Rubric
       a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại lớp học
       a.pill(href='/teacher/classrooms') Tất cả lớp học
 
@@ -45,7 +48,12 @@ block content
               div
                 h2.text-lg.font-bold.mb-1= assignment.title
                 p.text-sm.text-muted-foreground= assignment.description || 'Chưa có mô tả.'
-              span.badge-muted.badge-sm= assignment.totalPoints + ' điểm'
+              div.flex.items-center.gap-2
+                if assignment.rubric
+                  span.badge-muted.badge-sm.inline-flex.items-center.gap-1.text-primary.border-primary(class='border border-primary/20 bg-primary/5')
+                    i.ph-bold.ph-check-square-offset
+                    = 'Rubric: ' + (assignment.rubric.name || 'Đã gắn Rubric')
+                span.badge-muted.badge-sm= assignment.totalPoints + ' điểm'
             .flex.flex-wrap.gap-4.text-sm.text-muted-foreground.mt-3
               span Hạn chót #{assignment.dueDate.toLocaleString('en-GB')}
               span Đã xuất bản #{assignment.isPublished ? 'Có' : 'Không'}

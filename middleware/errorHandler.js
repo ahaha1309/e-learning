@@ -10,6 +10,11 @@ function errorHandler(err, req, res, next) {
     return next(err);
   }
 
+  // The 500 page hides the real error from the user, so without this line
+  // there is nothing in the terminal to diagnose with. Log the request +
+  // stack here; the user still only sees the generic page.
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, err);
+
   const statusCode = err.statusCode || 500;
 
   res.status(statusCode).render('errors/error', {

@@ -45,7 +45,7 @@ block content
       h4.text-lg.font-bold.mb-4 Viết một Phản hồi
       form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/discussions/' + topic.id + '/replies', class='grid gap-4')
         input(type='hidden', name='_csrf', value=csrfToken)
-        textarea.tinymce(class='min-h-[120px]')
+        textarea.tinymce(name='content', class='min-h-[120px]')
         .text-right
           button.btn-primary(type='submit') Đăng Phản hồi
 

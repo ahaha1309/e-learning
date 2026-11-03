@@ -8,6 +8,7 @@ const createAssignmentRules = [
   body('dueDate').trim().notEmpty().withMessage('Due date is required').isISO8601().withMessage('Due date must be a valid date'),
   body('isPublished').optional().isBoolean().withMessage('Published flag must be true or false'),
   body('allowLateSubmission').optional().isBoolean().withMessage('Late submission flag must be true or false'),
+  body('rubric').optional({ checkFalsy: true }).isMongoId().withMessage('Invalid rubric id'),
 ];
 
 const classroomIdRules = [

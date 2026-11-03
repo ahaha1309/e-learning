@@ -32,6 +32,11 @@ const examSchema = new Schema(
       enum: ['quiz', 'upload'],
       default: 'quiz',
     },
+    examCategory: {
+      type: String,
+      enum: ['NORMAL', 'MIDTERM', 'FINAL'],
+      default: 'NORMAL',
+    },
     instructions: {
       type: String,
       default: '',

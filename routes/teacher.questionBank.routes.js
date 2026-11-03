@@ -24,6 +24,7 @@ function handleValidation(req, res, next) {
 }
 
 router.get('/', qbController.renderQuestionBankIndex);
+router.get('/api/search', qbController.searchQuestionsApi);
 router.get('/new', qbController.renderCreateQuestion);
 router.post('/', validateQuestion, handleValidation, qbController.createQuestionHandler);
 router.post('/:id/delete', qbController.deleteQuestionHandler);

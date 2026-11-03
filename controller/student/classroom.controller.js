@@ -12,14 +12,22 @@ function formatValidationErrors(req) {
 
 async function renderStudentClassrooms(req, res, next) {
   try {
-    const memberships = await ClassroomMember.find({ student: req.user.id }).populate('classroom').sort({ requestedAt: -1 });
+    const memberships = (await ClassroomMember.find({ student: req.user.id }).populate('classroom').sort({ requestedAt: -1 }))
+      // populate() leaves classroom = null when the classroom row was deleted
+      // (no cascade in ClassroomMember). index.pug reads membership.classroom.id /
+      // .name / .code unconditionally, so one orphan membership 500s the whole
+      // list page for that student. Drop orphans here instead of crashing.
+      .filter((membership) => membership.classroom);
     const pendingMemberships = memberships.filter((membership) => membership.status === 'pending');
     const approvedMemberships = memberships.filter((membership) => membership.status === 'approved');
+    const visibleMemberships = approvedMemberships.filter((m) => !m.isHidden);
+    const hiddenMemberships = approvedMemberships.filter((m) => m.isHidden);
 
     return res.render('student/classrooms/index', {
       title: 'My classrooms',
       pendingMemberships,
-      approvedMemberships,
+      visibleMemberships,
+      hiddenMemberships,
       feedback: req.query.feedback || null,
     });
   } catch (error) {
@@ -32,14 +40,16 @@ async function joinClassroomHandler(req, res, next) {
 
     const validationMessage = formatValidationErrors(req);
     if (validationMessage) {
-      const memberships = await ClassroomMember.find({ student: req.user.id }).populate('classroom').sort({ requestedAt: -1 });
+      const memberships = (await ClassroomMember.find({ student: req.user.id }).populate('classroom').sort({ requestedAt: -1 }))
+        .filter((membership) => membership.classroom);
       const pendingMemberships = memberships.filter((membership) => membership.status === 'pending');
       const approvedMemberships = memberships.filter((membership) => membership.status === 'approved');
 
       return res.status(422).render('student/classrooms/index', {
         title: 'My classrooms',
         pendingMemberships,
-        approvedMemberships,
+        visibleMemberships: approvedMemberships.filter((m) => !m.isHidden),
+        hiddenMemberships: approvedMemberships.filter((m) => m.isHidden),
         feedback: validationMessage,
       });
     }
@@ -187,9 +197,30 @@ async function askAiAssistantHandler(req, res, next) {
   }
 }
 
+async function toggleVisibilityHandler(req, res, next) {
+  try {
+    const member = await ClassroomMember.findOne({
+      classroom: req.params.classroomId,
+      student: req.user.id
+    });
+    
+    if (!member) {
+      return res.status(404).send('Classroom not found');
+    }
+
+    member.isHidden = !member.isHidden;
+    await member.save();
+
+    return res.redirect('/student/classrooms');
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   renderStudentClassrooms,
   joinClassroomHandler,
   renderStudentClassroomDetail,
   askAiAssistantHandler,
+  toggleVisibilityHandler,
 };

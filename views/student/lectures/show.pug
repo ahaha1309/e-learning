@@ -39,6 +39,17 @@ block content
             h1.text-base.font-bold.tracking-tight.truncate= lecture.title
 
         .flex.items-center.gap-2.flex-shrink-0
+          form.m-0.inline-block(
+            action=`/student/classrooms/${membership.classroom.id || membership.classroom._id}/lectures/${lecture.id || lecture._id}/complete`,
+            method='POST'
+          )
+            input(type='hidden', name='_csrf', value=csrfToken)
+            button.btn-primary.btn-sm.rounded-full(
+              type='submit',
+              aria-label='Đánh dấu đã học xong'
+            )
+              i.ph-bold.ph-check-circle(aria-hidden='true')
+              span.hidden.md_inline Đã học xong
           if lecture.resourceUrl
             a.btn-outline.btn-sm.rounded-full(
               href=lecture.resourceUrl,

@@ -4,6 +4,7 @@ const { requireAuth, requireRole } = require('../middleware/rbac');
 
 const classroomRoutes = require('./teacher.classroom.routes');
 const examRoutes = require('./teacher.exam.routes');
+const rubricRoutes = require('./teacher.rubric.routes');
 const qbRoutes = require('./teacher.questionBank.routes');
 const attendanceRoutes = require('./teacher.attendance.routes');
 const discussionRoutes = require('./teacher.discussion.routes');
@@ -20,6 +21,7 @@ router.get('/dashboard', renderTeacherDashboard);
 
 router.use('/classrooms', classroomRoutes);
 router.use('/classrooms/:classroomId/exams', examRoutes);
+router.use('/classrooms/:classroomId/rubrics', rubricRoutes);
 router.use('/classrooms/:classroomId/attendance', attendanceRoutes);
 router.use('/classrooms/:classroomId/discussions', discussionRoutes);
 router.get('/classrooms/:classroomId/chat', renderChatRoom);

@@ -21,6 +21,32 @@ const classroomMemberSchema = new Schema(
       enum: ['pending', 'approved', 'rejected', 'left'],
       default: 'pending',
     },
+    attendanceScore: {
+      type: Number,
+      min: 0,
+      max: 10,
+      default: null,
+    },
+    manualMidtermScore: {
+      type: Number,
+      min: 0,
+      max: 10,
+      default: null,
+    },
+    useManualMidterm: {
+      type: Boolean,
+      default: false,
+    },
+    manualFinalScore: {
+      type: Number,
+      min: 0,
+      max: 10,
+      default: null,
+    },
+    useManualFinal: {
+      type: Boolean,
+      default: false,
+    },
     requestedAt: {
       type: Date,
       default: Date.now,
@@ -28,6 +54,10 @@ const classroomMemberSchema = new Schema(
     approvedAt: {
       type: Date,
       default: null,
+    },
+    isHidden: {
+      type: Boolean,
+      default: false,
     },
   },
   {

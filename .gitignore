@@ -2,9 +2,11 @@
 # Dependencies
 # =========================
 node_modules/
+scratch/
 
 # =========================
 # AI / Tool configuration (local only)
+
 # =========================
 .claude/
 .agents/

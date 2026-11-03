@@ -13,14 +13,10 @@ block content
           a(href='/teacher/classrooms/' + classroom.id)= classroom.name
           span.breadcrumb-sep /
           span.text-foreground.font-bold Sổ điểm
-        p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-3 Điểm theo Trọng số
+        p.text-xs.font-bold.uppercase.tracking-widest.text-primary.mb-3 Điểm theo Trọng số C-B-A
         h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.text-foreground Sổ điểm
         p.text-lg.text-muted-foreground.max-w-prose.mt-4.leading-relaxed
-          | Phần trăm tổng thể tổng hợp các bài tập và bài thi đã được chấm điểm của mỗi học sinh.
-          if classroom.gradeWeights && classroom.gradeWeights.length
-            |  Được tính theo trọng số cấu hình cho từng loại.
-          else
-            |  Trung bình cộng đơn giản không tính trọng số.
+          | C = Chuyên cần (10%), B = Giữa kỳ (30%), A = Kết thúc môn (60%). Bấm vào điểm để cấu hình điểm thủ công.
 
       aside.glass-panel.p-8.border.shadow-sm.text-center(class='rounded-[2rem] border-border/60')
         p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest.mb-4 Xuất
@@ -40,68 +36,335 @@ block content
             table.w-full.text-left.border-collapse
               thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
                 tr
-                  th.px-8.py-5.font-bold Học sinh
-                  th.px-8.py-5.font-bold.text-center Bài tập
-                  th.px-8.py-5.font-bold.text-center Bài thi
-                  th.px-8.py-5.font-bold.text-center Tổng thể
-                  th.px-8.py-5.font-bold.text-center Điểm
+                  th.px-4.py-5.font-bold Sinh viên
+                  th.px-4.py-5.font-bold.text-center Điểm C
+                  th.px-4.py-5.font-bold.text-center Điểm B
+                  th.px-4.py-5.font-bold.text-center Điểm A
+                  th.px-4.py-5.font-bold.text-center Tổng kết
+                  th.px-4.py-5.font-bold.text-center Điểm chữ
+                  th.px-4.py-5.font-bold.text-center Hệ 4
+                  th.px-4.py-5.font-bold.text-center Xếp loại
               tbody(class='divide-y divide-border/60')
                 - var skeletonRows = [1,2,3,4,5,6]
                 each _ in skeletonRows
                   tr
-                    td.px-8.py-6
+                    td.px-4.py-6
                       .flex.items-center.gap-4
                         .skeleton.skeleton-avatar(class='!w-10 !h-10 !rounded-full')
                         .space-y-2
                           .skeleton.skeleton-text(class='!w-40')
                           .skeleton.skeleton-text-short(class='!w-56')
-                    td.px-8.py-6.text-center: .skeleton.skeleton-text-short.ml-auto
-                    td.px-8.py-6.text-center: .skeleton.skeleton-text-short.ml-auto
-                    td.px-8.py-6.text-center: .skeleton.rounded(class='!h-6 !w-12 ml-auto')
-                    td.px-8.py-6.text-center: .skeleton.rounded-xl.ml-auto(class='!h-10 !w-12')
+                    td.px-4.py-6.text-center: .skeleton.skeleton-text-short.mx-auto(class='!w-12')
+                    td.px-4.py-6.text-center: .skeleton.skeleton-text-short.mx-auto(class='!w-12')
+                    td.px-4.py-6.text-center: .skeleton.skeleton-text-short.mx-auto(class='!w-12')
+                    td.px-4.py-6.text-center: .skeleton.skeleton-text-short.mx-auto(class='!w-12')
+                    td.px-4.py-6.text-center: .skeleton.rounded.mx-auto(class='!h-6 !w-12')
+                    td.px-4.py-6.text-center: .skeleton.rounded.mx-auto(class='!h-6 !w-12')
+                    td.px-4.py-6.text-center: .skeleton.rounded.mx-auto(class='!h-6 !w-16')
       else if rows.length
-        .glass-panel.overflow-hidden(class='rounded-[2rem] border-border/60')
+        .glass-panel.overflow-x-auto(class='rounded-[2rem] border-border/60')
           .table-wrap
-            table.w-full.text-left.border-collapse
+            table.w-full.text-left.border-collapse.whitespace-nowrap
               thead.text-xs.uppercase.tracking-widest.text-muted-foreground(class='bg-muted/20 border-b border-border/60')
                 tr
-                  th.px-8.py-5.font-bold Học sinh
-                  th.px-8.py-5.font-bold.text-center Bài tập
-                  th.px-8.py-5.font-bold.text-center Bài thi
-                  th.px-8.py-5.font-bold.text-center Tổng thể
-                  th.px-8.py-5.font-bold.text-center Điểm
+                  th.px-4.py-5.font-bold Sinh viên
+                  th.px-4.py-5.font-bold.text-center Điểm C
+                  th.px-4.py-5.font-bold.text-center Điểm B
+                  th.px-4.py-5.font-bold.text-center Điểm A
+                  th.px-4.py-5.font-bold.text-center Tổng kết
+                  th.px-4.py-5.font-bold.text-center Điểm chữ
+                  th.px-4.py-5.font-bold.text-center Hệ 4
+                  th.px-4.py-5.font-bold.text-center Xếp loại
               tbody(class='divide-y divide-border/60')
                 each row in rows
+                  - var g = row.gradebook
+                  - var isCManual = row.member.attendanceScore != null
+                  - var isBManual = g.midtermScoreSource === 'MANUAL'
+                  - var isAManual = g.finalScoreSource === 'MANUAL'
+                  
                   tr.transition-colors(class='hover_bg-muted/10')
-                    td.px-8.py-6
+                    td.px-4.py-6
                       .flex.items-center.gap-4
                         div.w-10.h-10.rounded-full.flex.items-center.justify-center.font-bold.border(class='bg-primary/10 text-primary border-primary/20')
                           = (row.studentName || '?').charAt(0).toUpperCase()
                         div
                           p.font-bold.text-base.text-foreground= row.studentName
                           p.font-mono.text-sm.text-muted-foreground= row.studentEmail
-                    td.px-8.py-6.text-center
-                      if row.byType.ASSIGNMENT
-                        span.font-mono.text-base.text-foreground= row.byType.ASSIGNMENT.percent + '%'
-                        p.text-xs.text-muted-foreground= row.byType.ASSIGNMENT.count + ' đã chấm'
+
+                    //- C Column
+                    td.px-4.py-6.text-center
+                      button.grade-cell.inline-flex.flex-col.items-center.gap-1(
+                        data-member-id=row.member.id, 
+                        data-type='C', 
+                        data-score=row.member.attendanceScore
+                      )
+                        if g.attendanceScore != null
+                          span.font-mono.text-base.text-foreground(class=isCManual ? 'text-primary' : '')= g.attendanceScore
+                        else
+                          span.text-muted-foreground.text-sm.italic Chưa có điểm
+
+                    //- B Column
+                    td.px-4.py-6.text-center
+                      button.grade-cell.inline-flex.flex-col.items-center.gap-1(
+                        data-member-id=row.member.id, 
+                        data-type='B', 
+                        data-use-manual=row.member.useManualMidterm,
+                        data-manual-score=row.member.manualMidtermScore,
+                        data-auto-score=(!isBManual && g.midtermScore != null ? g.midtermScore : ''),
+                        data-exams=JSON.stringify(g.midtermExams || [])
+                      )
+                        if g.midtermScore != null
+                          span.font-mono.text-base.text-foreground(class=isBManual ? 'text-primary' : '')= g.midtermScore
+                        else
+                          span.text-muted-foreground.text-sm.italic= (g.midtermCount > 0 ? 'Chưa đủ điểm' : 'Chưa có điểm')
+
+                    //- A Column
+                    td.px-4.py-6.text-center
+                      button.grade-cell.inline-flex.flex-col.items-center.gap-1(
+                        data-member-id=row.member.id, 
+                        data-type='A', 
+                        data-use-manual=row.member.useManualFinal,
+                        data-manual-score=row.member.manualFinalScore,
+                        data-auto-score=(!isAManual && g.finalScore != null ? g.finalScore : ''),
+                        data-exam=JSON.stringify(g.finalExam || null)
+                      )
+                        if g.finalScore != null
+                          span.font-mono.text-base.text-foreground(class=isAManual ? 'text-primary' : '')= g.finalScore
+                        else
+                          span.text-muted-foreground.text-sm.italic= (g.hasFinalDef ? 'Chưa đủ điểm' : 'Chưa có điểm')
+
+                    //- Total Column
+                    td.px-4.py-6.text-center
+                      if g.totalScore != null
+                        span.font-mono.text-xl.font-bold.text-foreground= g.totalScore
                       else
                         span.text-muted-foreground.text-sm —
-                    td.px-8.py-6.text-center
-                      if row.byType.EXAM
-                        span.font-mono.text-base.text-foreground= row.byType.EXAM.percent + '%'
-                        p.text-xs.text-muted-foreground= row.byType.EXAM.count + ' đã chấm'
+
+                    //- Letter Grade Column
+                    td.px-4.py-6.text-center
+                      if g.letterGrade
+                        span.inline-flex.items-center.justify-center.w-12.h-10.rounded-xl.font-extrabold.text-lg(
+                          class='bg-primary/10 text-primary border border-primary/20'
+                        )= g.letterGrade
+                      else
+                        span.inline-flex.items-center.justify-center.w-12.h-10.rounded-xl.font-medium.text-lg(
+                          class='bg-muted text-muted-foreground border border-border/60'
+                        ) -
+
+                    //- Grade 4 Column
+                    td.px-4.py-6.text-center
+                      if g.grade4 != null
+                        span.font-mono.text-base.font-bold.text-foreground= g.grade4
                       else
                         span.text-muted-foreground.text-sm —
-                    td.px-8.py-6.text-center
-                      span.font-mono.text-xl.font-bold.text-foreground= row.overallPercent + '%'
-                    td.px-8.py-6.text-center
-                      if row.letter
-                        span.inline-flex.items-center.justify-center.w-12.h-10.rounded-xl.font-extrabold.text-lg(class='bg-primary/10 text-primary border border-primary/20')= row.letter
+
+                    //- Classification Column
+                    td.px-4.py-6.text-center
+                      if g.classification
+                        if g.classification === 'Đạt'
+                          span.inline-flex.items-center.gap-1.px-3.py-1.rounded-full.text-xs.font-bold(class='bg-success/10 text-success')
+                            i.ph-fill.ph-check-circle
+                            | Đạt
+                        else
+                          span.inline-flex.items-center.gap-1.px-3.py-1.rounded-full.text-xs.font-bold(class='bg-destructive/10 text-destructive')
+                            i.ph-fill.ph-x-circle
+                            | Không đạt
                       else
                         span.text-muted-foreground.text-sm —
       else
-        .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 300ms;')
-          .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
-            i.ph-fill.ph-list-numbers.text-5xl(class='text-muted-foreground/30')
-          h2.text-3xl.font-extrabold.text-foreground Chưa có học sinh nào được chấm điểm
-          p.text-lg.text-muted-foreground.mt-3 Điểm sẽ xuất hiện sau khi học sinh nộp bài và bạn chấm bài của họ.
+        .glass-panel.p-16.text-center.space-y-4(class='rounded-[2rem] border-border/60')
+          .w-16.h-16.rounded-2xl.bg-muted.flex.items-center.justify-center.mx-auto
+            i.ph-bold.ph-users.text-3xl.text-muted-foreground
+          h3.text-xl.font-bold Chưa có học sinh
+          p.text-muted-foreground Phê duyệt học sinh để xem sổ điểm của họ.
+
+  //- Modal Edit Grades
+  #grade-modal.fixed.inset-0.z-50.flex.items-center.justify-center(class='bg-background/80 backdrop-blur-sm', style='display: none;')
+    .bg-background.border.border-border.rounded-2xl.shadow-2xl.w-full.max-w-md.p-6.space-y-6.animate-in.zoom-in-95
+      .flex.justify-between.items-center
+        h3.text-xl.font-bold#modal-title Sửa Điểm
+        button#modal-close.text-muted-foreground.hover_text-foreground
+          i.ph.ph-x.text-2xl
+      
+      #modal-details.text-sm.space-y-2.p-4.rounded-xl.border(class='bg-muted/30 border-border/60', style='display: none;')
+      
+      form#grade-form.space-y-4
+        input#modal-member-id(type='hidden')
+        input#modal-type(type='hidden')
+        
+        #c-inputs(style='display: none;')
+          label.block.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Điểm Chuyên cần (C)
+          input#c-score.w-full.h-12.px-4.rounded-xl.border.bg-background(type='number', min='0', max='10', step='0.1')
+        
+        #b-inputs(style='display: none;')
+          label.flex.items-center.gap-2.mb-4.cursor-pointer
+            input#use-manual-b.rounded.border-border.text-primary(type='checkbox')
+            span.text-sm.font-medium Sử dụng Điểm Giữa kỳ Thủ công
+          #b-score-container(style='display: none;')
+            label.block.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Điểm Giữa kỳ (B)
+            input#b-score.w-full.h-12.px-4.rounded-xl.border.bg-background(type='number', min='0', max='10', step='0.1')
+            
+        #a-inputs(style='display: none;')
+          label.flex.items-center.gap-2.mb-4.cursor-pointer
+            input#use-manual-a.rounded.border-border.text-primary(type='checkbox')
+            span.text-sm.font-medium Sử dụng Điểm Kết thúc môn Thủ công
+          #a-score-container(style='display: none;')
+            label.block.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground.mb-2 Điểm Kết thúc môn (A)
+            input#a-score.w-full.h-12.px-4.rounded-xl.border.bg-background(type='number', min='0', max='10', step='0.1')
+            
+        .flex.justify-end.gap-3.pt-4
+          button.btn-outline.px-4.py-2.rounded-lg(type='button', id='modal-cancel') Hủy
+          button.btn-primary.px-4.py-2.rounded-lg(type='submit', id='modal-save') Lưu
+
+  script.
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('grade-modal');
+      // Move the modal to <body>: #main-content keeps a transform from the page-enter
+      // animation, which makes position:fixed relative to the whole page instead of the viewport.
+      document.body.appendChild(modal);
+      const modalTitle = document.getElementById('modal-title');
+      const modalDetails = document.getElementById('modal-details');
+      const closeBtn = document.getElementById('modal-close');
+      const cancelBtn = document.getElementById('modal-cancel');
+      const form = document.getElementById('grade-form');
+      
+      const memberIdInput = document.getElementById('modal-member-id');
+      const typeInput = document.getElementById('modal-type');
+      
+      const cInputs = document.getElementById('c-inputs');
+      const cScore = document.getElementById('c-score');
+      
+      const bInputs = document.getElementById('b-inputs');
+      const useManualB = document.getElementById('use-manual-b');
+      const bScoreContainer = document.getElementById('b-score-container');
+      const bScore = document.getElementById('b-score');
+      
+      const aInputs = document.getElementById('a-inputs');
+      const useManualA = document.getElementById('use-manual-a');
+      const aScoreContainer = document.getElementById('a-score-container');
+      const aScore = document.getElementById('a-score');
+      
+      useManualB.addEventListener('change', (e) => {
+        bScoreContainer.style.display = e.target.checked ? 'block' : 'none';
+      });
+      useManualA.addEventListener('change', (e) => {
+        aScoreContainer.style.display = e.target.checked ? 'block' : 'none';
+      });
+
+      function closeModal() {
+        modal.style.display = 'none';
+      }
+      closeBtn.addEventListener('click', closeModal);
+      cancelBtn.addEventListener('click', closeModal);
+
+      document.querySelectorAll('.grade-cell').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const type = btn.getAttribute('data-type');
+          const memberId = btn.getAttribute('data-member-id');
+          
+          memberIdInput.value = memberId;
+          typeInput.value = type;
+          
+          cInputs.style.display = 'none';
+          bInputs.style.display = 'none';
+          aInputs.style.display = 'none';
+          modalDetails.style.display = 'none';
+          modalDetails.innerHTML = '';
+          
+          if (type === 'C') {
+            modalTitle.textContent = 'Điểm Chuyên Cần (C)';
+            cInputs.style.display = 'block';
+            cScore.value = btn.getAttribute('data-score') || '';
+          } else if (type === 'B') {
+            modalTitle.textContent = 'Điểm Giữa Kỳ (B)';
+            bInputs.style.display = 'block';
+            
+            useManualB.checked = btn.getAttribute('data-use-manual') === 'true';
+            bScore.value = btn.getAttribute('data-manual-score') || '';
+            bScoreContainer.style.display = useManualB.checked ? 'block' : 'none';
+            
+            // Build details
+            const exams = JSON.parse(btn.getAttribute('data-exams') || '[]');
+            if (exams.length > 0) {
+              modalDetails.style.display = 'block';
+              modalDetails.innerHTML = '<p class="font-bold mb-2 text-muted-foreground">Chi tiết điểm tự động:</p>';
+              exams.forEach(ex => {
+                const scoreText = ex.score != null ? `${ex.scale10} đ` : 'Chưa thi';
+                modalDetails.innerHTML += `<div class="flex justify-between items-center py-1 border-b border-border/40 last:border-0"><span class="truncate pr-4">${ex.exam.title}</span><span class="font-mono font-bold whitespace-nowrap">${scoreText}</span></div>`;
+              });
+              const autoScore = btn.getAttribute('data-auto-score');
+              modalDetails.innerHTML += `<div class="flex justify-between items-center pt-2 mt-2 border-t border-border/60"><span class="font-bold">Điểm B Tự động:</span><span class="font-mono font-bold text-primary">${autoScore || 'Chưa đủ'}</span></div>`;
+            } else {
+              modalDetails.style.display = 'block';
+              modalDetails.innerHTML = '<p class="text-muted-foreground italic">Lớp chưa có bài thi MIDTERM nào.</p>';
+            }
+          } else if (type === 'A') {
+            modalTitle.textContent = 'Điểm Kết Thúc Môn (A)';
+            aInputs.style.display = 'block';
+            
+            useManualA.checked = btn.getAttribute('data-use-manual') === 'true';
+            aScore.value = btn.getAttribute('data-manual-score') || '';
+            aScoreContainer.style.display = useManualA.checked ? 'block' : 'none';
+            
+            const examStr = btn.getAttribute('data-exam');
+            const exam = examStr && examStr !== 'null' ? JSON.parse(examStr) : null;
+            modalDetails.style.display = 'block';
+            if (exam && exam.exam) {
+              modalDetails.innerHTML = '<p class="font-bold mb-2 text-muted-foreground">Chi tiết điểm tự động:</p>';
+              const scoreText = exam.score != null ? `${exam.scale10} đ` : 'Chưa thi';
+              modalDetails.innerHTML += `<div class="flex justify-between items-center py-1"><span class="truncate pr-4">${exam.exam.title}</span><span class="font-mono font-bold">${scoreText}</span></div>`;
+            } else {
+              modalDetails.innerHTML = '<p class="text-muted-foreground italic">Lớp chưa có bài thi FINAL nào.</p>';
+            }
+          }
+          
+          modal.style.display = 'flex';
+        });
+      });
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = typeInput.value;
+        const memberId = memberIdInput.value;
+        
+        const payload = {};
+        if (type === 'C') {
+          payload.attendanceScore = cScore.value;
+        } else if (type === 'B') {
+          payload.useManualMidterm = useManualB.checked;
+          payload.manualMidtermScore = bScore.value;
+        } else if (type === 'A') {
+          payload.useManualFinal = useManualA.checked;
+          payload.manualFinalScore = aScore.value;
+        }
+        
+        try {
+          const btn = document.getElementById('modal-save');
+          const oldText = btn.textContent;
+          btn.textContent = 'Đang lưu...';
+          btn.disabled = true;
+          
+          const classroomId = '#{classroom.id}';
+          const res = await fetch(`/teacher/classrooms/${classroomId}/gradebook/${memberId}/manual-grades`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'CSRF-Token': '#{csrfToken}'
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Có lỗi xảy ra khi lưu điểm');
+            btn.textContent = oldText;
+            btn.disabled = false;
+          }
+        } catch (err) {
+          alert('Có lỗi xảy ra: ' + err.message);
+          btn.textContent = 'Lưu';
+          btn.disabled = false;
+        }
+      });
+    });

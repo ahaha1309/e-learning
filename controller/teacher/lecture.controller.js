@@ -3,6 +3,7 @@ const Classroom = require('../../models/Classroom');
 const Lecture = require('../../models/Lecture');
 const ChatMessage = require('../../models/ChatMessage');
 const { buildPreviewModel } = require('../../helper/lecturePreview');
+const { sanitizeRichHtml } = require('../../helper/sanitize');
 
 function formatValidationErrors(req) {
   const result = validationResult(req);
@@ -83,8 +84,8 @@ async function createLectureHandler(req, res, next) {
       teacher: req.user.id,
       chapterTitle: req.body.chapterTitle,
       title: req.body.title,
-      summary: req.body.summary || '',
-      content: req.body.content || '',
+      summary: sanitizeRichHtml(req.body.summary || ''),
+      content: sanitizeRichHtml(req.body.content || ''),
       resourceUrl,
       resourceType,
       orderIndex: Number(req.body.orderIndex || 0),
@@ -223,8 +224,8 @@ async function updateLectureHandler(req, res, next) {
 
     lecture.chapterTitle = req.body.chapterTitle;
     lecture.title = req.body.title;
-    lecture.summary = req.body.summary || '';
-    lecture.content = req.body.content || '';
+    lecture.summary = sanitizeRichHtml(req.body.summary || '');
+    lecture.content = sanitizeRichHtml(req.body.content || '');
     lecture.orderIndex = Number(req.body.orderIndex || 0);
     lecture.isPublished = req.body.isPublished !== 'false';
 

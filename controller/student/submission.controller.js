@@ -22,7 +22,7 @@ async function renderSubmissionForm(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: membership.classroom.id, isPublished: true });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: membership.classroom.id, isPublished: true }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',
@@ -246,11 +246,24 @@ async function renderSubmissionDetail(req, res, next) {
 
     const submission = await Submission.findOne({ assignment: assignment.id, student: req.user.id });
 
+    let rubricCriterionGrades = [];
+    if (assignment.rubric && assignment.rubric.criteria && submission && submission.rubricGrades && submission.rubricGrades.length > 0) {
+      const awardedMap = {};
+      submission.rubricGrades.forEach((g) => { awardedMap[String(g.criterion)] = g.points; });
+      rubricCriterionGrades = assignment.rubric.criteria.map((c) => ({
+        label: c.label,
+        description: c.description,
+        maxPoints: c.maxPoints,
+        awardedPoints: awardedMap[String(c._id)] !== undefined ? awardedMap[String(c._id)] : null,
+      }));
+    }
+
     return res.render('student/submissions/show', {
       title: `${assignment.title} submission`,
       membership,
       assignment,
       submission,
+      rubricCriterionGrades,
       feedback: req.query.feedback || null,
     });
   } catch (error) {

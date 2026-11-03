@@ -5,6 +5,7 @@ block content
   //- §7 Motion: all animations use CSS only, spring timing, reduced-motion safe
 
   //- ── AMBIENT BACKGROUND ───────────────────────────────────────────────
+  .hero-ambient.noise-overlay(aria-hidden='true')
   .absolute.inset-0.pointer-events-none.overflow-hidden(aria-hidden='true')
     div.absolute.opacity-25.bg-primary.rounded-full(class='top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px]', style='filter:blur(160px);transform:translate3d(-50%,-30%,0);')
     div.absolute.opacity-15.bg-info.rounded-full.animate-float(class='top-1/3 left-0 w-[600px] h-[600px]', style='filter:blur(120px);')
@@ -12,7 +13,7 @@ block content
 
   //- ── HERO — SPLIT SCREEN ─────────────────────────────────────────────
   //- §2.1: Content left 55%, CSS bento visual right 45%. No placehold.co.
-  section.relative.overflow-hidden.pt-28.pb-20.md_pt-40.md_pb-28
+  section.relative.overflow-hidden.pt-28.pb-20.md_pt-40.md_pb-28(data-constellation)
     .max-w-7xl.mx-auto.px-4.md_px-6
       .grid.grid-cols-1.lg_grid-cols-11.gap-12.lg_gap-16.items-center
 
@@ -27,12 +28,12 @@ block content
 
           h1.text-5xl.font-extrabold.tracking-tighter.text-balance.animate-in.slide-in-up(class='leading-[1.04] md:text-6xl lg:text-[5.25rem]', style='animation-delay:150ms;animation-duration:800ms;')
             | Nền tảng học tập 
-            span.text-transparent.bg-clip-text.bg-gradient-to-br.from-primary(class='to-primary/60') mang lại kết quả.
+            span.gradient-text mang lại kết quả.
 
           p.text-lg.md_text-xl.text-muted-foreground.leading-relaxed.max-w-lg.animate-in.slide-in-up(style='animation-delay:300ms;animation-duration:800ms;') Không gian làm việc đa năng dành cho học sinh, giáo viên và quản trị viên. Lớp học, bài thi, bài tập và phân tích — tất cả trong một.
 
           .flex.flex-col.sm_flex-row.gap-3.pt-2.animate-in.slide-in-up(style='animation-delay:450ms;animation-duration:800ms;')
-            a.btn-primary.h-13.px-8.text-base.rounded-full.shadow-elevated.transition-transform.active_scale-95.inline-flex.items-center.gap-2(href='/auth/register')
+            a.btn-primary.btn-glow.h-13.px-8.text-base.rounded-full.shadow-elevated.transition-transform.active_scale-95.inline-flex.items-center.gap-2(href='/auth/register')
               | Bắt đầu miễn phí
               i.ph-bold.ph-arrow-right.text-lg
 
@@ -126,7 +127,7 @@ block content
             {icon:'ph-shield-check', label:'Thi chống gian lận'},
             {icon:'ph-chat-circle', label:'Trò chuyện trực tiếp'},
             {icon:'ph-file-text', label:'Chấm bài tập'},
-            {icon:'ph-certificate', label:'Chứng chỉ'},
+            {icon:'ph-check-square-offset', label:'Đánh giá Rubric'},
             {icon:'ph-question', label:'Ngân hàng câu hỏi'},
             {icon:'ph-calendar-check', label:'Theo dõi điểm danh'},
             {icon:'ph-chalkboard', label:'Lớp học thông minh'},
@@ -134,7 +135,7 @@ block content
             {icon:'ph-shield-check', label:'Thi chống gian lận'},
             {icon:'ph-chat-circle', label:'Trò chuyện trực tiếp'},
             {icon:'ph-file-text', label:'Chấm bài tập'},
-            {icon:'ph-certificate', label:'Chứng chỉ'},
+            {icon:'ph-check-square-offset', label:'Đánh giá Rubric'},
             {icon:'ph-question', label:'Ngân hàng câu hỏi'},
             {icon:'ph-calendar-check', label:'Theo dõi điểm danh'}
           ]
@@ -146,7 +147,7 @@ block content
 
   //- ── BENTO FEATURES ───────────────────────────────────────────────────
   //- §4 Dashboard Strategy: asymmetric 2fr/1fr grid — not generic 3-equal
-  section.py-28(class='bg-muted/20')
+  section.py-28.reveal-on-scroll(class='bg-muted/20')
     .max-w-7xl.mx-auto.px-4.md_px-6
       .max-w-2xl.mx-auto.text-center.mb-16
         div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.py-2.mb-6(class='border-primary/20 bg-primary/5') Mọi thứ bạn cần
@@ -207,7 +208,7 @@ block content
         -
           var features = [
             {icon:'ph-bank', color:'primary', title:'Ngân hàng câu hỏi', desc:'Xây dựng thư viện câu hỏi dùng chung. Lọc theo môn học, chương và mức độ khó.'},
-            {icon:'ph-certificate', color:'warning', title:'Chứng chỉ', desc:'Học sinh nhận chứng chỉ PDF sau khi hoàn thành yêu cầu của lớp học.'},
+            {icon:'ph-check-square-offset', color:'warning', title:'Tiêu chí Rubric', desc:'Chấm điểm minh bạch theo ma trận tiêu chí và thang đo chuẩn hóa.'},
             {icon:'ph-bell', color:'info', title:'Thông báo thông minh', desc:'Cảnh báo theo vai trò về điểm số, bài giảng mới, lịch thi và các phê duyệt đang chờ.'}
           ];
         each feature in features
@@ -219,7 +220,7 @@ block content
 
   //- ── TESTIMONIALS ─────────────────────────────────────────────────────
   //- §2.1 Guest Journey: social proof below features section
-  section.py-28.border-y(class='border-border/60')
+  section.py-28.border-y.reveal-on-scroll(class='border-border/60')
     .max-w-7xl.mx-auto.px-4.md_px-6
       .max-w-xl.mx-auto.text-center.mb-16
         div.inline-flex.items-center.gap-2.rounded-full.border.text-primary.text-xs.font-bold.uppercase.tracking-widest.px-4.py-2.mb-6(class='border-primary/20 bg-primary/5') Đánh giá web
@@ -249,11 +250,11 @@ block content
   section.py-28.relative.overflow-hidden
     div.absolute.inset-0(class='bg-primary/4', aria-hidden='true')
     .max-w-7xl.mx-auto.px-4.md_px-6.relative.z-10
-      div.glass-panel.p-14.md_p-20.text-center(class='border-primary/15 rounded-[2.5rem]')
-        h2.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.mb-5 Sẵn sàng bắt đầu học tập?
+      div.beam-border.deep-glass.p-14.md_p-20.text-center(class='border-primary/15 rounded-[2.5rem]')
+        h2.text-4xl.md_text-5xl.font-extrabold.tracking-tighter.mb-5.gradient-text Sẵn sàng bắt đầu học tập?
         p.text-lg.text-muted-foreground.max-w-xl.mx-auto.mb-10 Tham gia không gian học tập chuyên nghiệp được xây dựng cho các lớp học, bài kiểm tra và kết quả thực tế.
         .flex.flex-col.sm_flex-row.gap-4.justify-center
-          a.btn-primary.h-14.px-10.text-base.rounded-full.active_scale-95.transition-transform.inline-flex.items-center.gap-2.shadow-elevated(href='/auth/register')
+          a.btn-primary.btn-glow.h-14.px-10.text-base.rounded-full.active_scale-95.transition-transform.inline-flex.items-center.gap-2.shadow-elevated(href='/auth/register')
             | Tạo tài khoản ngay
             i.ph-bold.ph-arrow-right
 

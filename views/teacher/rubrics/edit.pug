@@ -1,0 +1,344 @@
+extends ../../layouts/base
+
+block content
+  .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
+    header.flex.flex-col.md_flex-row.md_items-end.justify-between.gap-8.animate-in.slide-in-up
+      div
+        nav.breadcrumb.animate-in.fade-in.mb-6
+          a(href='/teacher') Bảng điều khiển
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms') Lớp học
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/rubrics') Rubric
+          span.breadcrumb-sep /
+          a(href='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id)= rubric.name
+          span.breadcrumb-sep /
+          span.text-foreground.font-bold Chỉnh sửa
+
+        .inline-flex.items-center.gap-2.rounded-full.border.text-warning.text-xs.font-bold.uppercase.tracking-widest.px-4.mb-6(class='py-1.5 bg-warning/5 border-warning/20')
+          i.ph-bold.ph-pencil-simple
+          | Cập nhật Rubric
+        h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Chỉnh sửa Rubric
+        p.text-lg.text-muted-foreground.mt-3 Điều chỉnh tiêu chí hoặc thang điểm. Tổng điểm tối đa sẽ được tự động đồng bộ lại.
+
+      .flex.items-center.gap-4
+        a.btn-outline.h-14.px-6.rounded-full(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id)
+          i.ph-bold.ph-x.text-lg
+          | Hủy
+
+    form#rubricForm.grid.grid-cols-1.lg_grid-cols-12.gap-12.animate-in.slide-in-up(style='animation-delay: 100ms;', method='POST', action='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id + '/edit')
+      input(type='hidden', name='_csrf', value=csrfToken)
+      input#criteriaJson(type='hidden', name='criteria', value='')
+
+      //- Main Content Col
+      .lg_col-span-8.space-y-8
+        if errorMessage
+          .alert-danger.rounded-2xl= errorMessage
+
+        //- Step 1: Rubric Overview
+        .glass-panel.p-8.space-y-6(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
+              span.font-bold.text-sm 1
+            h3.text-lg.font-bold Thông tin chung về Rubric
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='name') Tên Rubric
+            input#name.w-full.h-14.px-5.rounded-xl.bg-background.border.text-lg.font-bold(
+              class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent',
+              type='text',
+              name='name',
+              value=formData.name || rubric.name,
+              required
+            )
+
+          .space-y-2
+            label.text-sm.font-bold.uppercase.tracking-widest.text-muted-foreground(for='description') Mô tả hoặc Ghi chú hướng dẫn
+            textarea#description.w-full.px-5.py-4.rounded-xl.bg-background.border.font-medium.resize-y(
+              class='border-border/60 focus_ring-2 focus_ring-primary focus_border-transparent',
+              name='description',
+              rows='3'
+            )= formData.description || rubric.description || ''
+
+        //- Step 2: Criteria Builder
+        .glass-panel.p-8.space-y-6(class='rounded-[2rem] border-border/60')
+          .flex.items-center.justify-between.pb-4.border-b(class='border-border/60')
+            .flex.items-center.gap-3
+              .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-warning/10 text-warning')
+                span.font-bold.text-sm 2
+              div
+                h3.text-lg.font-bold Danh sách Tiêu chí Đánh giá
+                p.text-xs.text-muted-foreground Mỗi tiêu chí có điểm tối đa và các mức điểm con (thang đo).
+            button#addCriterionBtn.btn-outline.h-10.px-4.rounded-full.text-xs.font-bold.inline-flex.items-center(type='button', class='gap-1.5')
+              i.ph-bold.ph-plus
+              | Thêm tiêu chí
+
+          #criteriaContainer.space-y-6
+
+          .pt-4.border-t.border-border(class='border-border/60 flex items-center justify-between')
+            button#addCriterionBottomBtn.btn-outline.h-11.px-5.rounded-full.text-sm.font-bold.inline-flex.items-center.gap-2(type='button')
+              i.ph-bold.ph-plus-circle
+              | Thêm tiêu chí mới
+            span.text-xs.text-muted-foreground Có thể chỉnh sửa hoặc bổ sung tiêu chí.
+
+      //- Sidebar Info Col
+      .lg_col-span-4.space-y-8
+        .glass-panel.p-8.space-y-6.sticky.top-8(class='rounded-[2rem] border-border/60')
+          .flex.items-center.gap-3.pb-4.border-b(class='border-border/60')
+            .w-10.h-10.rounded-lg.flex.items-center.justify-center(class='bg-success/10 text-success')
+              i.ph-bold.ph-trophy.text-xl
+            h3.text-lg.font-bold Tổng kết Điểm số
+
+          .p-5.rounded-2xl.bg-muted.bg-opacity-40.border.border-border(class='border-border/60 space-y-3')
+            .flex.items-baseline.justify-between
+              span.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tổng điểm tối đa:
+              span#totalPointsDisplay.font-mono.text-3xl.font-black.text-primary= rubric.maxPoints
+            p.text-xs.text-muted-foreground Điểm tổng được tự động tính bằng tổng điểm tối đa của tất cả các tiêu chí cộng lại.
+
+          .space-y-2
+            .flex.items-center.justify-between.text-sm
+              span.text-muted-foreground Số lượng tiêu chí:
+              span#criteriaCountDisplay.font-bold= rubric.criteria ? rubric.criteria.length : 0
+            .flex.items-center.justify-between.text-sm
+              span.text-muted-foreground Trạng thái:
+              span.badge-muted.badge-sm.text-success Hoạt động
+
+          .pt-4.border-t.border-border(class='border-border/60 space-y-3')
+            button.btn-primary.btn-glow.w-full.h-14.rounded-full.font-bold.text-base.shadow-sm(type='submit')
+              i.ph-bold.ph-floppy-disk.mr-2
+              | Cập nhật Rubric
+            a.btn-outline.w-full.h-12.rounded-full.font-bold.text-sm.flex.items-center.justify-center(href='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id)
+              | Hủy bỏ
+
+  script.
+    const initialCriteria = !{JSON.stringify(formData.criteria || rubric.criteria || [])};
+
+    const container = document.getElementById('criteriaContainer');
+    const totalPointsDisplay = document.getElementById('totalPointsDisplay');
+    const criteriaCountDisplay = document.getElementById('criteriaCountDisplay');
+    const criteriaJsonInput = document.getElementById('criteriaJson');
+    const rubricForm = document.getElementById('rubricForm');
+
+    function createScaleRow(scaleItem = { points: 0, label: '' }) {
+      const row = document.createElement('div');
+      row.className = 'scale-row flex items-center gap-2';
+      row.innerHTML = `
+        <div class="w-24">
+          <input type="number" step="0.5" min="0" class="scale-points w-full h-10 px-3 rounded-lg bg-background border text-sm font-mono font-bold" placeholder="Điểm" value="${scaleItem.points !== undefined ? scaleItem.points : ''}" required>
+        </div>
+        <div class="flex-1">
+          <input type="text" class="scale-label w-full h-10 px-3 rounded-lg bg-background border text-sm font-medium" placeholder="Nhãn (ví dụ: Xuất sắc, Đạt, Tốt...)" value="${escapeHtml(scaleItem.label || '')}" required>
+        </div>
+        <button type="button" class="remove-scale-btn p-2 rounded-lg text-muted-foreground hover_text-destructive hover_bg-destructive/10" title="Xóa mức điểm">
+          <i class="ph-bold ph-trash"></i>
+        </button>
+      `;
+
+      row.querySelector('.remove-scale-btn').addEventListener('click', () => {
+        row.remove();
+      });
+
+      return row;
+    }
+
+    function createCriterionCard(data = {}) {
+      const card = document.createElement('div');
+      card.className = 'criterion-card p-6 rounded-2xl border border-border/80 bg-card/60 space-y-4 relative transition-all';
+
+      const label = data.label || '';
+      const description = data.description || '';
+      const maxPoints = data.maxPoints !== undefined ? data.maxPoints : 5;
+      const scale = Array.isArray(data.scale) ? data.scale : [];
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <span class="criterion-number inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-xs">#</span>
+            <h4 class="font-bold text-base text-foreground criterion-title-preview">${escapeHtml(label || 'Tiêu chí mới')}</h4>
+          </div>
+          <button type="button" class="remove-criterion-btn p-2 rounded-lg text-muted-foreground hover_text-destructive hover_bg-destructive/10" title="Xóa tiêu chí này">
+            <i class="ph-bold ph-trash text-base"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md_grid-cols-12 gap-4">
+          <div class="md_col-span-8 space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Tên tiêu chí *</label>
+            <input type="text" class="criterion-label w-full h-11 px-4 rounded-xl bg-background border text-sm font-bold" placeholder="ví dụ: Tính đúng đắn của giải thuật" value="${escapeHtml(label)}" required>
+          </div>
+          <div class="md_col-span-4 space-y-1">
+            <label class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Điểm tối đa *</label>
+            <input type="number" step="0.5" min="0" class="criterion-max-points w-full h-11 px-4 rounded-xl bg-background border text-sm font-mono font-bold" placeholder="Điểm" value="${maxPoints}" required>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mô tả chi tiết tiêu chí</label>
+          <input type="text" class="criterion-description w-full h-10 px-4 rounded-xl bg-background border text-xs" placeholder="Gợi ý đánh giá hoặc tiêu chuẩn đạt được đối với tiêu chí này..." value="${escapeHtml(description)}">
+        </div>
+
+        <!-- Scale levels -->
+        <div class="pt-3 border-t border-border/40 space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <i class="ph-bold ph-sliders"></i>
+              Thang đo mức điểm (Nút bấm chọn nhanh khi chấm)
+            </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <button type="button" class="preset-4-btn pill text-xs px-2 py-0.5">Thang 4 mức</button>
+              <button type="button" class="preset-3-btn pill text-xs px-2 py-0.5">Thang 3 mức</button>
+              <button type="button" class="add-scale-btn pill text-xs px-2 py-0.5 text-primary border-primary">
+                <i class="ph-bold ph-plus mr-1"></i>Thêm mức
+              </button>
+            </div>
+          </div>
+          <div class="scale-list space-y-2"></div>
+        </div>
+      `;
+
+      // Event handlers
+      const labelInput = card.querySelector('.criterion-label');
+      const titlePreview = card.querySelector('.criterion-title-preview');
+      labelInput.addEventListener('input', () => {
+        titlePreview.textContent = labelInput.value.trim() || 'Tiêu chí mới';
+      });
+
+      const maxPointsInput = card.querySelector('.criterion-max-points');
+      maxPointsInput.addEventListener('input', updateTotals);
+
+      const removeBtn = card.querySelector('.remove-criterion-btn');
+      removeBtn.addEventListener('click', () => {
+        if (container.querySelectorAll('.criterion-card').length <= 1) {
+          alert('Rubric phải có ít nhất 1 tiêu chí đánh giá.');
+          return;
+        }
+        card.remove();
+        renumberCriteria();
+        updateTotals();
+      });
+
+      const scaleList = card.querySelector('.scale-list');
+      const addScaleBtn = card.querySelector('.add-scale-btn');
+      addScaleBtn.addEventListener('click', () => {
+        scaleList.appendChild(createScaleRow({ points: 0, label: '' }));
+      });
+
+      const preset4Btn = card.querySelector('.preset-4-btn');
+      preset4Btn.addEventListener('click', () => {
+        const pts = parseFloat(maxPointsInput.value) || 4;
+        scaleList.innerHTML = '';
+        scaleList.appendChild(createScaleRow({ points: pts, label: 'Xuất sắc / Mastery' }));
+        scaleList.appendChild(createScaleRow({ points: Math.round(pts * 0.75 * 10) / 10, label: 'Tốt / Proficient' }));
+        scaleList.appendChild(createScaleRow({ points: Math.round(pts * 0.5 * 10) / 10, label: 'Đạt / Developing' }));
+        scaleList.appendChild(createScaleRow({ points: Math.round(pts * 0.25 * 10) / 10, label: 'Cần cải thiện / Novice' }));
+      });
+
+      const preset3Btn = card.querySelector('.preset-3-btn');
+      preset3Btn.addEventListener('click', () => {
+        const pts = parseFloat(maxPointsInput.value) || 3;
+        scaleList.innerHTML = '';
+        scaleList.appendChild(createScaleRow({ points: pts, label: 'Tốt' }));
+        scaleList.appendChild(createScaleRow({ points: Math.round(pts * 0.6 * 10) / 10, label: 'Đạt' }));
+        scaleList.appendChild(createScaleRow({ points: 0, label: 'Chưa đạt' }));
+      });
+
+      // Populate scale
+      if (scale.length > 0) {
+        scale.forEach(s => scaleList.appendChild(createScaleRow(s)));
+      }
+
+      return card;
+    }
+
+    function renumberCriteria() {
+      const cards = container.querySelectorAll('.criterion-card');
+      cards.forEach((card, idx) => {
+        card.querySelector('.criterion-number').textContent = idx + 1;
+      });
+      criteriaCountDisplay.textContent = cards.length;
+    }
+
+    function updateTotals() {
+      const maxPointsInputs = container.querySelectorAll('.criterion-max-points');
+      let sum = 0;
+      maxPointsInputs.forEach(input => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val) && val >= 0) {
+          sum += val;
+        }
+      });
+      totalPointsDisplay.textContent = Math.round(sum * 10) / 10;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function collectCriteria() {
+      const cards = container.querySelectorAll('.criterion-card');
+      const criteria = [];
+      cards.forEach(card => {
+        const label = card.querySelector('.criterion-label').value.trim();
+        const maxPoints = parseFloat(card.querySelector('.criterion-max-points').value) || 0;
+        const description = card.querySelector('.criterion-description').value.trim();
+        
+        const scale = [];
+        const scaleRows = card.querySelectorAll('.scale-row');
+        scaleRows.forEach(row => {
+          const sPts = parseFloat(row.querySelector('.scale-points').value);
+          const sLabel = row.querySelector('.scale-label').value.trim();
+          if (!isNaN(sPts) && sLabel) {
+            scale.push({ points: sPts, label: sLabel });
+          }
+        });
+
+        criteria.push({
+          label,
+          description,
+          maxPoints,
+          scale
+        });
+      });
+      return criteria;
+    }
+
+    // Add criterion buttons
+    document.getElementById('addCriterionBtn').addEventListener('click', () => {
+      container.appendChild(createCriterionCard());
+      renumberCriteria();
+      updateTotals();
+    });
+
+    document.getElementById('addCriterionBottomBtn').addEventListener('click', () => {
+      container.appendChild(createCriterionCard());
+      renumberCriteria();
+      updateTotals();
+    });
+
+    // Form submission packaging
+    rubricForm.addEventListener('submit', (e) => {
+      const criteria = collectCriteria();
+      if (criteria.length === 0) {
+        e.preventDefault();
+        alert('Rubric cần có ít nhất một tiêu chí đánh giá.');
+        return;
+      }
+      criteriaJsonInput.value = JSON.stringify(criteria);
+    });
+
+    // Initialize with data
+    if (initialCriteria && initialCriteria.length > 0) {
+      initialCriteria.forEach(c => container.appendChild(createCriterionCard(c)));
+    } else {
+      container.appendChild(createCriterionCard());
+    }
+    renumberCriteria();
+    updateTotals();

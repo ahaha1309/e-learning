@@ -15,12 +15,12 @@ block content
         a.btn-outline.h-14.px-6.rounded-full.transition-colors.active_scale-95(class='hover_bg-muted/50', href='/teacher/question-banks')
           i.ph-bold.ph-bank.text-lg
           span.hidden.sm_inline Ngân hàng câu hỏi
-        a.btn-primary.h-14.px-8.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2(href='/teacher/classrooms/new')
+        a.btn-primary.btn-glow.h-14.px-8.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2(href='/teacher/classrooms/new')
           i.ph-bold.ph-plus.text-lg
           | Tạo Lớp học
 
     //- ── KPI STRIP ───────────────────────────────────────────
-    .glass-panel.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem]', style='animation-delay: 150ms;')
+    .beam-border.deep-glass.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem]', style='animation-delay: 150ms;')
       div.grid.grid-cols-2.md_grid-cols-4.divide-y.md_divide-y-0.md_divide-x(class='divide-border/60')
         .p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
           .flex.items-center.justify-between.mb-4
@@ -144,7 +144,7 @@ block content
           h2.text-xl.font-extrabold.tracking-tight.mb-5 Hành động nhanh
           .grid.grid-cols-2.gap-3.sm_grid-cols-4
             each action in quickActions
-              a.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action.href)
+              a.spotlight-card.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action.href)
                 .w-9.h-9.rounded-xl.flex.items-center.justify-center.transition-transform.duration-300.group-hover_scale-110(class='bg-' + action.tone + '/10 text-' + action.tone)
                   i.ph-bold.text-base(class=action.icon)
                 span.text-sm.font-bold.text-foreground= action.label

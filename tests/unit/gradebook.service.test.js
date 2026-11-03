@@ -1,138 +1,135 @@
-const {
-  normalizeWeights,
-  gradeAverage,
-  letterFor,
-  DEFAULT_SCALE,
-} = require('../../services/gradebook.service');
-const { CONTENT_TYPES } = require('../../services/courseProgress.service');
+// Mock các model Mongoose để test logic tính điểm mà không cần kết nối CSDL
+jest.mock('../../models/ClassroomMember', () => ({ findOne: jest.fn() }));
+jest.mock('../../models/Exam', () => ({ find: jest.fn() }));
+jest.mock('../../models/StudentProgress', () => ({ find: jest.fn() }));
+
+const ClassroomMember = require('../../models/ClassroomMember');
+const Exam = require('../../models/Exam');
+const StudentProgress = require('../../models/StudentProgress');
+const { computeGradebook, getLetterGrade } = require('../../services/gradebook.service');
 const { computeRubricTotal } = require('../../services/grading.service');
 
-describe('gradebook.service', () => {
-  describe('normalizeWeights', () => {
-    it('returns null for empty / missing weights (unweighted)', () => {
-      expect(normalizeWeights(null)).toBeNull();
-      expect(normalizeWeights([])).toBeNull();
-      expect(normalizeWeights(undefined)).toBeNull();
-    });
+const lean = (value) => ({ lean: () => Promise.resolve(value) });
 
-    it('normalizes weights to sum to 1', () => {
-      const w = normalizeWeights([
-        { itemType: CONTENT_TYPES.ASSIGNMENT, weight: 1 },
-        { itemType: CONTENT_TYPES.EXAM, weight: 1 },
-      ]);
-      expect(w[CONTENT_TYPES.ASSIGNMENT]).toBeCloseTo(0.5);
-      expect(w[CONTENT_TYPES.EXAM]).toBeCloseTo(0.5);
-    });
+function setup({ member = null, exams = [], progress = [] } = {}) {
+  ClassroomMember.findOne.mockResolvedValue(member);
+  Exam.find.mockReturnValue(lean(exams));
+  StudentProgress.find.mockReturnValue(lean(progress));
+}
 
-    it('preserves the ratio for weights that do not sum to 1', () => {
-      const w = normalizeWeights([
-        { itemType: CONTENT_TYPES.ASSIGNMENT, weight: 4 },
-        { itemType: CONTENT_TYPES.EXAM, weight: 6 },
-      ]);
-      expect(w[CONTENT_TYPES.ASSIGNMENT]).toBeCloseTo(0.4);
-      expect(w[CONTENT_TYPES.EXAM]).toBeCloseTo(0.6);
-    });
+const CLASSROOM = { _id: 'class1' };
+const MID1 = { _id: 'mid1', examCategory: 'MIDTERM', totalPoints: 10 };
+const MID2 = { _id: 'mid2', examCategory: 'MIDTERM', totalPoints: 20 };
+const FINAL = { _id: 'final1', examCategory: 'FINAL', totalPoints: 50 };
+const NORMAL = { _id: 'quiz1', examCategory: 'NORMAL', totalPoints: 10 };
+const prog = (itemId, score, maxScore) => ({ itemType: 'EXAM', itemId, score, maxScore });
 
-    it('clamps negative weights to 0 and skips invalid entries', () => {
-      const w = normalizeWeights([
-        { itemType: CONTENT_TYPES.ASSIGNMENT, weight: -5 },
-        { itemType: CONTENT_TYPES.EXAM, weight: 3 },
-        { itemType: 'LESSON', weight: 'nope' },
-      ]);
-      // ASSIGNMENT went to 0 (sum of valid positive weights is just EXAM),
-      // and a weight-sum of only one positive collapses to all-null (no
-      // distribution across multiple types) — EXAM keeps its self-normalized 1.
-      expect(w[CONTENT_TYPES.EXAM]).toBeCloseTo(1);
-      expect(w['LESSON']).toBeUndefined();
-    });
+describe('gradebook.service getLetterGrade', () => {
+  it('trả về null khi chưa có điểm tổng kết', () => {
+    expect(getLetterGrade(null)).toEqual({ letterGrade: null, grade4: null, classification: null });
+    expect(getLetterGrade(undefined)).toEqual({ letterGrade: null, grade4: null, classification: null });
   });
 
-  describe('gradeAverage', () => {
-    it('produces a simple average OF per-type averages (unweighted)', () => {
-      const items = [
-        { itemType: CONTENT_TYPES.ASSIGNMENT, percent: 80, maxScore: 10 },
-        { itemType: CONTENT_TYPES.ASSIGNMENT, percent: 90, maxScore: 10 },
-        { itemType: CONTENT_TYPES.EXAM, percent: 100, maxScore: 50 },
-      ];
-      const r = gradeAverage(items, null);
-      // Per-type averages first (so a category with many items doesn't dominate):
-      // assignments avg = (80+90)/2 = 85, exam avg = 100. Overall = mean(85,100) = 92.5.
-      expect(r.percent).toBe(92.5);
-      expect(r.byType[CONTENT_TYPES.ASSIGNMENT].percent).toBeCloseTo(85);
-      expect(r.byType[CONTENT_TYPES.EXAM].percent).toBe(100);
-      expect(r.byType[CONTENT_TYPES.ASSIGNMENT].count).toBe(2);
-      expect(r.byType[CONTENT_TYPES.EXAM].count).toBe(1);
-    });
-
-    it('applies per-type weights to the overall percent', () => {
-      const items = [
-        { itemType: CONTENT_TYPES.ASSIGNMENT, percent: 0, maxScore: 10 },   // 0% assignments
-        { itemType: CONTENT_TYPES.EXAM, percent: 100, maxScore: 50 },        // 100% exams
-      ];
-      const weights = normalizeWeights([
-        { itemType: CONTENT_TYPES.ASSIGNMENT, weight: 4 },
-        { itemType: CONTENT_TYPES.EXAM, weight: 6 },
-      ]);
-      const r = gradeAverage(items, weights);
-      // 0*0.4 + 100*0.6 = 60
-      expect(r.percent).toBe(60);
-    });
-
-    it('falls back to unweighted average when a student has no scored weighted types', () => {
-      const items = [
-        { itemType: CONTENT_TYPES.ASSIGNMENT, percent: 80, maxScore: 10 },
-      ];
-      // Only EXAM is weighted, but the student has no exam score yet.
-      const weights = normalizeWeights([{ itemType: CONTENT_TYPES.EXAM, weight: 1 }]);
-      const r = gradeAverage(items, weights);
-      expect(r.percent).toBe(80);
-    });
-
-    it('excludes items with no usable maxScore (e.g. lesson rows)', () => {
-      const items = [
-        { itemType: CONTENT_TYPES.LESSON, percent: 100, maxScore: null },
-        { itemType: CONTENT_TYPES.ASSIGNMENT, percent: 50, maxScore: 20 },
-      ];
-      const r = gradeAverage(items, null);
-      // LESSON with null maxScore is not counted; only the 50% assignment.
-      expect(r.percent).toBe(50);
-      expect(r.byType[CONTENT_TYPES.LESSON]).toBeUndefined();
-    });
-
-    it('returns 0 when there are no scored items', () => {
-      const r = gradeAverage([], null);
-      expect(r.percent).toBe(0);
-    });
+  it.each([
+    [10, 'A+', 4.0], [9.0, 'A+', 4.0], [8.99, 'A', 3.7], [8.5, 'A', 3.7],
+    [8.0, 'B+', 3.5], [7.0, 'B', 3.0], [6.5, 'C+', 2.5], [5.5, 'C', 2.0],
+    [5.0, 'D+', 1.5], [4.0, 'D', 1.0],
+  ])('điểm %p → %s (hệ 4: %p, Đạt)', (score, letter, g4) => {
+    expect(getLetterGrade(score)).toEqual({ letterGrade: letter, grade4: g4, classification: 'Đạt' });
   });
 
-  describe('letterFor', () => {
-    it('returns null for an empty scale (percent only)', () => {
-      expect(letterFor(85, [])).toBeNull();
-      expect(letterFor(85, null)).toBeNull();
-    });
+  it('dưới 4.0 là F, Không đạt', () => {
+    expect(getLetterGrade(3.99)).toEqual({ letterGrade: 'F', grade4: 0, classification: 'Không đạt' });
+    expect(getLetterGrade(0)).toEqual({ letterGrade: 'F', grade4: 0, classification: 'Không đạt' });
+  });
+});
 
-    it('maps to the default scale boundary inclusive', () => {
-      expect(letterFor(90, DEFAULT_SCALE)).toBe('A');
-      expect(letterFor(89.9, DEFAULT_SCALE)).toBe('B');
-      expect(letterFor(80, DEFAULT_SCALE)).toBe('B');
-      expect(letterFor(0, DEFAULT_SCALE)).toBe('F');
-      expect(letterFor(100, DEFAULT_SCALE)).toBe('A');
-    });
+describe('gradebook.service computeGradebook (C 10% – B 30% – A 60%)', () => {
+  beforeEach(() => jest.clearAllMocks());
 
-    it('works with an unsorted custom scale', () => {
-      const scale = [
-        { letter: 'C', min: 60 },
-        { letter: 'A', min: 90 },
-        { letter: 'B', min: 75 },
-      ];
-      expect(letterFor(95, scale)).toBe('A');
-      expect(letterFor(80, scale)).toBe('B');
-      expect(letterFor(60, scale)).toBe('C');
-    });
+  it('báo lỗi khi thiếu studentId', async () => {
+    await expect(computeGradebook(CLASSROOM)).rejects.toThrow('studentId is required');
+  });
 
-    it('returns null for non-finite percent', () => {
-      expect(letterFor(NaN, DEFAULT_SCALE)).toBeNull();
+  it('tính tự động: B = trung bình các bài MIDTERM (thang 10), A = bài FINAL', async () => {
+    setup({
+      member: { attendanceScore: 9 },
+      exams: [MID1, MID2, FINAL, NORMAL],
+      progress: [prog('mid1', 8, 10), prog('mid2', 18, 20), prog('final1', 45, 50), prog('quiz1', 2, 10)],
     });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.attendanceScore).toBe(9);
+    expect(g.midtermScore).toBe(8.5); // (8 + 9) / 2
+    expect(g.midtermScoreSource).toBe('AUTO');
+    expect(g.midtermCount).toBe(2);
+    expect(g.finalScore).toBe(9); // 45/50 * 10
+    expect(g.finalScoreSource).toBe('AUTO');
+    expect(g.totalScore).toBe(8.85); // 0.1*9 + 0.3*8.5 + 0.6*9
+    expect(g.letterGrade).toBe('A');
+    expect(g.grade4).toBe(3.7);
+    expect(g.overallPercent).toBeCloseTo(88.5);
+  });
+
+  it('bài NORMAL không ảnh hưởng điểm B và A', async () => {
+    setup({
+      member: { attendanceScore: 10 },
+      exams: [MID1, FINAL, NORMAL],
+      progress: [prog('mid1', 10, 10), prog('final1', 50, 50), prog('quiz1', 0, 10)],
+    });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.midtermScore).toBe(10);
+    expect(g.finalScore).toBe(10);
+    expect(g.totalScore).toBe(10);
+  });
+
+  it('chưa làm đủ các bài MIDTERM thì chưa có điểm B và chưa có tổng kết', async () => {
+    setup({
+      member: { attendanceScore: 9 },
+      exams: [MID1, MID2, FINAL],
+      progress: [prog('mid1', 8, 10), prog('final1', 40, 50)],
+    });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.midtermScore).toBeNull();
+    expect(g.midtermExams.find((e) => e.exam._id === 'mid2').score).toBeNull();
+    expect(g.totalScore).toBeNull();
+    expect(g.letterGrade).toBeNull();
+  });
+
+  it('điểm nhập tay (useManualMidterm / useManualFinal) được ưu tiên hơn điểm tự động', async () => {
+    setup({
+      member: { attendanceScore: 10, useManualMidterm: true, manualMidtermScore: 7, useManualFinal: true, manualFinalScore: 6 },
+      exams: [MID1, FINAL],
+      progress: [prog('mid1', 10, 10), prog('final1', 50, 50)],
+    });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.midtermScore).toBe(7);
+    expect(g.midtermScoreSource).toBe('MANUAL');
+    expect(g.finalScore).toBe(6);
+    expect(g.finalScoreSource).toBe('MANUAL');
+    expect(g.totalScore).toBe(6.7); // 1 + 2.1 + 3.6
+    expect(g.letterGrade).toBe('C+');
+  });
+
+  it('lớp chưa có bài FINAL thì chưa có điểm A', async () => {
+    setup({ member: { attendanceScore: 8 }, exams: [MID1], progress: [prog('mid1', 9, 10)] });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.hasFinalDef).toBe(false);
+    expect(g.finalScore).toBeNull();
+    expect(g.totalScore).toBeNull();
+  });
+
+  it('chưa có điểm chuyên cần (C) thì chưa tính tổng kết', async () => {
+    setup({ member: { attendanceScore: null }, exams: [MID1, FINAL], progress: [prog('mid1', 9, 10), prog('final1', 45, 50)] });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.attendanceScore).toBeNull();
+    expect(g.totalScore).toBeNull();
+  });
+
+  it('làm tròn điểm B, A tới 2 chữ số thập phân', async () => {
+    setup({ member: { attendanceScore: 10 }, exams: [MID1, FINAL], progress: [prog('mid1', 7, 9), prog('final1', 2, 3)] });
+    const g = await computeGradebook(CLASSROOM, 'stu1');
+    expect(g.midtermScore).toBe(7.78); // 7/9*10
+    expect(g.finalScore).toBe(6.67); // 2/3*10
   });
 });
 

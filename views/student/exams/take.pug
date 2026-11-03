@@ -10,9 +10,18 @@ block head
     body {
       overflow: hidden;
     }
+    /* Exam shell covers the whole viewport (above the app topbar/sidebar) so the
+       100dvh grid isn't pushed down and clipped at the bottom */
+    .exam-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+    }
     /* Prevent right-click context menu visual feedback */
     * { -webkit-user-select: none; user-select: none; }
     textarea, input[type="text"] { -webkit-user-select: text; user-select: text; }
+    /* Fix CodeMirror layout with Tailwind CSS */
+    .CodeMirror, .CodeMirror * { box-sizing: content-box !important; }
 
 block content
   //- Anti-cheat config consumed by /js/anti-cheat.js
@@ -94,18 +103,27 @@ block content
           | Trực tiếp
         h1.text-base.font-bold.tracking-tight.truncate= exam.title
 
-      //- Center: countdown timer
-      if exam.duration > 0
-        .flex.items-center(class='gap-2')
-          i.ph-bold.ph-timer.text-muted-foreground(aria-hidden='true')
-          time#timer.exam-timer(
-            datetime='',
-            data-duration=exam.duration,
-            data-started=submission.startedAt.toISOString(),
-            aria-label='Thời gian còn lại'
-          ) --:--
-      else
-        .text-sm.text-muted-foreground Thời gian không giới hạn
+      //- Center: countdown timer + submit button
+      .flex.items-center(class='gap-4')
+        if exam.duration > 0
+          .flex.items-center(class='gap-2')
+            i.ph-bold.ph-timer.text-muted-foreground(aria-hidden='true')
+            time#timer.exam-timer(
+              datetime='',
+              data-duration=exam.duration,
+              data-started=submission.startedAt.toISOString(),
+              aria-label='Thời gian còn lại'
+            ) --:--
+        else
+          .text-sm.text-muted-foreground Thời gian không giới hạn
+        //- Button lives outside the form, linked via the form attribute
+        button.btn-primary.h-10.px-5.rounded-full.font-bold.flex-shrink-0.active_scale-95.transition-transform(
+          type='submit',
+          form='exam-form',
+          id='submit-exam-btn'
+        )
+          i.ph-bold.ph-paper-plane-tilt(aria-hidden='true')
+          | Nộp bài thi
 
       //- Right: integrity status
       .flex.items-center(class='gap-2')
@@ -206,14 +224,6 @@ block content
             h3.text-lg.font-bold Chưa có câu hỏi nào được tải
             p.text-sm.text-muted-foreground Vui lòng liên hệ với giảng viên của bạn.
 
-        //- Submit bar
-        .sticky.bottom-6.flex.justify-end.pt-6(style='z-index: 100;')
-          button.btn-primary.h-12.px-8.rounded-full.font-bold.shadow-diffused.active_scale-95.transition-transform(
-            type='submit',
-            id='submit-exam-btn'
-          )
-            i.ph-bold.ph-paper-plane-tilt(aria-hidden='true')
-            | Nộp bài thi
 
     //- Progress strip at bottom (question nav dots)
     footer.exam-topbar(style='padding: 0.5rem 1.5rem; border-top: 1px solid hsl(var(--border)); border-bottom: none;', aria-label='Question progress')
@@ -269,6 +279,11 @@ block content
           gate.classList.remove('visible');
           gate.style.display = 'none';
           shell.style.display = '';
+          setTimeout(function() {
+            if (window.codeEditors) {
+              window.codeEditors.forEach(function(cm) { cm.refresh(); });
+            }
+          }, 50);
         };
 
         if (document.documentElement.requestFullscreen) {
@@ -301,12 +316,14 @@ block scripts
   script(src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/clike/clike.min.js")
   script.
     document.addEventListener("DOMContentLoaded", function() {
+      window.codeEditors = [];
       document.querySelectorAll('.code-editor').forEach(function(el) {
-        CodeMirror.fromTextArea(el, {
+        var cm = CodeMirror.fromTextArea(el, {
           lineNumbers: true,
           mode: "javascript",
           theme: "dracula",
           viewportMargin: Infinity
         });
+        window.codeEditors.push(cm);
       });
     });

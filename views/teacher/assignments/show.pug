@@ -19,6 +19,38 @@ block content
       else
         p.text-muted-foreground Chưa có hướng dẫn.
 
+    if assignment.rubric
+      .card.p-6.space-y-4
+        .flex.items-center.justify-between.pb-3.border-b.border-border(class='border-border/60 flex-wrap gap-2')
+          .flex.items-center.gap-2
+            .w-8.h-8.rounded-lg.flex.items-center.justify-center(class='bg-primary/10 text-primary')
+              i.ph-bold.ph-check-square-offset
+            div
+              p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tiêu chuẩn chấm điểm
+              h3.text-lg.font-bold= assignment.rubric.name
+          .flex.items-center.gap-3
+            span.badge-muted.badge-sm= (assignment.rubric.criteria ? assignment.rubric.criteria.length : 0) + ' tiêu chí (' + assignment.rubric.maxPoints + ' điểm)'
+            a.pill.text-xs(href='/teacher/classrooms/' + classroom.id + '/rubrics/' + (assignment.rubric._id || assignment.rubric))
+              i.ph-bold.ph-arrow-square-out
+              | Chi tiết Rubric
+
+        if assignment.rubric.description
+          p.text-sm.text-muted-foreground= assignment.rubric.description
+
+        if assignment.rubric.criteria && assignment.rubric.criteria.length
+          .space-y-3
+            each criterion in assignment.rubric.criteria
+              .p-4.rounded-xl.border(class='border-border/50 bg-muted/20 space-y-2')
+                .flex.items-baseline.justify-between.gap-2
+                  p.text-sm.font-bold.text-foreground= criterion.label
+                  span.font-mono.text-xs.font-bold.text-primary= '/ ' + criterion.maxPoints + ' điểm'
+                if criterion.description
+                  p.text-xs.text-muted-foreground= criterion.description
+                if criterion.scale && criterion.scale.length
+                  .flex.flex-wrap.pt-1(class='gap-1.5')
+                    each sc in criterion.scale
+                      span.pill.text-xs(class='py-0.5 px-2')= sc.points + 'đ — ' + sc.label
+
     if assignment.attachments && assignment.attachments.length > 0
       .card.p-6
         p.text-lg.font-bold.mb-4 Tệp đính kèm & File Hướng dẫn từ Giảng viên

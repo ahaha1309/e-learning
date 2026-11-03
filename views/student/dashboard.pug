@@ -23,14 +23,14 @@ block content
           .streak-counter
             i.ph-fill.ph-fire.text-base
             | #{streak} ngày chuỗi
-        a.btn-primary.h-11.px-6.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2(href='/catalog')
+        a.btn-primary.btn-glow.h-11.px-6.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2(href='/catalog')
           i.ph-bold.ph-compass
           | Khám phá Khóa học
 
     //- ── XP / GAMIFICATION STRIP ──────────────────────────────────
     //- §4.3 Gamification: XP bar above KPIs creates progression feeling
     if xpData
-      .glass-panel.p-5.rounded-2xl.mb-8.animate-in(style='animation-delay:100ms;')
+      .deep-glass.p-5.rounded-2xl.mb-8.animate-in(style='animation-delay:100ms;')
         .flex.items-center.justify-between.mb-3.gap-4
           .flex.items-center.gap-3.flex-wrap
             //- Level badge
@@ -51,7 +51,7 @@ block content
 
     //- ── KPI STRIP ───────────────────────────────────────────────
     //- §4.1 Dashboard Strategy: 4 stats above fold
-    .glass-panel.overflow-hidden.mb-8.animate-in(class='rounded-[2rem]', style='animation-delay: 150ms;')
+    .beam-border.deep-glass.overflow-hidden.mb-8.animate-in(class='rounded-[2rem]', style='animation-delay: 150ms;')
       div.grid.grid-cols-2.md_grid-cols-4.divide-y.md_divide-y-0.md_divide-x(class='divide-border/60')
         div.p-6.md_p-8.transition-colors.group(class='hover_bg-muted/30')
           .flex.items-center.justify-between.mb-4
@@ -138,8 +138,8 @@ block content
         div
           h2.text-xl.font-extrabold.tracking-tight.mb-5 Hành động nhanh
           .grid.grid-cols-2.gap-3.sm_grid-cols-4
-            each action in [['Bài tập của tôi', 'ph-file-text', '/student/assignments', 'primary'], ['Bài thi của tôi', 'ph-exam', '/student/exams', 'destructive'], ['Thảo luận', 'ph-chats', '/student/discussions', 'info'], ['Chứng chỉ', 'ph-certificate', '/student/certificates', 'warning']]
-              a.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action[2])
+            each action in [['Bài tập của tôi', 'ph-file-text', '/student/assignments', 'primary'], ['Bài thi của tôi', 'ph-exam', '/student/exams', 'destructive'], ['Thảo luận', 'ph-chats', '/student/discussions', 'info'], ['Phân tích học tập', 'ph-chart-line', '/student/analytics', 'warning']]
+              a.spotlight-card.glass-panel.p-4.rounded-xl.flex.flex-col.items-start.gap-3.transition-all.group.border(class='border-border/60 hover_border-primary/30 hover_bg-muted/20', href=action[2])
                 .w-9.h-9.rounded-xl.flex.items-center.justify-center.transition-transform.duration-300.group-hover_scale-110(class='bg-' + action[3] + '/10 text-' + action[3])
                   i.ph-bold(class=action[1] + ' text-base')
                 span.text-sm.font-bold.text-foreground= action[0]

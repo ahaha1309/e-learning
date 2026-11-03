@@ -14,7 +14,7 @@ block content
         h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter= membership.classroom.name
         p.text-xl.text-muted-foreground.mt-4.max-w-prose.leading-relaxed= membership.classroom.description || 'Chưa có mô tả.'
         
-      .glass-panel.p-5.flex.items-center.gap-6.min-w-64(class='rounded-[2rem] border-border/60')
+      .beam-border.deep-glass.p-5.flex.items-center.gap-6.min-w-64(class='rounded-[2rem] border-border/60')
         div.flex-1
           p.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Trạng thái
           p.font-bold.text-2xl.capitalize.text-foreground= membership.status
@@ -28,7 +28,7 @@ block content
       data-csrf-token=csrfToken
     )
       if activeMeeting && activeMeeting.status === 'LIVE'
-        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-md.animate-in.slide-in-up(
+        .deep-glass.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-md.animate-in.slide-in-up(
           class='md_px-5 rounded-2xl border border-destructive/40 bg-destructive/5 sm_flex-row'
         )
           .flex.items-center.min-w-0(class='gap-3.5')
@@ -45,14 +45,14 @@ block content
                 span.text-xs.text-muted-foreground.truncate.font-medium • Giảng viên đang tổ chức
               h3.text-sm.font-extrabold.text-foreground.truncate= activeMeeting.title
           .flex.items-center.gap-2.w-full.flex-shrink-0.justify-end(class='sm_w-auto')
-            a.btn-primary.h-9.px-5.rounded-xl.text-xs.font-extrabold.shadow.bg-destructive.text-white.flex.items-center.justify-center.transition-transform(
+            a.btn-primary.btn-glow.h-9.px-5.rounded-xl.text-xs.font-extrabold.shadow.bg-destructive.text-white.flex.items-center.justify-center.transition-transform(
               class='gap-1.5 hover_bg-destructive/90 hover_scale-105',
               href='/classrooms/' + membership.classroom.id + '/meetings/' + activeMeeting.id + '/room'
             )
               i.ph-bold.ph-sign-in.text-sm
               | JOIN MEETING
       else if activeMeeting && activeMeeting.status === 'SCHEDULED'
-        .glass-panel.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-sm.animate-in.slide-in-up(
+        .deep-glass.p-3.px-4.flex.flex-col.items-center.justify-between.gap-3.shadow-sm.animate-in.slide-in-up(
           class='md_px-5 rounded-2xl border border-primary/30 bg-primary/5 sm_flex-row'
         )
           .flex.items-center.min-w-0(class='gap-3.5')
@@ -73,32 +73,32 @@ block content
 
     //- Navigation Bento Grid
     .grid.grid-cols-2.md_grid-cols-3.lg_grid-cols-6.gap-6.animate-in.slide-in-up(style='animation-delay: 150ms;')
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/lectures', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/lectures', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-primary/10 border border-primary/20')
           i.ph-fill.ph-monitor-play.text-2xl
         p.text-sm.font-bold.tracking-tight Bài giảng
       
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/assignments', class='hover_border-warning/50 hover_bg-warning/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/assignments', class='hover_border-warning/50 hover_bg-warning/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-warning.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-warning/10 border border-warning/20')
           i.ph-fill.ph-file-code.text-2xl
         p.text-sm.font-bold.tracking-tight Bài tập
       
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/exams', class='hover_border-destructive/50 hover_bg-destructive/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/exams', class='hover_border-destructive/50 hover_bg-destructive/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-destructive.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-destructive/10 border border-destructive/20')
           i.ph-fill.ph-exam.text-2xl
         p.text-sm.font-bold.tracking-tight Bài thi
       
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/discussions', class='hover_border-success/50 hover_bg-success/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/discussions', class='hover_border-success/50 hover_bg-success/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-success.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-success/10 border border-success/20')
           i.ph-fill.ph-chats.text-2xl
         p.text-sm.font-bold.tracking-tight Thảo luận
       
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/attendance', class='hover_border-info/50 hover_bg-info/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/attendance', class='hover_border-info/50 hover_bg-info/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-info.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-info/10 border border-info/20')
           i.ph-fill.ph-check-square.text-2xl
         p.text-sm.font-bold.tracking-tight Điểm danh
 
-      a.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/obe-report', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
+      a.spotlight-card.glass-panel.p-6.text-center.transition-all.group(href='/student/classrooms/' + membership.classroom.id + '/obe-report', class='hover_border-primary/50 hover_bg-primary/5 rounded-[1.5rem]')
         .w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.mx-auto.mb-4.transition-transform.group-hover_scale-110(class='bg-primary/10 border border-primary/20')
           i.ph-fill.ph-target.text-2xl
         p.text-sm.font-bold.tracking-tight Chuẩn OBE
@@ -112,7 +112,7 @@ block content
 
       if courseProgress
         //- Course-level progress (also backend-computed, never stored)
-        .glass-panel.p-6.mb-6(class='rounded-[2rem] border-border/60')
+        .deep-glass.p-6.mb-6(class='rounded-[2rem] border-border/60')
           .flex.items-center.justify-between.gap-4.mb-3
             p.text-sm.font-bold.text-foreground Tiến độ khóa học
             p.text-sm.font-mono.text-muted-foreground
@@ -125,7 +125,7 @@ block content
         //- Course completion verdict (Phase C). Only shown when the teacher set
         //- explicit rules; otherwise completion is implicit (no minimums).
         if courseCompletion && courseCompletion.missing && courseCompletion.missing.length
-          .glass-panel.p-6.mb-6(class='rounded-[2rem] border-border/60')
+          .deep-glass.p-6.mb-6(class='rounded-[2rem] border-border/60')
             .flex.items-start.gap-4
               .w-10.h-10.rounded-xl.flex.items-center.justify-center.flex-shrink-0(class='bg-warning/10 text-warning border border-warning/20')
                 i.ph-bold.ph-warning-circle.text-xl
@@ -136,15 +136,15 @@ block content
                   each req in courseCompletion.missing
                     span.badge-muted.ml-2.text-xs= req
         else if courseCompletion && courseCompletion.isComplete
-          .glass-panel.p-6.mb-6(class='rounded-[2rem] border-border/60')
+          .deep-glass.p-6.mb-6(class='rounded-[2rem] border-border/60')
             .flex.items-center.gap-4
               .w-10.h-10.rounded-xl.flex.items-center.justify-center.flex-shrink-0(class='bg-success/10 text-success border border-success/20')
                 i.ph-bold.ph-check-circle.text-xl
               div
                 p.text-base.font-bold.text-foreground Khóa học hoàn tất
-                p.text-sm.text-muted-foreground.mt-1 Chứng chỉ của bạn sẽ có sẵn sau khi được cấp.
+                p.text-sm.text-muted-foreground.mt-1 Bạn đã hoàn thành tất cả các mục tiêu của khóa học.
 
-        .glass-panel.p-8.sm_p-12.w-full(class='rounded-[2.5rem] border-border/60')
+        .deep-glass.p-8.sm_p-12.w-full(class='rounded-[2.5rem] border-border/60')
           if courseProgress.modules && courseProgress.modules.length
             .grid.grid-cols-1.gap-10.w-full
               each module, moduleIndex in courseProgress.modules
@@ -257,7 +257,7 @@ block content
             required=true,
             autocomplete='off'
           )
-          button.btn-primary.px-4.rounded-xl.flex.items-center.justify-center.border-none(type='submit')
+          button.btn-primary.btn-glow.px-4.rounded-xl.flex.items-center.justify-center.border-none(type='submit')
             i.ph-bold.ph-paper-plane-tilt.text-base
 
   script.

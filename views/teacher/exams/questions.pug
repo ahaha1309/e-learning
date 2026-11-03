@@ -14,32 +14,25 @@ block content
       )
         i.ph-bold.ph-upload-simple(aria-hidden='true')
         | Nhập Câu hỏi
+      a.btn-primary.rounded-full.h-10.px-5(
+        href='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/ai-generate',
+        title='Tạo câu hỏi tự động từ tài liệu học tập bằng Gemini AI'
+      )
+        i.ph-bold.ph-sparkle(aria-hidden='true')
+        | Tạo bằng AI
 
     if feedback
       .alert-success= feedback
 
     .grid.grid-cols-1.gap-8(class='lg_grid-cols-[repeat(auto-fit,minmax(350px,1fr))] mb-8')
-      form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/generate-matrix')
-        input(type='hidden', name='_csrf', value=csrfToken)
-        h2.text-lg.font-bold.mb-4 Tạo từ Ngân hàng Câu hỏi
-        .space-y-4
-          div
-            label.text-sm.font-medium(for='subject') Môn học
-            input#subject.mt-2(type='text', name='subject', required, placeholder='ví dụ: Toán học')
-          div
-            label.text-sm.font-medium(for='chapter') Chương (Tùy chọn)
-            input#chapter.mt-2(type='text', name='chapter', placeholder='ví dụ: Chương 1')
-          .grid.grid-cols-1.gap-3(class='md_grid-cols-3')
-            div
-              label.text-xs.text-muted-foreground 'Nhận biết'
-              input(type='number', name='num_nhan_biet', value='0', min='0')
-            div
-              label.text-xs.text-muted-foreground 'Thông hiểu'
-              input(type='number', name='num_thong_hieu', value='0', min='0')
-            div
-              label.text-xs.text-muted-foreground 'Vận dụng'
-              input(type='number', name='num_van_dung', value='0', min='0')
-          button.btn-primary(type='submit') Tạo Câu hỏi
+      .card.p-6.flex.flex-col.justify-center.items-center.text-center.border-dashed.border-2.border-border.bg-muted_10
+        .w-16.h-16.rounded-2xl.bg-primary_10.text-primary.flex.items-center.justify-center.mb-4
+          i.ph-bold.ph-magnifying-glass.text-2xl
+        h2.text-lg.font-bold.mb-2 Chọn từ Ngân hàng Câu hỏi
+        p.text-sm.text-muted-foreground.mb-6 Tìm kiếm và chọn từng câu hỏi từ kho câu hỏi của bạn để thêm vào bài thi.
+        button.btn-primary.shadow-sm(type='button', onclick='openBankModal()')
+          i.ph-bold.ph-list-magnifying-glass
+          | Mở Ngân hàng Câu hỏi
 
       form.card.p-6(method='POST', action='/teacher/classrooms/' + classroom.id + '/exams/' + exam.id + '/questions')
         input(type='hidden', name='_csrf', value=csrfToken)
@@ -61,21 +54,22 @@ block content
           div
             label.text-sm.font-medium(for='content') Nội dung Câu hỏi
             textarea#content.tinymce.mt-2(name='content', rows='3')
-          .grid.grid-cols-1.gap-4
-            div
-              label.text-sm.font-medium(for='order') Thứ tự (Tùy chọn)
-              input#order.mt-2(type='number', name='order', value='0')
 
           #options-container.border.border-dashed.border-border.p-4.rounded-xl
             p.text-sm.font-medium.mb-3 Các Lựa chọn
             #options-list.space-y-2
               - for (var i = 1; i <= 4; i++)
-                .flex.items-center.gap-2
+                .flex.items-center.gap-2.option-item
                   input(type='text', name='optionText[]', placeholder='Nội dung lựa chọn ' + i, class='flex-1')
                   label.inline-flex.items-center.gap-1.text-xs.cursor-pointer
                     input(type='checkbox', name='optionCorrect[]', value=i - 1)
                     | Đúng
-            p.text-xs.text-muted-foreground.mt-2 Đánh dấu vào ô bên cạnh các lựa chọn đúng.
+                    
+            button#add-option-btn.btn-outline(type='button', class='mt-3 flex items-center justify-center gap-2 w-full')
+              i.ph-bold.ph-plus
+              | Thêm lựa chọn
+              
+            p.text-xs.text-muted-foreground.mt-3 Đánh dấu vào ô bên cạnh các lựa chọn đúng.
 
           button.btn-primary(type='submit') Thêm Câu hỏi
 
@@ -98,6 +92,44 @@ block content
     else
       p.text-sm.text-muted-foreground Chưa có câu hỏi nào được thêm.
 
+  // Bank Search Modal
+  #bank-modal.fixed.inset-0.z-50.hidden.items-center.justify-center.bg-black_50.backdrop-blur-sm
+    .bg-background.rounded-2xl.shadow-xl.w-full.max-w-4xl.max-h-screen.overflow-hidden.flex.flex-col.animate-in.zoom-in-95.p-6
+      .flex.items-center.justify-between.mb-6
+        h3.text-xl.font-bold Tìm kiếm Ngân hàng Câu hỏi
+        button.btn-ghost.btn-sm.rounded-full(type='button', onclick='closeBankModal()')
+          i.ph-bold.ph-x.text-lg
+      
+      .grid.grid-cols-1.gap-4.mb-6(class='md_grid-cols-3')
+        div
+          label.text-sm.font-medium Môn học
+          input#bank-search-subject.mt-1.w-full(type='text', placeholder='Môn học', value=exam.subject || '')
+        div
+          label.text-sm.font-medium Chương (Tùy chọn)
+          input#bank-search-chapter.mt-1.w-full(type='text', placeholder='Chương')
+        div
+          label.text-sm.font-medium Độ khó
+          select#bank-search-difficulty.mt-1.w-full
+            option(value='') -- Tất cả --
+            option(value='nhan_biet') Nhận biết
+            option(value='thong_hieu') Thông hiểu
+            option(value='van_dung') Vận dụng
+      
+      .flex.justify-end.mb-4
+        button.btn-primary(type='button', onclick='searchBank()')
+          i.ph-bold.ph-magnifying-glass
+          | Tìm kiếm
+
+      .flex-1.overflow-y-auto.border.border-border.rounded-xl.p-4.bg-muted_30#bank-search-results
+        p.text-center.text-muted-foreground Vui lòng nhập tiêu chí và bấm Tìm kiếm
+      
+      .flex.justify-between.items-center.mt-6.pt-4.border-t.border-border
+        p.text-sm.font-medium Đã chọn: <span id="bank-selected-count">0</span> câu
+        .flex.gap-3
+          button.btn-outline(type='button', onclick='closeBankModal()') Hủy
+          button.btn-primary(type='button', onclick='importSelectedBankQuestions()', id='btn-import-bank', disabled)
+            | Thêm vào Bài thi
+
   script(src='https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.1.1/tinymce.min.js', referrerpolicy='origin')
   script(src='/js/tinymce-config.js')
   script.
@@ -113,20 +145,23 @@ block content
 
     document.addEventListener('DOMContentLoaded', function() {
       var typeSelect = document.getElementById('type');
-      var checkboxes = document.querySelectorAll('input[name="optionCorrect[]"]');
+      var optionsList = document.getElementById('options-list');
+      var addOptionBtn = document.getElementById('add-option-btn');
 
-      checkboxes.forEach(function(checkbox) {
-        checkbox.addEventListener('change', function() {
-          if (typeSelect.value === 'multiple_choice' && this.checked) {
+      optionsList.addEventListener('change', function(e) {
+        if (e.target.name === 'optionCorrect[]') {
+          if (typeSelect.value === 'multiple_choice' && e.target.checked) {
+            var checkboxes = optionsList.querySelectorAll('input[name="optionCorrect[]"]');
             checkboxes.forEach(function(cb) {
-              if (cb !== checkbox) cb.checked = false;
+              if (cb !== e.target) cb.checked = false;
             });
           }
-        });
+        }
       });
 
       typeSelect.addEventListener('change', function() {
         if (this.value === 'multiple_choice') {
+          var checkboxes = optionsList.querySelectorAll('input[name="optionCorrect[]"]');
           var checkedCount = 0;
           checkboxes.forEach(function(cb) {
             if (cb.checked) {
@@ -135,6 +170,23 @@ block content
             }
           });
         }
+      });
+
+      addOptionBtn.addEventListener('click', function() {
+        var currentOptions = optionsList.querySelectorAll('.option-item').length;
+        var newIndex = currentOptions;
+        var displayIndex = currentOptions + 1;
+        
+        var newOption = document.createElement('div');
+        newOption.className = 'flex items-center gap-2 option-item';
+        newOption.innerHTML = `
+          <input type="text" name="optionText[]" placeholder="Nội dung lựa chọn ${displayIndex}" class="flex-1">
+          <label class="inline-flex items-center gap-1 text-xs cursor-pointer">
+            <input type="checkbox" name="optionCorrect[]" value="${newIndex}">
+            Đúng
+          </label>
+        `;
+        optionsList.appendChild(newOption);
       });
     });
 
@@ -169,5 +221,106 @@ block content
         console.error(err);
         alert('Có lỗi xảy ra khi xóa câu hỏi.');
         btn.disabled = false;
+      }
+    }
+
+    // Modal Logic
+    function openBankModal() {
+      document.getElementById('bank-modal').classList.remove('hidden');
+      document.getElementById('bank-modal').classList.add('flex');
+    }
+
+    function closeBankModal() {
+      document.getElementById('bank-modal').classList.add('hidden');
+      document.getElementById('bank-modal').classList.remove('flex');
+    }
+
+    async function searchBank() {
+      const subject = document.getElementById('bank-search-subject').value;
+      const chapter = document.getElementById('bank-search-chapter').value;
+      const difficulty = document.getElementById('bank-search-difficulty').value;
+      const resultsContainer = document.getElementById('bank-search-results');
+      const importBtn = document.getElementById('btn-import-bank');
+
+      resultsContainer.innerHTML = '<p class="text-center text-muted-foreground"><i class="ph-bold ph-spinner animate-spin"></i> Đang tìm kiếm...</p>';
+      
+      try {
+        const query = new URLSearchParams();
+        if (subject) query.append('subject', subject);
+        if (chapter) query.append('chapter', chapter);
+        if (difficulty) query.append('difficulty', difficulty);
+
+        const res = await fetch(`/teacher/question-banks/api/search?${query.toString()}`);
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.questions.length === 0) {
+            resultsContainer.innerHTML = '<p class="text-center text-muted-foreground">Không tìm thấy câu hỏi nào.</p>';
+            return;
+          }
+
+          let html = '<div class="space-y-3">';
+          data.questions.forEach(q => {
+            html += `
+              <label class="flex items-start gap-3 p-4 bg-background border border-border rounded-xl cursor-pointer hover:border-primary transition-colors">
+                <input type="checkbox" class="bank-q-checkbox mt-1" value="${q._id}" onchange="updateBankSelectedCount()">
+                <div class="flex-1">
+                  <div class="flex gap-2 mb-2">
+                    <span class="badge-muted text-xs uppercase">${q.subject} ${q.chapter ? '- ' + q.chapter : ''}</span>
+                    <span class="badge-muted text-xs">${q.difficulty}</span>
+                    <span class="badge-muted text-xs">${q.type}</span>
+                  </div>
+                  <div class="text-sm font-medium prose prose-sm max-w-none prose-p:my-0">${q.content}</div>
+                </div>
+              </label>
+            `;
+          });
+          html += '</div>';
+          resultsContainer.innerHTML = html;
+          updateBankSelectedCount();
+        } else {
+          resultsContainer.innerHTML = `<p class="text-center text-destructive">${data.message || 'Lỗi tìm kiếm'}</p>`;
+        }
+      } catch (err) {
+        resultsContainer.innerHTML = '<p class="text-center text-destructive">Lỗi kết nối mạng.</p>';
+      }
+    }
+
+    function updateBankSelectedCount() {
+      const checked = document.querySelectorAll('.bank-q-checkbox:checked').length;
+      document.getElementById('bank-selected-count').textContent = checked;
+      document.getElementById('btn-import-bank').disabled = checked === 0;
+    }
+
+    async function importSelectedBankQuestions() {
+      const checked = Array.from(document.querySelectorAll('.bank-q-checkbox:checked')).map(cb => cb.value);
+      if (checked.length === 0) return;
+
+      const btn = document.getElementById('btn-import-bank');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph-bold ph-spinner animate-spin"></i> Đang thêm...';
+
+      try {
+        const res = await fetch(`/teacher/classrooms/#{classroom.id}/exams/#{exam.id}/import-from-bank`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+          },
+          body: JSON.stringify({ questionBankIds: checked })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          window.location.href = `/teacher/classrooms/#{classroom.id}/exams/#{exam.id}/questions?feedback=Đã+thêm+${data.importedCount}+câu+hỏi+từ+ngân+hàng`;
+        } else {
+          alert(data.message || 'Lỗi khi thêm câu hỏi');
+          btn.disabled = false;
+          btn.textContent = 'Thêm vào Bài thi';
+        }
+      } catch (err) {
+        alert('Lỗi kết nối mạng');
+        btn.disabled = false;
+        btn.textContent = 'Thêm vào Bài thi';
       }
     }

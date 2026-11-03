@@ -11,9 +11,14 @@ block content
 
     .flex.flex-wrap.gap-3
       a.pill(href='/teacher/classrooms/' + classroom.id) Quay lại Lớp học
-      form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance', class='inline-block')
+      form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance', class='inline-flex flex-wrap gap-3')
         input(type='hidden', name='_csrf', value=csrfToken)
-        button.btn-primary(type='submit') Bắt đầu Buổi mới
+        button.btn-primary(type='submit', name='method', value='code')
+          i.ph-bold.ph-password
+          | Bắt đầu bằng Mã 6 số
+        button.btn-primary(type='submit', name='method', value='qr')
+          i.ph-bold.ph-qr-code
+          | Bắt đầu bằng Mã QR
 
     if sessions.length
       .space-y-3.mt-4
@@ -21,6 +26,7 @@ block content
           article.card.p-5.flex.justify-between.items-center
             div
               p.font-medium= session.date.toLocaleDateString('en-GB')
+              p.text-sm.text-muted-foreground.mt-1 Hình thức: #{session.method === 'qr' ? 'Mã QR' : 'Mã 6 số'}
               p.text-sm.text-muted-foreground.mt-1 Trạng thái:
                 if session.status === 'open'
                   span.text-success.font-bold  Mở
@@ -35,4 +41,4 @@ block content
         .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mb-4
           i.ph-bold.ph-clipboard-text.text-3xl.text-muted-foreground
         h2.text-xl.font-bold.text-foreground Chưa có buổi điểm danh nào
-        p.text-sm.text-muted-foreground.mt-2 Nhấp vào "Bắt đầu Buổi mới" để bắt đầu.
+        p.text-sm.text-muted-foreground.mt-2 Chọn "Bắt đầu bằng Mã 6 số" hoặc "Bắt đầu bằng Mã QR" để bắt đầu.

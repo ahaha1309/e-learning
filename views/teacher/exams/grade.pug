@@ -49,8 +49,8 @@ block content
                 h3.text-lg.font-bold Câu hỏi #{index + 1}
                 span.text-sm.text-muted-foreground #{pointPerQuestion.toFixed(2)} điểm
 
-              .mb-4.p-4.bg-muted.rounded-xl
-                | !{ans.question.content}
+              .mb-4.p-4.bg-muted.rounded-xl.text-sm
+                | !{ans.question.content ? ans.question.content.replace(/&lt;/g, '<').replace(/&gt;/g, '>') : ''}
 
               if ans.question.type === 'essay'
                 div.mb-4

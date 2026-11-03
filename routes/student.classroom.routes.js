@@ -14,6 +14,7 @@ router.use(requireAuth, requireRole('student'));
 router.get('/', renderStudentClassrooms);
 router.post('/join', joinClassroomRules, joinClassroomHandler);
 router.get('/:classroomId', classroomIdRules, renderStudentClassroomDetail);
+router.post('/:classroomId/toggle-visibility', classroomIdRules, require('../controller/student/classroom.controller').toggleVisibilityHandler);
 router.post('/:classroomId/ai-assistant', classroomIdRules, askAiAssistantHandler);
 router.get('/:classroomId/obe-report', classroomIdRules, renderStudentOBEReport);
 router.post('/:classroomId/storage/request-upload-url', classroomIdRules, requestUploadUrl);

@@ -1,28 +1,48 @@
 extends ../../layouts/base
 
 block content
+  - var isQr = session.method === 'qr'
   .flex.flex-col.items-center.text-center.py-16(class='min-h-[80dvh]')
     p.eyebrow.text-lg Điểm danh Trực tiếp
     h1.text-2xl.font-bold.mt-0.mb-4 #{classroom.name}
-    p.text-muted-foreground.text-xl.mt-0.mb-8 Truy cập vào cổng thông tin học sinh và nhập mã bên dưới để điểm danh.
+    if isQr
+      p.text-muted-foreground.text-xl.mt-0.mb-8 Dùng camera điện thoại (đã đăng nhập tài khoản học sinh) quét mã QR bên dưới để điểm danh.
+    else
+      p.text-muted-foreground.text-xl.mt-0.mb-8 Truy cập vào cổng thông tin học sinh và nhập mã bên dưới để điểm danh.
 
     .w-full.max-w-xl.h-2.bg-muted.rounded-full.overflow-hidden.mb-8
       #timer-bar.h-full.w-full(class='bg-primary transition-[width] duration-1000 linear')
 
-    #pin-display.text-8xl.font-extrabold.tracking-widest.font-mono.text-foreground.py-8.px-16.border-4(class='border-primary rounded-xl bg-primary/5 mb-12')
-      | ------
+    if isQr
+      #qr-display.p-4.border-4.mb-12(class='border-primary rounded-xl bg-white', style='width:360px;height:360px;max-width:90vw;max-height:90vw;')
+    else
+      #pin-display.text-8xl.font-extrabold.tracking-widest.font-mono.text-foreground.py-8.px-16.border-4(class='border-primary rounded-xl bg-primary/5 mb-12')
+        | ------
 
     form(method='POST', action='/teacher/classrooms/' + classroom.id + '/attendance/' + session.id + '/close')
       input(type='hidden', name='_csrf', value=csrfToken)
       button.btn-primary.text-lg.py-4.px-12(type='submit') Đóng Buổi Điểm danh
 
+  if isQr
+    script(src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js')
   script.
     (function() {
       var sessionId = '#{session.id}';
       var classroomId = '#{classroom.id}';
+      var isQr = #{isQr ? 'true' : 'false'};
+      var refreshSeconds = isQr ? 30 : 15;
       var pinDisplay = document.getElementById('pin-display');
+      var qrDisplay = document.getElementById('qr-display');
       var timerBar = document.getElementById('timer-bar');
       var expiresAt = new Date();
+
+      function renderQr(token) {
+        var url = window.location.origin + '/student/classrooms/' + classroomId + '/attendance/qr?t=' + token;
+        var qr = qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        qrDisplay.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 0, scalable: true });
+      }
 
       async function fetchNewCode() {
         try {
@@ -34,12 +54,16 @@ block content
           });
           var data = await response.json();
           if (data.code) {
-            pinDisplay.textContent = data.code;
+            if (isQr) {
+              renderQr(data.code);
+            } else {
+              pinDisplay.textContent = data.code;
+            }
             expiresAt = new Date(data.expiresAt);
             timerBar.style.transition = 'none';
             timerBar.style.width = '100%';
             void timerBar.offsetWidth;
-            timerBar.style.transition = 'width 15s linear';
+            timerBar.style.transition = 'width ' + refreshSeconds + 's linear';
             timerBar.style.width = '0%';
           }
         } catch (err) {
@@ -48,5 +72,5 @@ block content
       }
 
       fetchNewCode();
-      setInterval(fetchNewCode, 15000);
+      setInterval(fetchNewCode, refreshSeconds * 1000);
     })();

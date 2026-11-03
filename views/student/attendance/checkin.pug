@@ -14,7 +14,14 @@ block content
       .alert-danger.max-w-md.w-full.mb-8
         p.font-bold= errorMessage
 
-    if activeSession && !feedback
+    if activeSession && !feedback && activeSession.method === 'qr'
+      .card.p-8.max-w-sm.w-full.text-center
+        .w-16.h-16.rounded-xl.bg-muted.flex.items-center.justify-center.mx-auto.mb-4
+          i.ph-bold.ph-qr-code.text-3xl.text-primary
+        h3.text-lg.font-bold Điểm danh bằng Mã QR
+        p.text-sm.text-muted-foreground.mt-2 Dùng camera điện thoại quét mã QR trên màn hình của giảng viên. Hãy đăng nhập tài khoản trên trình duyệt điện thoại trước khi quét.
+
+    else if activeSession && !feedback
       p.text-muted-foreground.text-lg.mb-8.max-w-md Nhìn vào màn hình và nhập mã PIN 6 chữ số trước khi hết hạn.
 
       form.card.p-8.max-w-sm.w-full(method='POST', action='/student/classrooms/' + classroom.id + '/attendance').space-y-6

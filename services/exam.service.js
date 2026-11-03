@@ -22,10 +22,10 @@ async function generateMatrixQuestions(examId, teacherId, subject, chapter, requ
     if (reqConfig.count > 0) {
       const matchCriteria = {
         teacher: teacherId,
-        subject: subject,
+        subject: { $regex: new RegExp(`^${subject.trim()}$`, 'i') },
         difficulty: reqConfig.difficulty
       };
-      if (chapter) matchCriteria.chapter = chapter;
+      if (chapter) matchCriteria.chapter = { $regex: new RegExp(`^${chapter.trim()}$`, 'i') };
 
       const matchingQuestions = await QuestionBank.aggregate([
         { $match: matchCriteria },
@@ -56,6 +56,45 @@ async function generateMatrixQuestions(examId, teacherId, subject, chapter, requ
   }
 
   return generatedCount;
+}
+
+async function importQuestionsFromBank(examId, teacherId, questionBankIds) {
+  const exam = await Exam.findOne({ _id: examId, teacher: teacherId });
+  if (!exam) throw new AppError('Exam not found', 404);
+
+  const matchingQuestions = await QuestionBank.find({
+    _id: { $in: questionBankIds },
+    teacher: teacherId
+  });
+
+  let importedCount = 0;
+  let pointsAdded = 0;
+
+  const lastQuestion = await Question.findOne({ exam: exam.id }).sort({ order: -1 });
+  let currentOrder = lastQuestion ? lastQuestion.order : 0;
+
+  for (const mq of matchingQuestions) {
+    currentOrder++;
+    const q = new Question({
+      exam: exam.id,
+      type: mq.type,
+      content: mq.content,
+      options: mq.options,
+      points: mq.points,
+      order: currentOrder
+    });
+    await q.save();
+    importedCount++;
+    pointsAdded += mq.points;
+  }
+
+  if (importedCount > 0) {
+    exam.totalPoints += pointsAdded;
+    exam.questionCount += importedCount;
+    await exam.save();
+  }
+
+  return importedCount;
 }
 
 async function gradeSubmission(submissionId, examId, teacherId, answersData) {
@@ -121,5 +160,6 @@ async function gradeSubmission(submissionId, examId, teacherId, answersData) {
 
 module.exports = {
   generateMatrixQuestions,
+  importQuestionsFromBank,
   gradeSubmission,
 };

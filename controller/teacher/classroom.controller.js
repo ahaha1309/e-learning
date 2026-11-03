@@ -5,6 +5,7 @@ const ClassroomMember = require('../../models/ClassroomMember');
 const Category = require('../../models/Category');
 const { computeGradebook } = require('../../services/gradebook.service');
 const meetingService = require('../../services/meeting.service');
+const User = require('../../models/User');
 
 function formatValidationErrors(req) {
   const result = validationResult(req);
@@ -56,7 +57,7 @@ async function createClassroomHandler(req, res, next) {
     });
 
     await classroom.save();
-    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Đã tạo lớp học thành công.')}`);
+    return res.redirect(`/teacher/classrooms/${classroom.id}?feedback=${encodeURIComponent('Đã tạo lớp học thành công.')}&showAddStudents=true`);
   } catch (error) {
     return next(error);
   }
@@ -82,6 +83,7 @@ async function renderClassroomDetail(req, res, next) {
       members,
       activeMeeting,
       feedback: req.query.feedback || null,
+      showAddStudents: req.query.showAddStudents === 'true',
     });
   } catch (error) {
     return next(error);
@@ -259,9 +261,8 @@ async function renderGradebook(req, res, next) {
           member: m,
           studentName: m.student ? m.student.name : '(removed)',
           studentEmail: m.student ? m.student.email : '',
-          overallPercent: gradebook.overallPercent,
-          letter: gradebook.letter,
-          byType: gradebook.byType,
+          studentEmail: m.student ? m.student.email : '',
+          gradebook
         };
       })
     );
@@ -297,20 +298,37 @@ async function exportGradebookCsv(req, res, next) {
       })
     );
 
-    const fields = ['name', 'email', 'overallPercent', 'letter', 'assignmentsAvg', 'examsAvg'];
-    const data = members.map((m, i) => ({
-      name: m.student ? m.student.name : '',
-      email: m.student ? m.student.email : '',
-      overallPercent: gradebooks[i].overallPercent,
-      letter: gradebooks[i].letter || '',
-      assignmentsAvg: (gradebooks[i].byType.ASSIGNMENT && gradebooks[i].byType.ASSIGNMENT.percent) !== undefined ? gradebooks[i].byType.ASSIGNMENT.percent : '',
-      examsAvg: (gradebooks[i].byType.EXAM && gradebooks[i].byType.EXAM.percent) !== undefined ? gradebooks[i].byType.EXAM.percent : '',
-    }));
+    const fields = [
+      { label: 'Sinh viên', value: 'name' },
+      { label: 'Email', value: 'email' },
+      { label: 'Điểm C (Chuyên cần)', value: 'attendance' },
+      { label: 'Điểm B (Giữa kỳ)', value: 'midterm' },
+      { label: 'Điểm A (Kết thúc môn)', value: 'final' },
+      { label: 'Tổng kết', value: 'total' },
+      { label: 'Điểm chữ', value: 'letter' },
+      { label: 'Hệ 4', value: 'grade4' },
+      { label: 'Xếp loại', value: 'classification' }
+    ];
+
+    const data = members.map((m, i) => {
+      const g = gradebooks[i];
+      return {
+        name: m.student ? m.student.name : '',
+        email: m.student ? m.student.email : '',
+        attendance: g.attendanceScore != null ? g.attendanceScore : 'Chưa đủ điểm',
+        midterm: g.midtermScore != null ? g.midtermScore : (g.midtermCount > 0 ? 'Chưa đủ điểm' : 'Chưa có điểm'),
+        final: g.finalScore != null ? g.finalScore : (g.hasFinalDef ? 'Chưa đủ điểm' : 'Chưa có điểm'),
+        total: g.totalScore != null ? g.totalScore : 'Chưa đủ điểm',
+        letter: g.letterGrade || '',
+        grade4: g.grade4 != null ? g.grade4 : '',
+        classification: g.classification || ''
+      };
+    });
 
     const parser = new Parser({ fields });
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="gradebook-${classroom.id}.csv"`);
-    return res.send(parser.parse(data));
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.attachment(`gradebook - ${classroom.name}.csv`);
+    return res.send('\uFEFF' + parser.parse(data));
   } catch (error) {
     return next(error);
   }
@@ -329,4 +347,104 @@ module.exports = {
   removeMemberHandler,
   renderGradebook,
   exportGradebookCsv,
+  updateManualGradesApi: async function(req, res, next) {
+    try {
+      const classroomId = req.params.classroomId;
+      const memberId = req.params.memberId;
+      const classroom = await Classroom.findOne({ _id: classroomId, teacher: req.user.id });
+      if (!classroom) return res.status(404).json({ error: 'Classroom not found' });
+
+      const member = await ClassroomMember.findOne({ _id: memberId, classroom: classroomId });
+      if (!member) return res.status(404).json({ error: 'Member not found' });
+
+      if (req.body.attendanceScore !== undefined) {
+        member.attendanceScore = req.body.attendanceScore === '' ? null : Number(req.body.attendanceScore);
+      }
+      
+      if (req.body.useManualMidterm !== undefined) {
+        member.useManualMidterm = req.body.useManualMidterm === true || req.body.useManualMidterm === 'true';
+      }
+      if (req.body.manualMidtermScore !== undefined) {
+        member.manualMidtermScore = req.body.manualMidtermScore === '' ? null : Number(req.body.manualMidtermScore);
+      }
+      
+      if (req.body.useManualFinal !== undefined) {
+        member.useManualFinal = req.body.useManualFinal === true || req.body.useManualFinal === 'true';
+      }
+      if (req.body.manualFinalScore !== undefined) {
+        member.manualFinalScore = req.body.manualFinalScore === '' ? null : Number(req.body.manualFinalScore);
+      }
+
+      await member.save();
+      return res.json({ success: true });
+    } catch (error) {
+      return next(error);
+    }
+  },
 };
+
+async function searchStudentsApi(req, res, next) {
+  try {
+    const query = req.query.q || '';
+    if (!query) {
+      return res.json([]);
+    }
+
+    const classroomId = req.params.classroomId;
+    // Find students matching query
+    const regex = new RegExp(query, 'i');
+    let students = await User.find({
+      role: 'student',
+      status: 'active',
+      $or: [{ name: regex }, { email: regex }]
+    }).limit(10).select('name email avatarUrl');
+
+    // Exclude students already in the classroom
+    if (classroomId) {
+      const existingMembers = await ClassroomMember.find({ classroom: classroomId }).select('student');
+      const existingStudentIds = existingMembers.map(m => m.student.toString());
+      students = students.filter(s => !existingStudentIds.includes(s._id.toString()));
+    }
+
+    return res.json(students);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function addManualMembersApi(req, res, next) {
+  try {
+    const classroom = await Classroom.findOne({ _id: req.params.classroomId, teacher: req.user.id });
+    if (!classroom) {
+      return res.status(404).json({ error: 'Classroom not found' });
+    }
+
+    const studentIds = req.body.studentIds;
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ error: 'No students selected' });
+    }
+
+    const addedMembers = [];
+    for (const studentId of studentIds) {
+      // Check if already member
+      const existing = await ClassroomMember.findOne({ classroom: classroom.id, student: studentId });
+      if (!existing) {
+        const member = new ClassroomMember({
+          classroom: classroom.id,
+          student: studentId,
+          status: 'active', // Add directly as active
+          approvedAt: new Date()
+        });
+        await member.save();
+        addedMembers.push(member);
+      }
+    }
+
+    return res.json({ success: true, count: addedMembers.length });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports.searchStudentsApi = searchStudentsApi;
+module.exports.addManualMembersApi = addManualMembersApi;

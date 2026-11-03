@@ -32,7 +32,7 @@ async function renderClassroomAnalytics(req, res, next) {
         { $group: { _id: null, avg: { $avg: '$score' }, count: { $sum: 1 } } },
       ]),
       ExamSubmission.aggregate([
-        { $match: { classroom: classroom._id, score: { $ne: null }, gradingStatus: 'fully_graded' } },
+        { $match: { classroom: classroom._id, score: { $ne: null }, gradingStatus: { $in: ['auto_graded', 'fully_graded'] } } },
         { $group: { _id: null, avg: { $avg: '$score' }, count: { $sum: 1 } } },
       ]),
     ]);
@@ -78,7 +78,7 @@ async function renderClassroomAnalytics(req, res, next) {
 
     if (latestExam) {
       examTitle = latestExam.title;
-      const submissions = await ExamSubmission.find({ exam: latestExam._id, gradingStatus: 'fully_graded' }).lean();
+      const submissions = await ExamSubmission.find({ exam: latestExam._id, gradingStatus: { $in: ['auto_graded', 'fully_graded'] } }).lean();
 
       submissions.forEach(sub => {
         const percentage = (sub.score / (latestExam.totalPoints || 1)) * 100;
@@ -92,12 +92,12 @@ async function renderClassroomAnalytics(req, res, next) {
       distribution.hasData = submissions.length > 0;
     }
 
-    // 6. Top and At-Risk Students
-    const examsInClass = await Exam.find({ classroom: classroom._id }).select('_id totalPoints').lean();
+    // 6. Top and At-Risk Students (excluding FINAL exams)
+    const examsInClass = await Exam.find({ classroom: classroom._id, examCategory: { $ne: 'FINAL' } }).select('_id totalPoints').lean();
     const examIds = examsInClass.map(e => e._id);
 
     const studentStats = await ExamSubmission.aggregate([
-      { $match: { exam: { $in: examIds }, gradingStatus: 'fully_graded' } },
+      { $match: { exam: { $in: examIds }, gradingStatus: { $in: ['auto_graded', 'fully_graded'] } } },
       {
         $lookup: {
           from: 'exams',

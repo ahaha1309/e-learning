@@ -886,11 +886,11 @@ body {
 }
 
 .glass-panel {
-  background: hsl(var(--card) / 0.8);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid hsl(var(--border) / 0.6);
-  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05), inset 0 1px 0 hsl(var(--foreground) / 0.06), inset 1px 0 0 hsl(var(--foreground) / 0.03), inset -1px 0 0 hsl(var(--foreground) / 0.03);
+  background: linear-gradient(160deg, hsl(var(--card) / 0.85), hsl(var(--card) / 0.65));
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 16px 48px -16px hsl(var(--foreground) / 0.08), inset 0 1px 0 hsl(var(--foreground) / 0.1), inset -1px 0 0 hsl(var(--foreground) / 0.04);
 }
 
 .bento-card {
@@ -1226,6 +1226,18 @@ input[type='radio'] {
 
 .modal-backdrop.open {
   display: flex;
+}
+
+.\!modal {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 20px 25px -5px hsl(var(--foreground) / 0.1), 0 8px 10px -6px hsl(var(--foreground) / 0.1) !important;
+  width: 100% !important;
+  max-width: 28rem !important;
+  max-height: calc(100dvh - 2rem) !important;
+  overflow-y: auto !important;
+  animation: slide-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) both !important;
 }
 
 .modal {
@@ -2056,7 +2068,7 @@ input[type='radio'] {
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  padding: 0.75rem 1rem 1.5rem;
+  padding: 0.75rem 1rem 2.5rem;
   border-top: 1px solid hsl(var(--border));
   background: hsl(var(--card));
   flex-shrink: 0;
@@ -2741,7 +2753,7 @@ input[type='radio'] {
 }
 
 .chat-input-bar {
-  padding: 0.75rem 1rem 1.5rem;
+  padding: 0.75rem 1rem 2.5rem;
   border-top: 1px solid hsl(var(--border));
   display: flex;
   gap: 0.5rem;
@@ -3404,6 +3416,10 @@ input[type='radio'] {
   visibility: visible;
 }
 
+.static {
+  position: static;
+}
+
 .fixed {
   position: fixed;
 }
@@ -3585,6 +3601,10 @@ input[type='radio'] {
   top: 1rem;
 }
 
+.top-8 {
+  top: 2rem;
+}
+
 .-z-10 {
   z-index: -10;
 }
@@ -3633,8 +3653,16 @@ input[type='radio'] {
   grid-column: span 1 / span 1;
 }
 
+.col-span-full {
+  grid-column: 1 / -1;
+}
+
 .m-0 {
   margin: 0px;
+}
+
+.m-auto {
+  margin: auto;
 }
 
 .-mx-2 {
@@ -3724,6 +3752,10 @@ input[type='radio'] {
 
 .ml-4 {
   margin-left: 1rem;
+}
+
+.ml-8 {
+  margin-left: 2rem;
 }
 
 .ml-auto {
@@ -3945,6 +3977,10 @@ input[type='radio'] {
   height: 1rem;
 }
 
+.h-48 {
+  height: 12rem;
+}
+
 .h-5 {
   height: 1.25rem;
 }
@@ -3963,10 +3999,6 @@ input[type='radio'] {
 
 .h-8 {
   height: 2rem;
-}
-
-.h-80 {
-  height: 20rem;
 }
 
 .h-9 {
@@ -4019,6 +4051,14 @@ input[type='radio'] {
 
 .max-h-96 {
   max-height: 24rem;
+}
+
+.max-h-\[60vh\] {
+  max-height: 60vh;
+}
+
+.max-h-screen {
+  max-height: 100vh;
 }
 
 .min-h-0 {
@@ -4622,6 +4662,12 @@ input[type='radio'] {
   margin-bottom: calc(0.25rem * var(--tw-space-y-reverse));
 }
 
+.space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+}
+
 .space-y-10 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(2.5rem * calc(1 - var(--tw-space-y-reverse)));
@@ -4924,6 +4970,10 @@ input[type='radio'] {
   border-color: hsl(var(--card));
 }
 
+.border-destructive {
+  border-color: hsl(var(--destructive));
+}
+
 .border-destructive\/15 {
   border-color: hsl(var(--destructive) / 0.15);
 }
@@ -5007,8 +5057,16 @@ input[type='radio'] {
   border-color: hsl(var(--success) / 0.2);
 }
 
+.border-success\/30 {
+  border-color: hsl(var(--success) / 0.3);
+}
+
 .border-transparent {
   border-color: transparent;
+}
+
+.border-warning {
+  border-color: hsl(var(--warning));
 }
 
 .border-warning\/20 {
@@ -5024,16 +5082,12 @@ input[type='radio'] {
   border-color: rgb(255 255 255 / 0.1);
 }
 
-.border-success\/30 {
-  border-color: hsl(var(--success) / 0.3);
-}
-
-.border-destructive {
-  border-color: hsl(var(--destructive));
-}
-
 .border-l-primary {
   border-left-color: hsl(var(--primary));
+}
+
+.border-opacity-20 {
+  --tw-border-opacity: 0.2;
 }
 
 .bg-\[\#5B5FC7\] {
@@ -5302,6 +5356,10 @@ input[type='radio'] {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
 }
 
+.bg-opacity-10 {
+  --tw-bg-opacity: 0.1;
+}
+
 .bg-opacity-40 {
   --tw-bg-opacity: 0.4;
 }
@@ -5312,12 +5370,6 @@ input[type='radio'] {
 
 .bg-gradient-to-br {
   background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
-}
-
-.from-primary {
-  --tw-gradient-from: hsl(var(--primary)) var(--tw-gradient-from-position);
-  --tw-gradient-to: hsl(var(--primary) / 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
 .from-primary\/10 {
@@ -5333,15 +5385,6 @@ input[type='radio'] {
 
 .to-primary\/5 {
   --tw-gradient-to: hsl(var(--primary) / 0.05) var(--tw-gradient-to-position);
-}
-
-.to-primary\/60 {
-  --tw-gradient-to: hsl(var(--primary) / 0.6) var(--tw-gradient-to-position);
-}
-
-.bg-clip-text {
-  -webkit-background-clip: text;
-          background-clip: text;
 }
 
 .object-contain {
@@ -5376,6 +5419,10 @@ input[type='radio'] {
 
 .p-14 {
   padding: 3.5rem;
+}
+
+.p-16 {
+  padding: 4rem;
 }
 
 .p-2 {
@@ -5602,6 +5649,10 @@ input[type='radio'] {
 
 .pl-3 {
   padding-left: 0.75rem;
+}
+
+.pl-3\.5 {
+  padding-left: 0.875rem;
 }
 
 .pl-4 {
@@ -5906,6 +5957,10 @@ input[type='radio'] {
   color: rgb(251 191 36 / var(--tw-text-opacity, 1));
 }
 
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
 .text-destructive {
   color: hsl(var(--destructive));
 }
@@ -6018,10 +6073,6 @@ input[type='radio'] {
 
 .text-success\/80 {
   color: hsl(var(--success) / 0.8);
-}
-
-.text-transparent {
-  color: transparent;
 }
 
 .text-warning {
@@ -6217,6 +6268,10 @@ input[type='radio'] {
 
 .backdrop-blur-xl {
   --tw-backdrop-blur: blur(24px);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.backdrop-filter {
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
@@ -6575,6 +6630,536 @@ input[type='radio'] {
   background: hsl(var(--border));
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   THREEUI-INSPIRED PREMIUM DESIGN LAYER
+   Constellation backgrounds, gradient beams, cinematic glows, deep glass
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Constellation Canvas ──────────────────────────────────────────────── */
+
+.constellation-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+[data-constellation] {
+  position: relative;
+}
+
+[data-constellation] > *:not(.constellation-canvas) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Gradient Beam Border (ThreeUI animated-top-dock inspired) ─────────── */
+
+.beam-border {
+  position: relative;
+  border: none !important;
+  background: hsl(var(--card));
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.beam-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    var(--beam-angle, 135deg),
+    hsl(var(--primary) / 0.5),
+    hsl(var(--info) / 0.3),
+    hsl(var(--primary) / 0.1),
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.beam-border:hover::before {
+  opacity: 1;
+  animation: beam-rotate 4s linear infinite;
+}
+
+@keyframes beam-rotate {
+  from {
+    --beam-angle: 0deg;
+  }
+
+  to {
+    --beam-angle: 360deg;
+  }
+}
+
+/* Fallback for browsers without @property support */
+
+@supports not (background: paint(x)) {
+  .beam-border:hover::before {
+    animation: beam-rotate-fallback 4s linear infinite;
+  }
+
+  @keyframes beam-rotate-fallback {
+    0% {
+      background: linear-gradient(0deg, hsl(var(--primary) / 0.5), transparent 70%);
+    }
+
+    25% {
+      background: linear-gradient(90deg, hsl(var(--primary) / 0.5), hsl(var(--info) / 0.3), transparent 70%);
+    }
+
+    50% {
+      background: linear-gradient(180deg, hsl(var(--info) / 0.3), hsl(var(--primary) / 0.2), transparent 70%);
+    }
+
+    75% {
+      background: linear-gradient(270deg, hsl(var(--primary) / 0.4), transparent 70%);
+    }
+
+    100% {
+      background: linear-gradient(360deg, hsl(var(--primary) / 0.5), transparent 70%);
+    }
+  }
+}
+
+/* ── Premium Glow Button (ThreeUI spark-badge/liquid-metal inspired) ──── */
+
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)),
+    hsl(var(--info) / 0.8),
+    hsl(var(--primary) / 0.6)
+  );
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  filter: blur(12px);
+  transition: opacity 0.4s;
+}
+
+.btn-glow:hover::before {
+  opacity: 0.6;
+}
+
+/* ── Enhanced Spotlight Cards (ThreeUI glassmorphism-cta inspired) ──── */
+
+.spotlight-card {
+  box-shadow:
+    0 1px 3px hsl(var(--foreground) / 0.04),
+    0 4px 12px -4px hsl(var(--foreground) / 0.06),
+    inset 0 1px 0 hsl(var(--foreground) / 0.04);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.spotlight-card:hover {
+  box-shadow:
+    0 8px 32px -8px hsl(var(--primary) / 0.12),
+    0 4px 12px -2px hsl(var(--foreground) / 0.06),
+    inset 0 1px 0 hsl(var(--primary) / 0.08);
+  transform: translateY(-2px);
+}
+
+/* ── Cinematic Hero Ambient (ThreeUI emerald-horizon inspired) ─────── */
+
+.hero-ambient {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-ambient::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: 50%;
+  width: 900px;
+  height: 500px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    hsl(var(--primary) / 0.15),
+    hsl(var(--primary) / 0.05) 40%,
+    transparent 70%
+  );
+  filter: blur(80px);
+  animation: ambient-pulse 8s ease-in-out infinite alternate;
+}
+
+.hero-ambient::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    hsl(var(--info) / 0.1),
+    transparent 70%
+  );
+  filter: blur(100px);
+  animation: ambient-drift 12s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-pulse {
+  0% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.15);
+  }
+}
+
+@keyframes ambient-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-40px, -30px);
+  }
+}
+
+/* ── Deep Glass Panel (ThreeUI atd-glass inspired) ────────────────── */
+
+.deep-glass {
+  background: linear-gradient(
+    160deg,
+    hsl(var(--card) / 0.85),
+    hsl(var(--card) / 0.65)
+  );
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow:
+    0 16px 48px -16px hsl(var(--foreground) / 0.08),
+    inset 0 1px 0 hsl(0 0% 100% / 0.08),
+    inset 0 -1px 0 hsl(0 0% 0% / 0.04);
+}
+
+/* ── Orbital Dot Decoration (ThreeUI brand-orbs inspired) ─────────── */
+
+.orbital-dots {
+  position: relative;
+}
+
+.orbital-dots::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: hsl(var(--primary));
+  border-radius: 50%;
+  top: -3px;
+  right: -3px;
+  box-shadow:
+    0 0 8px hsl(var(--primary) / 0.6),
+    0 0 20px hsl(var(--primary) / 0.2);
+  animation: orbit-pulse 3s ease-in-out infinite;
+}
+
+@keyframes orbit-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.7);
+  }
+}
+
+/* ── Noise Texture Overlay (ThreeUI cinematic grain effect) ────────── */
+
+.noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ── Premium Dark Mode Cosmic Enhancements ─────────────────────────── */
+
+.dark .topbar {
+  background: hsl(var(--background) / 0.85);
+  border-bottom-color: hsl(var(--border) / 0.5);
+  box-shadow: 0 1px 0 hsl(var(--primary) / 0.04);
+}
+
+.dark .shell-sidebar {
+  background: hsl(var(--card) / 0.9);
+  border-right-color: hsl(var(--border) / 0.4);
+}
+
+.dark .glass-panel {
+  background: linear-gradient(
+    160deg,
+    hsl(var(--card) / 0.75),
+    hsl(var(--card) / 0.55)
+  );
+  border-color: hsl(var(--border) / 0.3);
+  box-shadow:
+    0 10px 30px -10px rgba(0,0,0,0.3),
+    inset 0 1px 0 hsl(0 0% 100% / 0.05),
+    inset 1px 0 0 hsl(0 0% 100% / 0.02),
+    inset -1px 0 0 hsl(0 0% 100% / 0.02);
+}
+
+.dark .card {
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.2),
+    0 4px 12px -4px rgba(0,0,0,0.3),
+    inset 0 1px 0 hsl(0 0% 100% / 0.04);
+}
+
+.dark .spotlight-card:hover {
+  box-shadow:
+    0 8px 32px -8px hsl(var(--primary) / 0.2),
+    0 4px 12px -2px rgba(0,0,0,0.3),
+    inset 0 1px 0 hsl(var(--primary) / 0.1);
+}
+
+.dark .btn-primary {
+  box-shadow: 0 0 20px -6px hsl(var(--primary) / 0.4);
+}
+
+.dark .btn-primary:hover {
+  box-shadow: 0 0 30px -4px hsl(var(--primary) / 0.5);
+}
+
+/* ── Glow Input Focus (ThreeUI form styling) ─────────────────────── */
+
+.dark input:focus-visible,
+.dark textarea:focus-visible,
+.dark select:focus-visible {
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.25), 0 0 16px -4px hsl(var(--ring) / 0.2);
+}
+
+/* ── Animated Gradient Text (ThreeUI headline treatment) ─────────── */
+
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)),
+    hsl(var(--info)),
+    hsl(var(--primary) / 0.7)
+  );
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-shift 6s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* ── Floating Animation (enhanced) ─────────────────────────────────── */
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+/* ── Scan Line Effect for Exam Mode (ThreeUI CRT inspired) ─────── */
+
+.scan-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.02;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 1px,
+    rgba(0,0,0,0.15) 1px 2px
+  );
+}
+
+/* ── Enhanced Sidebar Active Link Glow ──────────────────────────── */
+
+.dark .shell-sidebar-link-active {
+  background: hsl(var(--primary) / 0.12);
+  box-shadow: inset 0 0 20px -10px hsl(var(--primary) / 0.2);
+}
+
+.dark .admin-nav-link-active, .dark a.admin-nav-link-active {
+  background: hsl(var(--primary) / 0.12);
+  box-shadow: inset 0 0 20px -10px hsl(var(--primary) / 0.2);
+}
+
+/* ── Premium Stat Card Glow ─────────────────────────────────────── */
+
+.dark .stat:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow:
+    0 8px 24px -8px hsl(var(--primary) / 0.15),
+    inset 0 1px 0 hsl(var(--primary) / 0.08);
+}
+
+/* ── Badge Glow Variants ──────────────────────────────────────── */
+
+.dark .badge-primary {
+  box-shadow: 0 0 12px -4px hsl(var(--primary) / 0.3);
+}
+
+.dark .badge-success {
+  box-shadow: 0 0 12px -4px hsl(var(--success) / 0.3);
+}
+
+.dark .badge-danger {
+  box-shadow: 0 0 12px -4px hsl(var(--destructive) / 0.3);
+}
+
+/* ── Scroll-triggered Reveal Animation ─────────────────────────── */
+
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Premium Table Row Hover (ThreeUI data styling) ──────────────── */
+
+.dark .table-wrap tbody tr:hover {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.06),
+    hsl(var(--primary) / 0.02)
+  );
+}
+
+/* ── Topbar Search Glow ──────────────────────────────────────────── */
+
+.dark [data-cmd-palette]:hover {
+  border-color: hsl(var(--primary) / 0.3) !important;
+  box-shadow: 0 0 16px -6px hsl(var(--primary) / 0.2);
+}
+
+/* ── Avatar Glow Ring (online status indicator) ──────────────────── */
+
+.avatar-glow {
+  box-shadow: 0 0 0 2px hsl(var(--card)), 0 0 12px -2px hsl(var(--primary) / 0.4);
+}
+
+/* ── Notification Pulse Dot (ThreeUI spark-badge inspired) ────── */
+
+.pulse-dot {
+  position: relative;
+}
+
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: hsl(var(--destructive));
+  border-radius: 50%;
+  box-shadow: 0 0 8px hsl(var(--destructive) / 0.5);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px hsl(var(--destructive) / 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--destructive) / 0);
+  }
+}
+
+/* ── Page Transition Effect ──────────────────────────────────────── */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shell-main {
+  /* 'backwards' (not 'both'): keeping transform after the animation would make
+     position:fixed children (chatbot button, modals) stick to the page instead of the viewport */
+  animation: page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* ── Auth Pages Enhanced Ambient ─────────────────────────────────── */
+
+.dark .min-h-screen > .hidden.lg_flex {
+  background: linear-gradient(
+    160deg,
+    hsl(var(--primary) / 0.08),
+    hsl(240 10% 4%)
+  ) !important;
+}
+
 .file_mr-4::file-selector-button {
   margin-right: 1rem;
 }
@@ -6743,6 +7328,10 @@ input[type='radio'] {
   background-color: hsl(var(--muted) / 0.8);
 }
 
+.hover_bg-primary:hover {
+  background-color: hsl(var(--primary));
+}
+
 .hover_bg-primary\/10:hover {
   background-color: hsl(var(--primary) / 0.1);
 }
@@ -6753,6 +7342,10 @@ input[type='radio'] {
 
 .hover_bg-primary\/5:hover {
   background-color: hsl(var(--primary) / 0.05);
+}
+
+.hover_bg-primary\/90:hover {
+  background-color: hsl(var(--primary) / 0.9);
 }
 
 .hover_bg-slate-700:hover {
@@ -6766,10 +7359,6 @@ input[type='radio'] {
 
 .hover_bg-warning\/5:hover {
   background-color: hsl(var(--warning) / 0.05);
-}
-
-.hover_bg-primary\/90:hover {
-  background-color: hsl(var(--primary) / 0.9);
 }
 
 .hover_text-destructive:hover {
@@ -6915,10 +7504,6 @@ input[type='radio'] {
 
 .group:hover .group-hover_text-primary {
   color: hsl(var(--primary));
-}
-
-.group:hover .group-hover_text-primary-foreground {
-  color: hsl(var(--primary-foreground));
 }
 
 .group:hover .group-hover_text-success {

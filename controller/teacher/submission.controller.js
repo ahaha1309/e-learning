@@ -21,7 +21,7 @@ async function renderSubmissionsIndex(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',
@@ -53,7 +53,7 @@ async function renderSubmissionDetail(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',
@@ -71,11 +71,24 @@ async function renderSubmissionDetail(req, res, next) {
       });
     }
 
+    let rubricCriterionGrades = [];
+    if (assignment.rubric && assignment.rubric.criteria && submission.rubricGrades && submission.rubricGrades.length > 0) {
+      const awardedMap = {};
+      submission.rubricGrades.forEach((g) => { awardedMap[String(g.criterion)] = g.points; });
+      rubricCriterionGrades = assignment.rubric.criteria.map((c) => ({
+        label: c.label,
+        description: c.description,
+        maxPoints: c.maxPoints,
+        awardedPoints: awardedMap[String(c._id)] !== undefined ? awardedMap[String(c._id)] : null,
+      }));
+    }
+
     return res.render('teacher/submissions/show', {
       title: `${assignment.title} submission`,
       classroom,
       assignment,
       submission,
+      rubricCriterionGrades,
       errorMessage: null,
     });
   } catch (error) {
@@ -93,7 +106,7 @@ async function gradeSubmissionHandler(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',
@@ -155,7 +168,7 @@ async function renderRubricGrade(req, res, next) {
       return res.status(404).render('errors/404', { title: 'Classroom not found', path: req.originalUrl });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment || !assignment.rubric) {
       return res.status(404).render('errors/404', { title: 'This assignment has no rubric', path: req.originalUrl });
     }
@@ -222,7 +235,7 @@ async function deleteSubmissionHandler(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: classroom.id, teacher: req.user.id }).populate('rubric');
     if (!assignment) {
       return res.status(404).render('errors/404', {
         title: 'Assignment not found',

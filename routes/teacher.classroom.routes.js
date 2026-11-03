@@ -18,6 +18,9 @@ const {
   removeMemberHandler,
   renderGradebook,
   exportGradebookCsv,
+  searchStudentsApi,
+  addManualMembersApi,
+  updateManualGradesApi,
 } = require('../controller/teacher/classroom.controller');
 const {
   renderClassroomOBEManagement,
@@ -39,9 +42,12 @@ router.get('/:classroomId', classroomIdRules, renderClassroomDetail);
 router.get('/:classroomId/edit', classroomIdRules, renderEditClassroom);
 router.post('/:classroomId/edit', classroomIdRules, updateClassroomHandler);
 router.post('/:classroomId/delete', classroomIdRules, deleteClassroomHandler);
+router.get('/:classroomId/search-students', classroomIdRules, searchStudentsApi);
+router.post('/:classroomId/members/add-manual', classroomIdRules, addManualMembersApi);
 router.post('/:classroomId/members/:memberId/approve', classroomIdRules.concat(memberIdRules), approveMemberHandler);
 router.post('/:classroomId/members/:memberId/reject', classroomIdRules.concat(memberIdRules), rejectMemberHandler);
 router.post('/:classroomId/members/:memberId/remove', classroomIdRules.concat(memberIdRules), removeMemberHandler);
+router.post('/:classroomId/gradebook/:memberId/manual-grades', classroomIdRules.concat(memberIdRules), updateManualGradesApi);
 
 router.get('/:classroomId/obe-manage', classroomIdRules, renderClassroomOBEManagement);
 router.post('/:classroomId/obe-manage/question-mappings', classroomIdRules, apiSaveQuestionMappings);

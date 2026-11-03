@@ -159,6 +159,7 @@ html(lang='en', class='light')
     //- ── SCRIPTS ─────────────────────────────────────────────────────────
     script(src='/js/theme.js')
     script(src='/js/modal.js')
+    script(src='/js/threeui-bg.js', defer)
 
     if currentUser
       script.
@@ -219,6 +220,39 @@ html(lang='en', class='light')
       });
 
     block scripts
+
+    //- ── ThreeUI-inspired scroll reveal + spotlight tracking ────────────
+    script.
+      (function() {
+        // Scroll-triggered reveal
+        var reveals = document.querySelectorAll('.reveal-on-scroll');
+        if (reveals.length && 'IntersectionObserver' in window) {
+          var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+              if (e.isIntersecting) {
+                e.target.classList.add('revealed');
+                observer.unobserve(e.target);
+              }
+            });
+          }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+          reveals.forEach(function(el) { observer.observe(el); });
+        }
+
+        // Spotlight card mouse-angle tracking
+        document.addEventListener('mousemove', function(e) {
+          var cards = document.querySelectorAll('.spotlight-card');
+          cards.forEach(function(card) {
+            var rect = card.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var angle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI) + 90;
+            card.style.setProperty('--spotlight-angle', angle + 'deg');
+            var dist = Math.sqrt(Math.pow(e.clientX - cx, 2) + Math.pow(e.clientY - cy, 2));
+            var maxDist = 600;
+            card.style.setProperty('--spotlight-opacity', dist < maxDist ? (0.4 * (1 - dist / maxDist)).toFixed(2) : '0');
+          });
+        });
+      })();
 
     include ./partials/cmd-palette-script
 

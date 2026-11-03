@@ -25,7 +25,7 @@ block content
       .alert-success.animate-in.fade-in.rounded-2xl.shadow-sm= feedback
 
     .flex.gap-4.animate-in.slide-in-up(style='animation-delay: 100ms;')
-      a.btn-primary.h-14.px-8.text-base.rounded-full.shadow-diffused.active_scale-95.transition-transform(href='/teacher/classrooms/new')
+      a.btn-primary.btn-glow.h-14.px-8.text-base.rounded-full.shadow-diffused.active_scale-95.transition-transform(href='/teacher/classrooms/new')
         i.ph-bold.ph-plus.text-lg
         | Tạo Lớp học
       a.btn-outline.h-14.px-6.rounded-full(class='hover_bg-muted/50', href='/teacher')
@@ -33,7 +33,7 @@ block content
         | Bảng điều khiển
 
     if loading
-      .glass-panel.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;', aria-busy='true', aria-label='Loading classrooms')
+      .beam-border.deep-glass.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;', aria-busy='true', aria-label='Loading classrooms')
         .table-wrap
           table.w-full.text-left.border-collapse
             thead
@@ -58,7 +58,7 @@ block content
                   td.py-5.px-6: .skeleton.skeleton-text-short(class='!w-24')
                   td.py-5.px-6.text-center: .skeleton.rounded-full.ml-auto(class='!h-8 !w-20')
     else if classrooms.length
-      .glass-panel.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
+      .beam-border.deep-glass.overflow-hidden.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
         .table-wrap
           table.w-full.text-left.border-collapse
             thead
@@ -89,11 +89,11 @@ block content
                   td.py-5.px-6.text-center
                     a.btn-outline.btn-sm.rounded-full(class='hover_bg-muted/50', href='/teacher/classrooms/' + classroom.id) Quản lý
     else
-      .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
+      .deep-glass.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
         .w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
           i.ph-fill.ph-chalkboard-teacher.text-5xl(class='text-muted-foreground/30')
         h2.text-3xl.font-extrabold.text-foreground.tracking-tighter Chưa có lớp học nào
         p.text-lg.text-muted-foreground.mt-3.max-w-md Bạn chưa tạo lớp học nào. Bắt đầu ngay để tạo mã tham gia có thể chia sẻ.
-        a.btn-primary.h-12.px-7.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2.mt-8(href='/teacher/classrooms/new')
+        a.btn-primary.btn-glow.h-12.px-7.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2.mt-8(href='/teacher/classrooms/new')
           i.ph-bold.ph-plus
           | Tạo Lớp học

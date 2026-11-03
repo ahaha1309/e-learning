@@ -45,6 +45,7 @@ const indexRoutes = require('./routes/index.routes');
 const adminRoutes = require('./routes/admin.routes');
 const teacherLectureRoutes = require('./routes/teacher.lecture.routes');
 const teacherAssignmentRoutes = require('./routes/teacher.assignment.routes');
+const teacherRubricRoutes = require('./routes/teacher.rubric.routes');
 const teacherSubmissionRoutes = require('./routes/teacher.submission.routes');
 const studentLectureRoutes = require('./routes/student.lecture.routes');
 const studentAssignmentRoutes = require('./routes/student.assignment.routes');
@@ -143,6 +144,7 @@ app.use('/profile', profileRoutes);
 app.use('/', indexRoutes);
 app.use('/teacher/classrooms/:classroomId/lectures', teacherLectureRoutes);
 app.use('/teacher/classrooms/:classroomId/assignments', teacherAssignmentRoutes);
+app.use('/teacher/classrooms/:classroomId/rubrics', teacherRubricRoutes);
 app.use('/teacher/classrooms/:classroomId/assignments/:assignmentId/submissions', teacherSubmissionRoutes);
 app.use('/student/classrooms/:classroomId/lectures', studentLectureRoutes);
 app.use('/student/classrooms/:classroomId/assignments', studentAssignmentRoutes);
@@ -213,10 +215,6 @@ app.use((err, req, res, next) => {
 
 async function startServer() {
   await connectDatabase();
-
-  // Seed default categories and auto-assign to unassigned classrooms (idempotent)
-  const { seedCategories } = require('./seeds/categories.seed');
-  await seedCategories();
 
   const port = Number(process.env.PORT || 3000);
   const server = http.createServer(app);

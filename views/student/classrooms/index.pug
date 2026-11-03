@@ -1,5 +1,18 @@
 extends ../../layouts/base
 
+block head
+  style.
+    article.group:hover .group_card_menu:not(.dropdown-open) .dropdown {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(4px);
+    }
+    article.group .group_card_menu.dropdown-open .dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
 block content
   .page-narrow.max-w-7xl.space-y-12.pt-8.pb-32
     //- Cinematic Header
@@ -9,7 +22,7 @@ block content
         h1.text-4xl.md_text-5xl.font-extrabold.tracking-tighter Lớp học
         p.text-lg.text-muted-foreground.mt-3 Tham gia lớp học bằng mã từ giảng viên và theo dõi các lớp học đang hoạt động của bạn.
         
-      div.glass-panel.p-4.rounded-2xl.flex.items-center.gap-5.shadow-sm(class='border-border/60')
+      div.beam-border.deep-glass.p-4.rounded-2xl.flex.items-center.gap-5.shadow-sm(class='border-border/60')
         div.text-right
           p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Đang chờ
           p.font-mono.text-3xl.font-bold= pendingMemberships.length
@@ -20,7 +33,7 @@ block content
       .alert-primary.animate-in.fade-in= feedback
 
     //- Join Classroom Form (Glassmorphism)
-    .glass-panel.p-6.sm_p-8.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 100ms;')
+    .deep-glass.p-6.sm_p-8.animate-in.slide-in-up(class='rounded-[2rem] border-border/60', style='animation-delay: 100ms;')
       form.flex.flex-col.sm_flex-row.gap-4.items-end(method='POST', action='/student/classrooms/join')
         input(type='hidden', name='_csrf', value=csrfToken)
         .field.flex-1.w-full
@@ -29,34 +42,119 @@ block content
             .icon
               i.ph-bold.ph-hash.text-lg.text-muted-foreground
             input#code.uppercase(type='text', name='code', placeholder='ABC12345', maxlength='12', required, class='h-14 rounded-xl border-border bg-card shadow-sm focus:border-primary focus:ring-1 focus:ring-primary w-full tracking-widest font-mono text-lg')
-        button.btn-primary.h-14.px-8.text-base.rounded-xl.shadow-diffused.active_scale-95.transition-transform.flex-shrink-0.w-full.sm_w-auto(type='submit')
+        button.btn-primary.btn-glow.h-14.px-8.text-base.rounded-xl.shadow-diffused.active_scale-95.transition-transform.flex-shrink-0.w-full.sm_w-auto(type='submit')
           i.ph-bold.ph-plus
           | Tham gia Lớp học
 
-    if approvedMemberships.length
+    if visibleMemberships.length || hiddenMemberships.length
       .space-y-6.animate-in.slide-in-up(style='animation-delay: 200ms;')
-        h2.text-2xl.font-extrabold.tracking-tight Lớp học Hoạt động
-        .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-8
-          each membership in approvedMemberships
-            a.group.block.glass-panel.p-8.transition-all(class='rounded-[2rem] border-border/60 hover_border-primary/50 hover_bg-primary/5', href='/student/classrooms/' + membership.classroom.id)
-              .flex.items-start.justify-between.mb-8
-                div.w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.border(class='bg-primary/10 border-primary/20')
-                  i.ph-bold.ph-book-open.text-2xl
-                .w-10.h-10.rounded-full.bg-muted.flex.items-center.justify-center.text-muted-foreground.group-hover_bg-primary.group-hover_text-primary-foreground.transition-colors
-                  i.ph-bold.ph-arrow-up-right.text-sm
+        .flex.items-center.justify-between
+          h2.text-2xl.font-extrabold.tracking-tight Lớp học Hoạt động
+          .relative.group
+            button.btn-ghost.btn-icon.rounded-full(type='button', aria-haspopup='true', aria-expanded='false', aria-label='Tùy chọn lớp học')
+              i.ph-bold.ph-dots-three.text-xl
+            .dropdown.right-0(role='menu')
+              button.dropdown-item(type='button', role='menuitem', onclick='openClassroomManagementModal()')
+                i.ph-bold.ph-list-dashes
+                | Quản lý lớp học
+                
+        if visibleMemberships.length
+          .grid.grid-cols-1.md_grid-cols-2.lg_grid-cols-3.gap-8
+            each membership in visibleMemberships
+              article.group.relative.block.spotlight-card.glass-panel.p-8.transition-all(class='rounded-[2rem] border-border/60 hover_border-primary/50 hover_bg-primary/5')
+                a.absolute.inset-0.z-10(href='/student/classrooms/' + membership.classroom.id, aria-label='Vào lớp ' + membership.classroom.name)
+                
+                .flex.items-start.justify-between.mb-8
+                  div.w-14.h-14.rounded-2xl.text-primary.flex.items-center.justify-center.border(class='bg-primary/10 border-primary/20')
+                    i.ph-bold.ph-book-open.text-2xl
                   
-              h3.font-extrabold.text-2xl.tracking-tight.group-hover_text-primary.transition-colors.mb-2.truncate= membership.classroom.name
-              p.text-sm.font-mono.text-muted-foreground Mã: #{membership.classroom.code}
-              
-              div.mt-8.pt-6.border-t.flex.items-center.justify-between(class='border-border/60')
-                span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Xem Giáo trình
-                i.ph-bold.ph-caret-right.text-muted-foreground.group-hover_text-primary.transition-colors
+                  //- 3 dots menu
+                  .relative.z-20.group_card_menu
+                    button.btn-ghost.btn-icon.rounded-full.h-10.w-10(type='button', aria-haspopup='true', aria-expanded='false')
+                      i.ph-bold.ph-dots-three.text-xl
+                    .dropdown.right-0(role='menu')
+                      form(method='POST', action='/student/classrooms/' + membership.classroom.id + '/toggle-visibility')
+                        input(type='hidden', name='_csrf', value=csrfToken)
+                        button.dropdown-item(type='submit', role='menuitem')
+                          i.ph-bold.ph-eye-slash
+                          | Ẩn lớp học
+                    
+                h3.font-extrabold.text-2xl.tracking-tight.group-hover_text-primary.transition-colors.mb-2.truncate= membership.classroom.name
+                p.text-sm.font-mono.text-muted-foreground Mã: #{membership.classroom.code}
+                
+                div.mt-8.pt-6.border-t.flex.items-center.justify-between(class='border-border/60')
+                  span.text-xs.font-bold.text-muted-foreground.uppercase.tracking-widest Xem Giáo trình
+                  i.ph-bold.ph-caret-right.text-muted-foreground.group-hover_text-primary.transition-colors
+        else
+          .deep-glass.py-16.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60')
+            h3.text-lg.font-bold.text-foreground Tất cả lớp học đã bị ẩn
+            p.text-sm.text-muted-foreground.mt-2 Bạn có thể hiển thị lại từ menu Quản lý lớp học.
     else
-      .glass-panel.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
+      .deep-glass.h-96.flex.flex-col.items-center.justify-center.text-center.animate-in.fade-in(class='rounded-[2rem] border-border/60', style='animation-delay: 200ms;')
         div.w-24.h-24.rounded-3xl.flex.items-center.justify-center.mb-8(class='bg-muted/50')
           i.ph-fill.ph-book-open.text-5xl(class='text-muted-foreground/30')
         h2.text-3xl.font-extrabold.text-foreground.tracking-tighter Không có lớp học nào được phê duyệt
         p.text-lg.text-muted-foreground.mt-3.max-w-md Bạn chưa tham gia lớp học nào. Nhập mã từ giảng viên để yêu cầu quyền truy cập.
-        a.btn-primary.h-12.px-7.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2.mt-8(href='#code')
+        a.btn-primary.btn-glow.h-12.px-7.rounded-full.shadow-diffused.active_scale-95.transition-transform.inline-flex.items-center.gap-2.mt-8(href='#code')
           i.ph-bold.ph-hash
           | Nhập mã lớp học
+
+  //- Management Modal
+  dialog#classroom-management-modal.modal(aria-labelledby='cm-modal-title')
+    .modal-box.max-w-2xl
+      .flex.items-center.justify-between.mb-6
+        h3#cm-modal-title.text-lg.font-bold Quản lý lớp học
+        form(method='dialog')
+          button.btn-ghost.btn-icon.rounded-full(type='submit', aria-label='Đóng')
+            i.ph-bold.ph-x.text-lg
+            
+      if visibleMemberships.length || hiddenMemberships.length
+        .space-y-3.overflow-y-auto.pr-2(class='max-h-[60vh]')
+          - const allMemberships = [...visibleMemberships, ...hiddenMemberships]
+          each m in allMemberships
+            .flex.items-center.justify-between.p-4.rounded-xl.border.border-border.bg-card
+              div.min-w-0
+                p.font-bold.truncate= m.classroom.name
+                p.text-xs.text-muted-foreground Mã: #{m.classroom.code}
+              div.ml-4.flex-shrink-0
+                form(method='POST', action='/student/classrooms/' + m.classroom.id + '/toggle-visibility')
+                  input(type='hidden', name='_csrf', value=csrfToken)
+                  button.btn-outline.btn-sm.rounded-full(type='submit')
+                    if m.isHidden
+                      i.ph-bold.ph-eye
+                      | Hiện lại
+                    else
+                      i.ph-bold.ph-eye-slash.text-muted-foreground
+                      | Ẩn đi
+      else
+        p.text-sm.text-muted-foreground Trống.
+        
+  script.
+    function openClassroomManagementModal() {
+      const modal = document.getElementById('classroom-management-modal');
+      if (modal) modal.showModal();
+    }
+    
+    // Toggle dropdowns inside cards since they are dynamically inside .group
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.group_card_menu button');
+      if (btn) {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', !expanded);
+        const group = btn.closest('.group_card_menu');
+        if (group) {
+          if (!expanded) {
+            group.classList.add('dropdown-open'); // Force open
+          } else {
+            group.classList.remove('dropdown-open');
+          }
+        }
+      } else {
+        // close all open card menus
+        document.querySelectorAll('.group_card_menu.dropdown-open').forEach(g => {
+          g.classList.remove('dropdown-open');
+          const b = g.querySelector('button');
+          if (b) b.setAttribute('aria-expanded', 'false');
+        });
+      }
+    });

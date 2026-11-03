@@ -34,10 +34,12 @@ async function createSession(req, res, next) {
       return res.redirect(`/teacher/classrooms/${classroom.id}/attendance/${existingOpenSession.id}/live`);
     }
 
+    const method = req.body.method === 'qr' ? 'qr' : 'code';
     const session = new AttendanceSession({
       classroom: classroom.id,
       teacher: req.user.id,
       status: 'open',
+      method,
     });
     session.generateNewCode();
     await session.save();
@@ -95,7 +97,7 @@ async function apiGenerateCode(req, res, next) {
     const newCode = session.generateNewCode();
     await session.save();
 
-    return res.json({ code: newCode, expiresAt: session.expiresAt });
+    return res.json({ code: newCode, expiresAt: session.expiresAt, method: session.method });
   } catch (error) {
     return res.status(500).json({ error: 'Server error' });
   }
@@ -186,9 +188,9 @@ async function exportCSV(req, res, next) {
     const json2csvParser = new Parser();
     const csv = json2csvParser.parse(data);
 
-    res.header('Content-Type', 'text/csv');
+    res.header('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`attendance_${session.id}.csv`);
-    return res.send(csv);
+    return res.send('\uFEFF' + csv);
   } catch (error) {
     return next(error);
   }

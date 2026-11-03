@@ -103,7 +103,7 @@ async function renderStudentAssignmentDetail(req, res, next) {
       });
     }
 
-    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: membership.classroom.id, isPublished: true });
+    const assignment = await Assignment.findOne({ _id: req.params.assignmentId, classroom: membership.classroom.id, isPublished: true }).populate('rubric');
 
     if (!assignment) {
       return res.status(404).render('errors/404', {

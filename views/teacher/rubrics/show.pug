@@ -1,0 +1,94 @@
+extends ../../layouts/base
+
+block content
+  .page.space-y-8
+    nav.breadcrumb.mb-6
+      a(href='/teacher/classrooms') Lớp học
+      span.breadcrumb-sep /
+      a(href='/teacher/classrooms/' + classroom.id)= classroom.name
+      span.breadcrumb-sep /
+      a(href='/teacher/classrooms/' + classroom.id + '/rubrics') Rubric
+      span.breadcrumb-sep /
+      span.text-foreground.font-bold= rubric.name
+
+    .grid.grid-cols-1.gap-8.items-start(class='lg_grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]')
+      div
+        p.eyebrow Chi tiết Tiêu chuẩn Chấm điểm
+        h1.text-3xl.font-extrabold.tracking-tight= rubric.name
+        p.text-muted-foreground.max-w-prose.mt-2= rubric.description || 'Chưa có mô tả chi tiết cho Rubric này.'
+      aside.card.p-6.space-y-3
+        p.text-xs.font-bold.uppercase.tracking-widest.text-muted-foreground Tổng điểm Rubric
+        p.text-3xl.font-black.font-mono.text-primary= rubric.maxPoints + ' điểm'
+        p.text-sm.text-muted-foreground Gồm #{rubric.criteria ? rubric.criteria.length : 0} tiêu chí đánh giá
+
+    if feedback
+      .alert-success.animate-in.fade-in= feedback
+
+    if errorMessage
+      .alert-danger.animate-in.fade-in= errorMessage
+
+    .flex.gap-3.flex-wrap.items-center
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id + '/edit')
+        i.ph-bold.ph-pencil-simple
+        | Chỉnh sửa Rubric
+      form(method='POST', action='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id + '/duplicate')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        button.pill(type='submit')
+          i.ph-bold.ph-copy
+          | Nhân bản Rubric
+      form(method='POST', action='/teacher/classrooms/' + classroom.id + '/rubrics/' + rubric._id + '/delete', onsubmit='return confirm("Xóa Rubric này? Nếu có bài tập đang sử dụng, rubric sẽ được gỡ bỏ khỏi bài tập.");')
+        input(type='hidden', name='_csrf', value=csrfToken)
+        button.pill.text-destructive.border-destructive(type='submit', class='hover_bg-destructive/10')
+          i.ph-bold.ph-trash
+          | Xóa Rubric
+      a.pill(href='/teacher/classrooms/' + classroom.id + '/rubrics') Quay lại Danh sách Rubric
+
+    //- Criteria Matrix
+    .card.p-6.space-y-6
+      .flex.items-center.justify-between.pb-4.border-b.border-border(class='border-border/60')
+        h2.text-xl.font-bold.tracking-tight Danh sách Tiêu chí Đánh giá
+        span.badge-muted.badge-sm= (rubric.criteria ? rubric.criteria.length : 0) + ' tiêu chí'
+
+      .space-y-4
+        if rubric.criteria && rubric.criteria.length
+          each criterion, idx in rubric.criteria
+            .border.rounded-2xl.p-5.space-y-3(class='border-border/60 bg-muted/20')
+              .flex.items-baseline.justify-between.gap-4.flex-wrap
+                div
+                  .flex.items-center.gap-2
+                    span.inline-flex.items-center.justify-center.w-6.h-6.rounded-full.bg-primary.bg-opacity-10.text-primary.font-bold.text-xs= idx + 1
+                    h3.text-lg.font-bold.text-foreground= criterion.label
+                  if criterion.description
+                    p.text-sm.text-muted-foreground.mt-1.ml-8= criterion.description
+                span.badge-muted.text-sm.font-bold= 'Tối đa ' + criterion.maxPoints + ' điểm'
+
+              if criterion.scale && criterion.scale.length
+                .mt-3.ml-8(class='space-y-1.5')
+                  p.text-xs.font-bold.uppercase.tracking-wider.text-muted-foreground Thang điểm nút bấm:
+                  .flex.flex-wrap.gap-2
+                    each sc in criterion.scale
+                      span.pill.text-xs.inline-flex.items-center(class='gap-1.5')
+                        strong.font-mono.text-primary= sc.points + 'đ'
+                        span.text-muted-foreground —
+                        span= sc.label
+        else
+          p.text-sm.text-muted-foreground Chưa có tiêu chí nào.
+
+    //- Assignments using this Rubric
+    .card.p-6.space-y-4
+      .flex.items-center.justify-between.pb-3.border-b.border-border(class='border-border/60')
+        h2.text-lg.font-bold.tracking-tight Bài tập đang áp dụng Rubric này
+        span.badge-muted.badge-sm= assignments.length + ' bài tập'
+
+      if assignments && assignments.length
+        .divide-y.divide-border(class='divide-border/40')
+          each assignment in assignments
+            .py-3.flex.items-center.justify-between.gap-4.flex-wrap
+              div
+                a.font-bold.text-foreground.hover_text-primary(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment._id)= assignment.title
+                p.text-xs.text-muted-foreground(class='mt-0.5') Hạn chót: #{new Date(assignment.dueDate).toLocaleString('vi-VN')}
+              a.pill.text-xs(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment._id)
+                i.ph-bold.ph-arrow-right
+                | Mở bài tập
+      else
+        p.text-sm.text-muted-foreground Chưa có bài tập nào gắn với Rubric này. Bạn có thể chọn Rubric này khi tạo hoặc chỉnh sửa bài tập.

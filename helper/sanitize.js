@@ -45,12 +45,21 @@ const ALLOWED_OPTIONS = {
 
 /**
  * Sanitize rich HTML content. Returns '' for empty/non-string input.
+ * Decodes basic HTML entities first to undo global xss-clean middleware effects.
  * @param {string} html
  * @returns {string}
  */
 function sanitizeRichHtml(html) {
   if (!html || typeof html !== 'string') return '';
-  return sanitizeHtml(html, ALLOWED_OPTIONS);
+  // Undo xss-clean's basic escaping so sanitize-html can parse the actual tags
+  const decodedHtml = html
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&amp;/g, '&');
+  return sanitizeHtml(decodedHtml, ALLOWED_OPTIONS);
 }
 
 /**

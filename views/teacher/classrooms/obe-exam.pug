@@ -48,7 +48,7 @@ block content
                     - var pPerQ = (exam.totalPoints && questions.length > 0) ? (exam.totalPoints / questions.length) : (q.points || 0);
                     - var pPerQStr = Number.isInteger(pPerQ) ? pPerQ : pPerQ.toFixed(2);
                     | Điểm: #{pPerQStr}
-                p.text-sm.font-medium.text-foreground.markdown-content= q.content
+                div.text-sm.font-medium.text-foreground.markdown-content !{q.content}
               
               //- Selection of CLOs for this question
               div(class="border-t border-border/40 pt-3 space-y-2")

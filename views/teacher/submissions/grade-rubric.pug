@@ -42,7 +42,25 @@ block content
             span.badge-muted.text-sm= '/ ' + criterion.maxPoints + ' điểm'
           .flex.flex-wrap.gap-2
             each sc in criterion.scale
-              button.pill.text-sm(type='button', data-crit=String(criterion._id), data-points=sc.points, onclick='this.form.elements["crit_' + criterion._id + '"].value=' + sc.points + '; this.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("pill-primary")); this.classList.add("pill-primary");')= sc.points + ' — ' + sc.label
-          input.w-full(type='number', min='0', max=criterion.maxPoints, step='0.5', name='crit_' + criterion._id, value=(awarded[String(criterion._id)] !== undefined ? awarded[String(criterion._id)] : ''), aria-label='Points for ' + criterion.label)
+              button.pill.text-sm(type='button', data-crit=String(criterion._id), data-points=sc.points, class=(awarded[String(criterion._id)] !== undefined && Number(awarded[String(criterion._id)]) === Number(sc.points) ? 'pill-primary' : ''), onclick='this.form.elements["crit_' + criterion._id + '"].value=' + sc.points + '; this.parentElement.querySelectorAll("button").forEach(b=>b.classList.remove("pill-primary")); this.classList.add("pill-primary"); updateRubricTotal();')= sc.points + ' — ' + sc.label
+          input.w-full.criterion-input(type='number', min='0', max=criterion.maxPoints, step='0.5', name='crit_' + criterion._id, value=(awarded[String(criterion._id)] !== undefined ? awarded[String(criterion._id)] : ''), aria-label='Points for ' + criterion.label, oninput='updateRubricTotal()')
+      .p-4.rounded-xl.bg-muted.bg-opacity-40.border.border-border(class='border-border/60 flex items-center justify-between')
+        span.text-sm.font-bold Tổng điểm Rubric tính toán:
+        span#liveRubricTotal.font-mono.text-2xl.font-black.text-primary 0 / #{rubric.maxPoints} điểm
+
       .flex.gap-3.flex-wrap
-        button.btn-primary(type='submit') Lưu điểm rubric
+        button.btn-primary.btn-glow(type='submit') Lưu điểm rubric
+        a.pill(href='/teacher/classrooms/' + classroom.id + '/assignments/' + assignment.id + '/submissions/' + submission.id) Hủy
+
+    script.
+      function updateRubricTotal() {
+        const inputs = document.querySelectorAll('.criterion-input');
+        let total = 0;
+        inputs.forEach(inp => {
+          const val = parseFloat(inp.value);
+          if (!isNaN(val) && val >= 0) total += val;
+        });
+        const disp = document.getElementById('liveRubricTotal');
+        if (disp) disp.textContent = (Math.round(total * 10) / 10) + ' / #{rubric.maxPoints} điểm';
+      }
+      document.addEventListener('DOMContentLoaded', updateRubricTotal);
