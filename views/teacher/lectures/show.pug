@@ -11,8 +11,7 @@ block head
 block content
   //- Connection banner (Socket.io offline indicator)
   #chat-connection-banner.connection-banner(aria-live='polite', role='status')
-    i.ph-bold.ph-wifi-slash(aria-hidden='true')
-    span#chat-connection-msg Đã ngắt kết nối trò chuyện — đang thử lại...
+    span#chat-connection-msg 
 
   .split-pane
 
@@ -414,7 +413,7 @@ block content
         chatInput.disabled = false;
       });
       socket.on('disconnect', function () {
-        showBanner('offline', 'Đã ngắt kết nối trò chuyện — đang thử lại...');
+        showBanner('offline', '');
         chatInput.disabled = true;
         chatSend.disabled = true;
       });
