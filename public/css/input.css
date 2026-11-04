@@ -759,12 +759,12 @@
     top: var(--header-height);
     left: 0;
     bottom: 0;
-    z-index: 30;
+    z-index: 40;
     overflow-y: auto;
   }
   @media (min-width: 768px) { .shell-sidebar { display: flex; } }
   @media (max-width: 767px) {
-    .shell-sidebar.open { display: flex; box-shadow: 0 0 0 9999px hsl(0 0% 0% / 0.5); }
+    .shell-sidebar.open { display: flex; }
   }
 
   .shell-sidebar-link {

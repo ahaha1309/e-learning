@@ -1556,7 +1556,7 @@ input[type='radio'] {
   top: var(--header-height);
   left: 0;
   bottom: 0;
-  z-index: 30;
+  z-index: 40;
   overflow-y: auto;
 }
 
@@ -1569,7 +1569,6 @@ input[type='radio'] {
 @media (max-width: 767px) {
   .shell-sidebar.open {
     display: flex;
-    box-shadow: 0 0 0 9999px hsl(0 0% 0% / 0.5);
   }
 }
 
@@ -2243,30 +2242,6 @@ input[type='radio'] {
 }
 
 /* ── Gamification Components ───────────────────────── */
-
-.xp-bar {
-  height: 0.5rem;
-  border-radius: 9999px;
-  background: hsl(var(--muted));
-  overflow: hidden;
-  position: relative;
-}
-
-.xp-bar-fill {
-  height: 100%;
-  border-radius: 9999px;
-  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
-  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-}
-
-.xp-bar-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  animation: shimmer 2s infinite;
-}
 
 .badge-chip {
   display: inline-flex;
@@ -3635,10 +3610,6 @@ input[type='radio'] {
 
 .z-\[9999\] {
   z-index: 9999;
-}
-
-.z-sidebar {
-  z-index: 300;
 }
 
 .z-sticky {

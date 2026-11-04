@@ -24,28 +24,6 @@ block content
             i.ph-fill.ph-fire.text-base
             | #{streak} ngày chuỗi
 
-    //- ── XP / GAMIFICATION STRIP ──────────────────────────────────
-    //- §4.3 Gamification: XP bar above KPIs creates progression feeling
-    if xpData
-      .deep-glass.p-5.rounded-2xl.mb-8.animate-in(style='animation-delay:100ms;')
-        .flex.items-center.justify-between.mb-3.gap-4
-          .flex.items-center.gap-3.flex-wrap
-            //- Level badge
-            .inline-flex.items-center.px-3.rounded-full.font-bold.text-sm.border(class='gap-1.5 bg-primary/10 border-primary/20 text-primary py-1')
-              i.ph-fill.ph-crown
-              | Cấp #{xpData.level || 1}
-            //- Badges earned
-            if xpData.badges && xpData.badges.length > 0
-              each badge in xpData.badges.slice(0, 3)
-                .badge-chip(title=badge.name)
-                  i.ph-fill(class=badge.icon || 'ph-star')
-                  | #{badge.name}
-          .text-right.flex-shrink-0
-            p.font-mono.font-bold.text-foreground #{xpData.current || 0} XP
-            p.text-muted-foreground(style='font-size:0.7rem;') #{xpData.toNext || 100} để lên Cấp #{(xpData.level || 1) + 1}
-        .xp-bar
-          .xp-bar-fill(style='width: ' + Math.min(100, Math.round(((xpData.current % (xpData.toNext || 100)) / (xpData.toNext || 100)) * 100)) + '%')
-
     //- ── KPI STRIP ───────────────────────────────────────────────
     //- §4.1 Dashboard Strategy: 4 stats above fold
     .beam-border.deep-glass.overflow-hidden.mb-8.animate-in(class='rounded-[2rem]', style='animation-delay: 150ms;')

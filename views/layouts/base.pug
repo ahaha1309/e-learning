@@ -184,6 +184,15 @@ html(lang='en', class='light')
           if (toggle) toggle.addEventListener('click', openSidebar);
           if (overlay) overlay.addEventListener('click', closeSidebar);
 
+          // Auto-close sidebar when a nav link is clicked on mobile
+          if (sidebar) {
+            sidebar.addEventListener('click', function(e) {
+              if (window.innerWidth < 768 && e.target.closest('a')) {
+                closeSidebar();
+              }
+            });
+          }
+
           document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeSidebar();
           });
